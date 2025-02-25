@@ -1,0 +1,6 @@
+*.sublime-workspace
+core/
+_build/
+_data/*.exe
+_data/*.dll
+_data/*.ini
