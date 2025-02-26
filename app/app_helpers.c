@@ -104,7 +104,6 @@ void UpdateOptionValueInFile(FileOption* option)
 	NotNullStr(option->valueStr);
 	if (!StrExactEquals(option->valueStr, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex)))
 	{
-		uxx sliceLength = option->fileContentsEndIndex - option->fileContentsStartIndex;
 		Str8 fileBeginning = StrSlice(app->fileContents, 0, option->fileContentsStartIndex);
 		Str8 fileEnd = StrSliceFrom(app->fileContents, option->fileContentsEndIndex);
 		Str8 newFileContents = JoinStringsInArena(scratch, fileBeginning, option->valueStr, false);

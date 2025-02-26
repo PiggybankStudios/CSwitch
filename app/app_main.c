@@ -171,7 +171,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	
 	v2i screenSizei = appIn->screenSize;
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
-	v2 screenCenter = Div(screenSize, 2.0f);
+	// v2 screenCenter = Div(screenSize, 2.0f);
 	v2 mousePos = appIn->mouse.position;
 	
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
