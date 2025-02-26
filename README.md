@@ -1,5 +1,5 @@
-# Quick Switch
-A simple project to turn on/off defines in a file quickly. This project is based on PigCore using sokol_gfx.h and sokol_app.h to make a graphical window.
+# C-Switch
+A simple project to turn on/off defines in a C header file quickly. This project is based on PigCore using sokol_gfx.h and sokol_app.h to make a graphical window.
 
 # Usage
 1. Run quick_switch.exe

@@ -63,10 +63,10 @@ Description:
 // Enables using Clay header files
 #define BUILD_WITH_CLAY       1
 
-#define PROJECT_READABLE_NAME Quick Switch
-#define PROJECT_FOLDER_NAME   QuickSwitch
-#define PROJECT_DLL_NAME      quick_switch_app_hot_reload
-#define PROJECT_EXE_NAME      quick_switch
+#define PROJECT_READABLE_NAME C-Switch
+#define PROJECT_FOLDER_NAME   C_Switch
+#define PROJECT_DLL_NAME      cswitch_app
+#define PROJECT_EXE_NAME      cswitch
 
 #ifndef STRINGIFY_DEFINE
 #define STRINGIFY_DEFINE(define) STRINGIFY(define)
