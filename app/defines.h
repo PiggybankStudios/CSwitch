@@ -17,13 +17,24 @@ Date:   02\25\2025
 #define MAIN_FONT_SIZE  18
 #define MAIN_FONT_STYLE FontStyleFlag_Bold
 
-#define DEFAULT_WINDOW_SIZE NewV2i(400, 400)
+#define DEFAULT_WINDOW_SIZE NewV2i(360, 500)
 #define TOPBAR_HEIGHT   24 //px
 #define FILE_DROPDOWN_WIDTH 100 //px
-#define FILE_PATH_DISPLAY_MAX_LENGTH 32 //chars
+#define FILE_PATH_DISPLAY_MAX_LENGTH 40 //chars
 
 #define OPTION_UI_GAP              2 //px
 #define LINE_BREAK_EXTRA_UI_GAP    4 //px
 #define MAX_LINE_BREAKS_CONSIDERED 4 //lines
+
+#define TEXT_WHITE           NewColor(221, 222, 224, 255) //FFDDDEE0
+#define TEXT_LIGHT_GRAY      NewColor(175, 177, 179, 255) //FFAFB1B3
+#define TEXT_GRAY            NewColor(107, 112, 120, 255) //FF6B7078
+#define BACKGROUND_BLACK     NewColor(25, 27, 28, 255)    //FF191B1C
+#define BACKGROUND_DARK_GRAY NewColor(31, 34, 35, 255)    //FF1F2223
+#define BACKGROUND_GRAY      NewColor(39, 42, 43, 255)    //FF272A2B
+#define OUTLINE_GRAY         NewColor(52, 58, 59, 255)    //FF343A3B
+#define HOVERED_BLUE         NewColor(16, 60, 76, 255)    //FF103C4C
+#define SELECTED_BLUE        NewColor(0, 121, 166, 255)   //FF0079A6
+#define ERROR_RED            NewColor(255, 102, 102, 255) //FFFF6666
 
 #endif //  _DEFINES_H

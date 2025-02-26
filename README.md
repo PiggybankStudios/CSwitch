@@ -9,4 +9,4 @@ A simple project to turn on/off defines in a file quickly. This project is based
 5. Clicking a button will toggle the value between 1 and 0 (and immediately write to the file)
 
 # Screenshot
-![Screenshot1](/_media/screenshot1.png)
+![Screenshot2](/_media/screenshot2.png)

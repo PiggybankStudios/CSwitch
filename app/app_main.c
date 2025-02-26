@@ -174,7 +174,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	v2 screenCenter = Div(screenSize, 2.0f);
 	v2 mousePos = appIn->mouse.position;
 	
-	BeginFrame(platform->GetSokolSwapchain(), screenSizei, MonokaiDarkGray, 1.0f);
+	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
 	{
 		BindShader(&app->mainShader);
 		ClearDepthBuffer(1.0f);
@@ -208,12 +208,13 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						.childGap = 2,
 						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 					},
-					.backgroundColor = ToClayColor(MonokaiBack),
+					.backgroundColor = ToClayColor(BACKGROUND_GRAY),
+					.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
 				})
 				{
-					if (ClayTopBtn("File", &app->isFileMenuOpen, MonokaiBack, MonokaiWhite, FILE_DROPDOWN_WIDTH))
+					if (ClayTopBtn("File", &app->isFileMenuOpen, FILE_DROPDOWN_WIDTH))
 					{
-						if (ClayBtn("Open", Transparent, MonokaiWhite, true))
+						if (ClayBtn("Open", true))
 						{
 							Str8 selectedPath = Str8_Empty;
 							Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
@@ -226,12 +227,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
 						} Clay__CloseElement();
 						
-						if (ClayBtn("Close", Transparent, app->isFileOpen ? MonokaiWhite : MonokaiGray2, app->isFileOpen))
+						if (ClayBtn("Close", app->isFileOpen))
 						{
 							AppCloseFile();
 						} Clay__CloseElement();
 						
-						if (ClayBtn("Exit", Transparent, MonokaiWhite, true)) { shouldContinueRunning = false; } Clay__CloseElement();
+						if (ClayBtn("Exit", true)) { shouldContinueRunning = false; } Clay__CloseElement();
 						
 						Clay__CloseElement();
 						Clay__CloseElement();
@@ -265,9 +266,10 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							CLAY_TEXT_CONFIG({
 								.fontId = app->clayUiFontId,
 								.fontSize = UI_FONT_SIZE,
-								.textColor = ToClayColor(MonokaiGray1),
+								.textColor = ToClayColor(TEXT_LIGHT_GRAY),
 							})
 						);
+						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 					}
 				}
 				
@@ -318,7 +320,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							CLAY_TEXT_CONFIG({
 								.fontId = app->clayMainFontId,
 								.fontSize = MAIN_FONT_SIZE,
-								.textColor = ToClayColor(MonokaiWhite),
+								.textColor = ToClayColor(TEXT_WHITE),
 								.wrapMode = CLAY_TEXT_WRAP_NEWLINES,
 							})
 						);

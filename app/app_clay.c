@@ -7,31 +7,35 @@ Description:
 */
 
 //Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
-bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color32 textColor, r32 dropDownWidth)
+bool ClayTopBtn(const char* btnText, bool* isOpenPntr, r32 dropDownWidth)
 {
 	ScratchBegin(scratch);
-	Color32 highlightColor = ColorLerpSimple(backColor, White, 0.3f);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
 	Clay_ElementId btnId = ToClayId(btnIdStr);
 	Clay_ElementId menuId = ToClayId(menuIdStr);
-	bool isBtnHoveredOrMenuOpen = (Clay_PointerOver(btnId) || *isOpenPntr);
+	bool isBtnHovered = Clay_PointerOver(btnId);
+	bool isHovered = (isBtnHovered || Clay_PointerOver(menuId));
+	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
+	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
+	Color32 borderColor = SELECTED_BLUE;
+	u16 borderWith = isHovered ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .padding = { 6, 6, 4, 4 } },
-		.backgroundColor = ToClayColor(isBtnHoveredOrMenuOpen ? highlightColor : backColor),
-		.cornerRadius = CLAY_CORNER_RADIUS(5),
+		.layout = { .padding = { 12, 12, 4, 4 } },
+		.backgroundColor = ToClayColor(backgroundColor),
+		.cornerRadius = CLAY_CORNER_RADIUS(4),
+		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
 	});
 	CLAY_TEXT(
 		ToClayString(StrLit(btnText)),
 		CLAY_TEXT_CONFIG({
 			.fontId = app->clayUiFontId,
 			.fontSize = UI_FONT_SIZE,
-			.textColor = ToClayColor(textColor),
+			.textColor = ToClayColor(TEXT_WHITE),
 		})
 	);
-	bool isHovered = (Clay_PointerOver(btnId) || Clay_PointerOver(menuId));
 	if (Clay_PointerOver(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
 	if (*isOpenPntr == true && !isHovered) { *isOpenPntr = false; }
 	if (*isOpenPntr)
@@ -46,7 +50,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 				},
 			},
 			.layout = {
-				.padding = { 0, 0, 0, 0 },
+				.padding = { 2, 2, 0, 0 },
 			}
 		});
 		
@@ -57,10 +61,12 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 				.sizing = {
 					.width = CLAY_SIZING_FIXED(dropDownWidth),
 				},
+				.padding = CLAY_PADDING_ALL(2),
 				.childGap = 2,
 			},
-			.backgroundColor = ToClayColor(MonokaiBack),
-			.cornerRadius = CLAY_CORNER_RADIUS(8),
+			.backgroundColor = ToClayColor(BACKGROUND_GRAY),
+			.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
+			.cornerRadius = { 0, 0, 4, 4 },
 		});
 	}
 	ScratchEnd(scratch);
@@ -68,15 +74,16 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, Color32 backColor, Color3
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayBtnStr(Str8 btnText, Color32 backColor, Color32 textColor, bool isEnabled)
+bool ClayBtnStr(Str8 btnText, bool isEnabled)
 {
 	ScratchBegin(scratch);
-	Color32 hoverColor = ColorLerpSimple(backColor, White, 0.3f);
-	Color32 pressColor = ColorLerpSimple(backColor, White, 0.1f);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(btnText));
 	Clay_ElementId btnId = ToClayId(btnIdStr);
 	bool isHovered = Clay_PointerOver(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	Color32 backgroundColor = !isEnabled ? BACKGROUND_BLACK : (isPressed ? SELECTED_BLUE : (isHovered ? HOVERED_BLUE : Transparent));
+	Color32 borderColor = SELECTED_BLUE;
+	u16 borderWith = (isHovered && isEnabled) ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -84,36 +91,40 @@ bool ClayBtnStr(Str8 btnText, Color32 backColor, Color32 textColor, bool isEnabl
 			.padding = CLAY_PADDING_ALL(4),
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
-		.backgroundColor = ToClayColor((isPressed || !isEnabled) ? pressColor : (isHovered ? hoverColor : backColor)),
+		.backgroundColor = ToClayColor(backgroundColor),
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
+		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
 	});
 	CLAY_TEXT(
 		ToClayString(btnText),
 		CLAY_TEXT_CONFIG({
 			.fontId = app->clayUiFontId,
 			.fontSize = MAIN_FONT_SIZE,
-			.textColor = ToClayColor(textColor),
+			.textColor = ToClayColor(TEXT_WHITE),
 		})
 	);
 	ScratchEnd(scratch);
 	return (isHovered && isEnabled && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
-bool ClayBtn(const char* btnText, Color32 backColor, Color32 textColor, bool isEnabled)
+bool ClayBtn(const char* btnText, bool isEnabled)
 {
-	return ClayBtnStr(StrLit(btnText), backColor, textColor, isEnabled);
+	return ClayBtnStr(StrLit(btnText), isEnabled);
 }
 
 //Call Clay__CloseElement once after if statement
 bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 {
 	ScratchBegin(scratch);
-	Color32 hoverColor = ColorLerpSimple(MonokaiBack, White, 0.3f);
-	Color32 pressColor = ColorLerpSimple(MonokaiBack, White, 0.1f);
-	Color32 textColor = enabled ? MonokaiGreen : MonokaiGray1;
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(nameStr));
 	Clay_ElementId btnId = ToClayId(btnIdStr);
 	bool isHovered = Clay_PointerOver(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;
+	Color32 hoverColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, enabled ? 0.75f : 0.0f);
+	Color32 pressColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f);
+	Color32 textColor = TEXT_WHITE;
+	Color32 valueColor = enabled ? TEXT_WHITE : TEXT_GRAY;
+	Color32 outlineColor = enabled ? SELECTED_BLUE : (isHovered ? ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f) : OUTLINE_GRAY);
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -122,8 +133,12 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 			.padding = CLAY_PADDING_ALL(4),
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
-		.backgroundColor = ToClayColor(isPressed ? pressColor : (isHovered ? hoverColor : MonokaiBack)),
+		.backgroundColor = ToClayColor(isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
+		.border = {
+			.color = ToClayColor(outlineColor),
+			.width = CLAY_BORDER_OUTSIDE(2),
+		},
 	});
 	CLAY_TEXT(
 		ToClayString(nameStr),
@@ -139,7 +154,7 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 		CLAY_TEXT_CONFIG({
 			.fontId = app->clayMainFontId,
 			.fontSize = MAIN_FONT_SIZE,
-			.textColor = ToClayColor(textColor),
+			.textColor = ToClayColor(valueColor),
 		})
 	);
 	ScratchEnd(scratch);
