@@ -6,6 +6,11 @@ Description:
 	** Holds various functions that comprise common widgets for Clay
 */
 
+bool IsMouseOverClay(Clay_ElementId clayId)
+{
+	return appIn->mouse.isOverWindow && Clay_PointerOver(clayId);
+}
+
 //Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
 bool ClayTopBtn(const char* btnText, bool* isOpenPntr, r32 dropDownWidth)
 {
@@ -14,8 +19,8 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, r32 dropDownWidth)
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
 	Clay_ElementId btnId = ToClayId(btnIdStr);
 	Clay_ElementId menuId = ToClayId(menuIdStr);
-	bool isBtnHovered = Clay_PointerOver(btnId);
-	bool isHovered = (isBtnHovered || Clay_PointerOver(menuId));
+	bool isBtnHovered = IsMouseOverClay(btnId);
+	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
 	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
 	Color32 borderColor = SELECTED_BLUE;
@@ -36,7 +41,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, r32 dropDownWidth)
 			.textColor = ToClayColor(TEXT_WHITE),
 		})
 	);
-	if (Clay_PointerOver(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
+	if (IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
 	if (*isOpenPntr == true && !isHovered) { *isOpenPntr = false; }
 	if (*isOpenPntr)
 	{
@@ -79,7 +84,7 @@ bool ClayBtnStr(Str8 btnText, bool isEnabled)
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(btnText));
 	Clay_ElementId btnId = ToClayId(btnIdStr);
-	bool isHovered = Clay_PointerOver(btnId);
+	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backgroundColor = !isEnabled ? BACKGROUND_BLACK : (isPressed ? SELECTED_BLUE : (isHovered ? HOVERED_BLUE : Transparent));
 	Color32 borderColor = SELECTED_BLUE;
@@ -117,7 +122,7 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(nameStr));
 	Clay_ElementId btnId = ToClayId(btnIdStr);
-	bool isHovered = Clay_PointerOver(btnId);
+	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;
 	Color32 hoverColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, enabled ? 0.75f : 0.0f);

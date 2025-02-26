@@ -141,6 +141,20 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	InitVarArray(FileOption, &app->fileOptions, stdHeap);
 	
+	uxx argIndex = 0;
+	Str8 pathArgument = GetNamelessProgramArg(platformInfo->programArgs, argIndex);
+	while (!IsEmptyStr(pathArgument))
+	{
+		if (OsDoesFileExist(pathArgument))
+		{
+			AppOpenFile(pathArgument);
+			if (app->isFileOpen) { break; }
+		}
+		
+		argIndex++;
+		GetNamelessProgramArg(platformInfo->programArgs, argIndex);
+	}
+	
 	app->initialized = true;
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -173,6 +187,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	// v2 screenCenter = Div(screenSize, 2.0f);
 	v2 mousePos = appIn->mouse.position;
+	
+	if (appIn->droppedFilePaths.length > 0)
+	{
+		if (appIn->droppedFilePaths.length > 1) { PrintLine_W("WARNING: Dropped %llu files at the same time. We only support opening 1 file at a time!", (u64)appIn->droppedFilePaths.length); }
+		Str8 droppedFilePath = *VarArrayGetFirst(Str8, &appIn->droppedFilePaths);
+		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(droppedFilePath));
+		AppOpenFile(droppedFilePath);
+	}
 	
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
 	{
@@ -232,7 +254,21 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							AppCloseFile();
 						} Clay__CloseElement();
 						
-						if (ClayBtn("Exit", true)) { shouldContinueRunning = false; } Clay__CloseElement();
+						Clay__CloseElement();
+						Clay__CloseElement();
+					} Clay__CloseElement();
+					
+					if (ClayTopBtn("Window", &app->isWindowMenuOpen, WINDOW_DROPDOWN_WIDTH))
+					{
+						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "- Disable" : "+ Enable"), TARGET_IS_WINDOWS))
+						{
+							platform->SetWindowTopmost(!appIn->isWindowTopmost);
+						} Clay__CloseElement();
+						
+						if (ClayBtn("Close", true))
+						{
+							shouldContinueRunning = false;
+						} Clay__CloseElement();
 						
 						Clay__CloseElement();
 						Clay__CloseElement();

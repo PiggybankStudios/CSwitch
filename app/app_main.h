@@ -63,6 +63,7 @@ struct AppData
 	u16 clayUiFontId;
 	u16 clayMainFontId;
 	bool isFileMenuOpen;
+	bool isWindowMenuOpen;
 	
 	bool isFileOpen;
 	Str8 filePath;

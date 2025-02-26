@@ -5,16 +5,18 @@
 	[ ] Open->Recent Files->...
 	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Undo/Redo
-	[ ] Drag+Drop file to open
-	[ ] Open file from command-line argument (also Sublime Text hotkey to open)
+	[X] Drag+Drop file to open
+	[X] Open file from command-line argument (also Sublime Text hotkey to open)
 	[ ] Multiple tabs
 	[ ] Consider comment syntax on the line so we can find lines that have comments after the value portion
 	[ ] Support for true/false defines
-	[ ] Fix highlight of buttons while mouse is outside window
+	[X] Fix highlight of buttons while mouse is outside window
 	[ ] Reduce memory usage
 	[ ] Measure and reduce CPU load while idle
 	[ ] Add smoother scrolling
 	[ ] Add a scrollbar
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
 	[ ] Add a "Help" menu that gives info (version number?)
+	[ ] Add a notification like system where we can tell the user about notable warnings/errors
+	[X] Add TOPMOST support
 	[ ] 

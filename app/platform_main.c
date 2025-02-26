@@ -55,7 +55,6 @@ Description:
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
 #include "platform_main.h"
-// TODO: Add header files here
 
 #if BUILD_INTO_SINGLE_UNIT
 EXPORT_FUNC(AppGetApi) APP_GET_API_DEF(AppGetApi);
@@ -69,12 +68,12 @@ PlatformData* platformData = nullptr;
 Arena* stdHeap = nullptr;
 PlatformInfo* platformInfo = nullptr;
 PlatformApi* platform = nullptr;
+ProgramArgs programArgs = ZEROED;
 
 // +--------------------------------------------------------------+
 // |                    Platform Source Files                     |
 // +--------------------------------------------------------------+
 #include "platform_api.c"
-// TODO: Add source files here
 
 #if BUILD_WITH_RAYLIB
 void RaylibLogCallback(int logLevel, const char* text, va_list args)
@@ -150,7 +149,13 @@ void PlatDoUpdate(void)
 	if (oldAppInput->isFullscreen != newIsFullScreen) { oldAppInput->isFullscreenChanged = true; }
 	oldAppInput->isFullscreen = newIsFullScreen;
 	
+	VarArrayLoop(&newAppInput->droppedFilePaths, fIndex)
+	{
+		VarArrayLoopGet(Str8, filePathStr, &newAppInput->droppedFilePaths, fIndex);
+		FreeStr8(stdHeap, filePathStr);
+	}
 	MyMemCopy(newAppInput, oldAppInput, sizeof(AppInput));
+	VarArrayClear(&newAppInput->droppedFilePaths);
 	newAppInput->screenSizeChanged = false;
 	newAppInput->isFullscreenChanged = false;
 	newAppInput->isMinimizedChanged = false;
@@ -203,6 +208,8 @@ int main()
 	SetTargetFPS(60);
 	#endif //BUILD_WITH_RAYLIB
 	
+	InitVarArray(Str8, &platformData->appInputs[0].droppedFilePaths, stdHeap);
+	InitVarArray(Str8, &platformData->appInputs[1].droppedFilePaths, stdHeap);
 	InitKeyboardState(&platformData->appInputs[0].keyboard);
 	InitKeyboardState(&platformData->appInputs[1].keyboard);
 	InitMouseState(&platformData->appInputs[0].mouse);
@@ -215,6 +222,7 @@ int main()
 	ClearPointer(platformInfo);
 	platformInfo->platformStdHeap = stdHeap;
 	platformInfo->platformStdHeapAllowFreeWithoutSize = &platformData->stdHeapAllowFreeWithoutSize;
+	platformInfo->programArgs = &programArgs;
 	
 	platform = AllocType(PlatformApi, stdHeap);
 	NotNull(platform);
@@ -226,6 +234,7 @@ int main()
 	platform->SetMouseCursorType = Plat_SetMouseCursorType;
 	platform->SetWindowTitle = Plat_SetWindowTitle;
 	platform->SetWindowIcon = Plat_SetWindowIcon;
+	platform->SetWindowTopmost = Plat_SetWindowTopmost;
 	#endif
 	
 	#if BUILD_INTO_SINGLE_UNIT
@@ -284,6 +293,9 @@ int main()
 	NotNull(gfx.prevFontFlow.glyphs);
 	#endif
 	#endif
+	
+	bool topmostFlagValue = FindNamedProgramArgBoolEx(&programArgs, StrLit("top"), StrLit("topmost"), false, 0);
+	Plat_SetWindowTopmost(topmostFlagValue);
 	
 	platformData->appMemoryPntr = platformData->appApi.AppInit(platformInfo, platform);
 	NotNull(platformData->appMemoryPntr);
@@ -385,7 +397,18 @@ void PlatSappEvent(const sapp_event* event)
 			case SAPP_EVENTTYPE_RESUMED:           WriteLine_D("Event: RESUMED");           break;
 			case SAPP_EVENTTYPE_QUIT_REQUESTED:    WriteLine_D("Event: QUIT_REQUESTED");    break;
 			case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  WriteLine_D("Event: CLIPBOARD_PASTED");  break;
-			case SAPP_EVENTTYPE_FILES_DROPPED:     WriteLine_D("Event: FILES_DROPPED");     break;
+			case SAPP_EVENTTYPE_FILES_DROPPED:
+			{
+				int numDroppedFiles = sapp_get_num_dropped_files();
+				Assert(numDroppedFiles > 0)
+				Str8* newDroppedFilePaths = VarArrayAddMulti(Str8, &platformData->currentAppInput->droppedFilePaths, (uxx)numDroppedFiles);
+				for (uxx fIndex = 0; fIndex < (uxx)numDroppedFiles; fIndex++)
+				{
+					const char* filePathPntr = sapp_get_dropped_file_path((int)fIndex);
+					NotNull(filePathPntr);
+					newDroppedFilePaths[fIndex] = AllocStr8(stdHeap, StrLit(filePathPntr));
+				}
+			}break;
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
@@ -393,8 +416,16 @@ void PlatSappEvent(const sapp_event* event)
 
 sapp_desc sokol_main(int argc, char* argv[])
 {
-	UNUSED(argc);
-	UNUSED(argv);
+	Arena localStdHeap = ZEROED;
+	InitArenaStdHeap(&localStdHeap);
+	#if TARGET_IS_WINDOWS
+	Assert(argc >= 1); //First argument on windows is always the path to our .exe
+	ParseProgramArgs(&localStdHeap, (uxx)argc-1, &argv[1], &programArgs);
+	#else
+	//TODO: Is the above true for other platforms??
+	ParseProgramArgs(&localStdHeap, (uxx)argc, &argv[0], &programArgs);
+	#endif
+	
 	return (sapp_desc){
 		.init_cb = PlatSappInit,
 		.frame_cb = PlatDoUpdate,
@@ -405,6 +436,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.window_title = "Loading...",
 		.icon.sokol_default = false,
 		.logger.func = SokolLogCallback,
+		.enable_dragndrop = true,
+		.max_dropped_files = 1,
 	};
 }
 
