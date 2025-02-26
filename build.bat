@@ -23,15 +23,7 @@ for /f "delims=" %%i in ('%extract_define% DEBUG_BUILD') do set DEBUG_BUILD=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_INTO_SINGLE_UNIT') do set BUILD_INTO_SINGLE_UNIT=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WEB') do set BUILD_WEB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_IMGUI_OBJ') do set BUILD_IMGUI_OBJ=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_IMGUI_OBJ_IF_NEEDED') do set BUILD_IMGUI_OBJ_IF_NEEDED=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_PHYSX_OBJ') do set BUILD_PHYSX_OBJ=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_PHYSX_OBJ_IF_NEEDED') do set BUILD_PHYSX_OBJ_IF_NEEDED=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN') do set BUILD_PIGGEN=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_PIGGEN_IF_NEEDED') do set BUILD_PIGGEN_IF_NEEDED=%%i
-for /f "delims=" %%i in ('%extract_define% RUN_PIGGEN') do set RUN_PIGGEN=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_LIB') do set BUILD_PIG_CORE_LIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_LIB_IF_NEEDED') do set BUILD_PIG_CORE_LIB_IF_NEEDED=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_APP_EXE') do set BUILD_APP_EXE=%%i
@@ -42,13 +34,6 @@ for /f "delims=" %%i in ('%extract_define% DUMP_PREPROCESSOR') do set DUMP_PREPR
 for /f "delims=" %%i in ('%extract_define% CONVERT_WASM_TO_WAT') do set CONVERT_WASM_TO_WAT=%%i
 for /f "delims=" %%i in ('%extract_define% USE_EMSCRIPTEN') do set USE_EMSCRIPTEN=%%i
 for /f "delims=" %%i in ('%extract_define% ENABLE_AUTO_PROFILE') do set ENABLE_AUTO_PROFILE=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_RAYLIB') do set BUILD_WITH_RAYLIB=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_BOX2D') do set BUILD_WITH_BOX2D=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_GFX') do set BUILD_WITH_SOKOL_GFX=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SOKOL_APP') do set BUILD_WITH_SOKOL_APP=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_SDL') do set BUILD_WITH_SDL=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_OPENVR') do set BUILD_WITH_OPENVR=%%i
-for /f "delims=" %%i in ('%extract_define% BUILD_WITH_PHYSX') do set BUILD_WITH_OPENVR=%%i
 for /f "delims=" %%i in ('%extract_define% PROJECT_DLL_NAME') do set PROJECT_DLL_NAME=%%i
 for /f "delims=" %%i in ('%extract_define% PROJECT_EXE_NAME') do set PROJECT_EXE_NAME=%%i
 
@@ -144,26 +129,11 @@ if "%DEBUG_BUILD%"=="1" (
 :: /LIBPATH = Add a library search path
 :: User32.lib = Needed for os_font.h for CreateFontA, etc.
 :: Gdi32.lib = Needed for os_font.h for GetForegroundWindow and GetDC
-set common_ld_flags=-incremental:no /NOLOGO User32.lib Gdi32.lib
+:: Ole32.lib = Needed for CoInitializeEx, CoCreateInstance, etc.
+set common_ld_flags=-incremental:no /NOLOGO User32.lib Gdi32.lib Ole32.lib
 set pig_core_ld_flags=
 set platform_ld_flags=
 
-if "%BUILD_WITH_RAYLIB%"=="1" (
-	if "%BUILD_INTO_SINGLE_UNIT%"=="1" (
-		REM gdi32.lib    = ?
-		REM User32.lib   = ?
-		REM Shell32.lib  = Shlobj.h ? 
-		REM kernel32.lib = ?
-		REM winmm.lib    = ?
-		set common_ld_flags=raylib.lib %common_ld_flags% Shell32.lib kernel32.lib winmm.lib
-		REM TODO:: Compiling for Linux with raylib would require following instructions here: https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
-	) else (
-		set common_ld_flags=raylibdll.lib %common_ld_flags%
-	)
-)
-if "%BUILD_WITH_PHYSX%"=="1" (
-	set pig_core_ld_flags=%pig_core_ld_flags% PhysX_static_64.lib
-)
 if "%DEBUG_BUILD%"=="1" (
 	set common_ld_flags=%common_ld_flags% /LIBPATH:"%root%\third_party\_lib_debug" /LIBPATH:"%core%\third_party\_lib_debug"
 ) else (
@@ -227,93 +197,6 @@ for %%y in ("%shader_list:,=" "%") do (
 if "%BUILD_SHADERS%"=="1" ( echo [Shaders Compiled!] )
 rem echo shader_object_files %shader_object_files%
 rem echo shader_linux_object_files %shader_linux_object_files%
-
-:: +--------------------------------------------------------------+
-:: |                       Build piggen.exe                       |
-:: +--------------------------------------------------------------+
-:: /Fe = Set the output exe file name
-set piggen_source_path=%core%/piggen/piggen_main.c
-set piggen_exe_path=piggen.exe
-set piggen_cl_args=%common_cl_flags% %c_cl_flags% /Fe%piggen_exe_path% %piggen_source_path% /link %common_ld_flags%
-
-if "%BUILD_PIGGEN_IF_NEEDED%"=="1" (
-	if not exist %piggen_exe_path% (
-		set BUILD_PIGGEN=1
-	)
-)
-
-if "%BUILD_PIGGEN%"=="1" (
-	echo.
-	echo [Building piggen...]
-	del %piggen_exe_path% > NUL 2> NUL
-	cl %piggen_cl_args%
-	echo [Built piggen!]
-)
-
-if "%RUN_PIGGEN%"=="1" (
-	echo.
-	echo [%piggen_exe_path%]
-	%piggen_exe_path% %core%
-	%piggen_exe_path% %app%
-)
-
-:: +--------------------------------------------------------------+
-:: |                       Build imgui.obj                        |
-:: +--------------------------------------------------------------+
-set imgui_source_path=%core%/ui/ui_imgui_main.cpp
-set imgui_obj_path=imgui.obj
-set imgui_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%core%\third_party\imgui" /Fo%imgui_obj_path% %imgui_source_path%
-if "%BUILD_WITH_IMGUI%"=="1" (
-	set pig_core_ld_flags=%pig_core_ld_flags% %imgui_obj_path%
-)
-
-if "%BUILD_IMGUI_OBJ_IF_NEEDED%"=="1" (
-	if "%BUILD_WINDOWS%"=="1" (
-		if not exist %imgui_obj_path% (
-			set BUILD_IMGUI_OBJ=1
-		)
-	)
-)
-
-if "%BUILD_IMGUI_OBJ%"=="1" (
-	if "%BUILD_WINDOWS%"=="1" (
-		del "%imgui_obj_path%" > NUL 2> NUL
-		
-		echo.
-		echo [Building %imgui_obj_path% for Windows...]
-		cl %imgui_cl_args%
-		echo [Built %imgui_obj_path% for Windows!]
-	)
-)
-
-:: +--------------------------------------------------------------+
-:: |                     Build physx_capi.obj                     |
-:: +--------------------------------------------------------------+
-set physx_source_path=%core%/phys/phys_physx_capi_main.cpp
-set physx_obj_path=physx_capi.obj
-set physx_cl_args=/c %common_cl_flags% %cpp_cl_flags% /I"%core%\third_party\physx" /Fo%physx_obj_path% %physx_source_path%
-if "%BUILD_WITH_PHYSX%"=="1" (
-	set pig_core_ld_flags=%pig_core_ld_flags% %physx_obj_path%
-)
-
-if "%BUILD_PHYSX_OBJ_IF_NEEDED%"=="1" (
-	if "%BUILD_WINDOWS%"=="1" (
-		if not exist %physx_obj_path% (
-			set BUILD_PHYSX_OBJ=1
-		)
-	)
-)
-
-if "%BUILD_PHYSX_OBJ%"=="1" (
-	if "%BUILD_WINDOWS%"=="1" (
-		del "%physx_obj_path%" > NUL 2> NUL
-		
-		echo.
-		echo [Building %physx_obj_path% for Windows...]
-		cl %physx_cl_args%
-		echo [Built %physx_obj_path% for Windows!]
-	)
-)
 
 :: +--------------------------------------------------------------+
 :: |                      Build pig_core.dll                      |
@@ -410,20 +293,6 @@ if "%BUILD_APP_EXE%"=="1" (
 		if "%COPY_TO_DATA_DIRECTORY%"=="1" (
 			COPY %platform_exe_path% %root%\_data\%platform_exe_path% > NUL
 		)
-		if "%BUILD_WITH_RAYLIB%"=="1" (
-			if "%DEBUG_BUILD%"=="1" (
-				COPY %core%\third_party\_lib_debug\raylib.dll raylib.dll
-			) else (
-				COPY %core%\third_party\_lib_release\raylib.dll raylib.dll
-			)
-			if "%COPY_TO_DATA_DIRECTORY%"=="1" (
-				if "%DEBUG_BUILD%"=="1" (
-					COPY %core%\third_party\_lib_debug\raylib.dll %root%\_data\raylib.dll
-				) else (
-					COPY %core%\third_party\_lib_release\raylib.dll %root%\_data\raylib.dll
-				)
-			)
-		)
 	)
 	if "%BUILD_LINUX%"=="1" (
 		echo.
@@ -437,7 +306,6 @@ if "%BUILD_APP_EXE%"=="1" (
 		popd
 		echo [Built %platform_bin_path% for Linux!]
 	)
-	REM TODO: Add support for BUILD_WEB here!
 )
 
 :: +--------------------------------------------------------------+
@@ -456,7 +324,6 @@ if "%BUILD_INTO_SINGLE_UNIT%"=="1" (
 	if "%BUILD_LINUX%"=="1" (
 		del "linux\%app_so_path%" > NUL 2> NUL
 	)
-	REM TODO: Add support for BUILD_WEB here!
 ) else (
 	if "%BUILD_APP_DLL%"=="1" (
 		if "%BUILD_WINDOWS%"=="1" (
@@ -483,7 +350,6 @@ if "%BUILD_INTO_SINGLE_UNIT%"=="1" (
 			popd
 			echo [Built %app_so_path% for Linux!]
 		)
-		REM TODO: Add support for BUILD_WEB here!
 	)
 )
 

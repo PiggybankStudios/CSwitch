@@ -46,8 +46,9 @@ static Arena* stdHeap = nullptr;
 // +--------------------------------------------------------------+
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
+#include "main2d_shader.glsl.h"
 #include "app_helpers.c"
-//TODO: Add source files here!
+#include "app_clay.c"
 
 // +==============================+
 // |           DllMain            |
@@ -104,13 +105,41 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
-	#if BUILD_WITH_SOKOL_APP
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();
-	#endif
 	
 	InitRandomSeriesDefault(&app->random);
 	SeedRandomSeriesU64(&app->random, OsGetCurrentTimestamp(false));
+	
+	InitCompiledShader(&app->mainShader, stdHeap, main2d);
+	
+	FontCharRange fontCharRanges[] = { FontCharRange_ASCII, FontCharRange_LatinExt, };
+	{
+		app->uiFont = InitFont(stdHeap, StrLit("uiFont"));
+		Result attachResult = AttachOsTtfFileToFont(&app->uiFont, StrLit(UI_FONT_NAME), UI_FONT_SIZE, UI_FONT_STYLE);
+		Assert(attachResult == Result_Success);
+		Result bakeResult = BakeFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		Assert(bakeResult == Result_Success);
+		FillFontKerningTable(&app->uiFont);
+		RemoveAttachedTtfFile(&app->uiFont);
+	}
+	
+	{
+		app->mainFont = InitFont(stdHeap, StrLit("mainFont"));
+		Result attachResult = AttachOsTtfFileToFont(&app->mainFont, StrLit(MAIN_FONT_NAME), MAIN_FONT_SIZE, MAIN_FONT_STYLE);
+		Assert(attachResult == Result_Success);
+		
+		Result bakeResult = BakeFontAtlas(&app->mainFont, MAIN_FONT_SIZE, MAIN_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		Assert(bakeResult == Result_Success);
+		FillFontKerningTable(&app->mainFont);
+		RemoveAttachedTtfFile(&app->mainFont);
+	}
+	
+	InitClayUIRenderer(stdHeap, V2_Zero, &app->clay);
+	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
+	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
+	
+	InitVarArray(FileOption, &app->fileOptions, stdHeap);
 	
 	app->initialized = true;
 	ScratchEnd(scratch);
@@ -130,11 +159,178 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	ScratchBegin2(scratch3, scratch, scratch2);
 	bool shouldContinueRunning = true;
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
+	
+	bool refreshScreen = false;
+	if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
+	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
+	if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
+	if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
+	if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
+	else { app->numFramesConsecutivelyRendered++; }
+	if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP) { ScratchEnd(scratch); ScratchEnd(scratch2); ScratchEnd(scratch3); return shouldContinueRunning; }
+	
+	v2i screenSizei = appIn->screenSize;
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	v2 screenCenter = Div(screenSize, 2.0f);
 	v2 mousePos = appIn->mouse.position;
 	
-	//TODO: Implement me!
+	BeginFrame(platform->GetSokolSwapchain(), screenSizei, MonokaiDarkGray, 1.0f);
+	{
+		BindShader(&app->mainShader);
+		ClearDepthBuffer(1.0f);
+		SetDepth(1.0f);
+		mat4 projMat = Mat4_Identity;
+		TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(screenSize.Width/2.0f), 1.0f/(screenSize.Height/2.0f), 1.0f));
+		TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
+		TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
+		SetProjectionMat(projMat);
+		SetViewMat(Mat4_Identity);
+		
+		BeginClayUIRender(&app->clay.clay, screenSize, 16.6f, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left), appIn->mouse.scrollDelta);
+		{
+			CLAY({ .id = CLAY_ID("FullscreenContainer"),
+				.layout = {
+					.layoutDirection = CLAY_TOP_TO_BOTTOM,
+					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+				},
+			})
+			{
+				// +==============================+
+				// |            Topbar            |
+				// +==============================+
+				CLAY({ .id = CLAY_ID("Topbar"),
+					.layout = {
+						.sizing = {
+							.height = CLAY_SIZING_FIXED(TOPBAR_HEIGHT),
+							.width = CLAY_SIZING_GROW(0),
+						},
+						.padding = { 0, 0, 0, 0 },
+						.childGap = 2,
+						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+					},
+					.backgroundColor = ToClayColor(MonokaiBack),
+				})
+				{
+					if (ClayTopBtn("File", &app->isFileMenuOpen, MonokaiBack, MonokaiWhite, FILE_DROPDOWN_WIDTH))
+					{
+						if (ClayBtn("Open", Transparent, MonokaiWhite, true))
+						{
+							Str8 selectedPath = Str8_Empty;
+							Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
+							if (openResult == Result_Success)
+							{
+								PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
+								AppOpenFile(selectedPath);
+							}
+							else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
+							else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
+						} Clay__CloseElement();
+						
+						if (ClayBtn("Close", Transparent, app->isFileOpen ? MonokaiWhite : MonokaiGray2, app->isFileOpen))
+						{
+							AppCloseFile();
+						} Clay__CloseElement();
+						
+						if (ClayBtn("Exit", Transparent, MonokaiWhite, true)) { shouldContinueRunning = false; } Clay__CloseElement();
+						
+						Clay__CloseElement();
+						Clay__CloseElement();
+					} Clay__CloseElement();
+					
+					CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
+					
+					if (app->isFileOpen)
+					{
+						Str8 filePathTrimmed = app->filePath;
+						if (filePathTrimmed.length > FILE_PATH_DISPLAY_MAX_LENGTH)
+						{
+							Str8 fileNamePart = GetFileNamePart(app->filePath, true);
+							uxx fileNameStartIndex = (uxx)(fileNamePart.chars - app->filePath.chars);
+							uxx ellipsesPos = (fileNameStartIndex > 0) ? (fileNameStartIndex/2) : (filePathTrimmed.length/2);
+							uxx numCharsToCut = filePathTrimmed.length - 3 - FILE_PATH_DISPLAY_MAX_LENGTH;
+							if (ellipsesPos > numCharsToCut/2)
+							{
+								Str8 firstPart = StrSlice(filePathTrimmed, 0, ellipsesPos - numCharsToCut/2);
+								Str8 secondPart = StrSliceFrom(filePathTrimmed, ellipsesPos + (numCharsToCut+1)/2);
+								filePathTrimmed = PrintInArenaStr(scratch, "%.*s...%.*s", StrPrint(firstPart), StrPrint(secondPart));
+							}
+							else
+							{
+								Str8 lastPart = StrSliceFrom(filePathTrimmed, filePathTrimmed.length - FILE_PATH_DISPLAY_MAX_LENGTH + 3);
+								filePathTrimmed = PrintInArenaStr(scratch, "...%.*s", StrPrint(lastPart));
+							}
+						}
+						CLAY_TEXT(
+							ToClayString(filePathTrimmed),
+							CLAY_TEXT_CONFIG({
+								.fontId = app->clayUiFontId,
+								.fontSize = UI_FONT_SIZE,
+								.textColor = ToClayColor(MonokaiGray1),
+							})
+						);
+					}
+				}
+				
+				// +==============================+
+				// |         Options List         |
+				// +==============================+
+				CLAY({
+					.layout = {
+						.layoutDirection = CLAY_TOP_TO_BOTTOM,
+						.childGap = OPTION_UI_GAP,
+						.padding = CLAY_PADDING_ALL(4),
+						.sizing = {
+							.height=CLAY_SIZING_GROW(0),
+							.width=CLAY_SIZING_GROW(0)
+						},
+					},
+					.scroll = { .vertical=true },
+				})
+				{
+					VarArrayLoop(&app->fileOptions, oIndex)
+					{
+						VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
+						if (option->type == FileOptionType_Bool)
+						{
+							if (ClayOptionBtn(option->name, option->valueBool ? StrLit("1") : StrLit("0"), option->valueBool))
+							{
+								option->valueBool = !option->valueBool;
+							} Clay__CloseElement();
+						}
+						else
+						{
+							if (ClayOptionBtn(option->name, StrLit("-"), false))
+							{
+								//TODO: Implement me!
+							} Clay__CloseElement();
+						}
+						if (option->numEmptyLinesAfter > 0)
+						{
+							CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
+						}
+					}
+					
+					#if 0
+					if (app->isFileOpen)
+					{
+						CLAY_TEXT(
+							ToClayString(app->fileContents),
+							CLAY_TEXT_CONFIG({
+								.fontId = app->clayMainFontId,
+								.fontSize = MAIN_FONT_SIZE,
+								.textColor = ToClayColor(MonokaiWhite),
+								.wrapMode = CLAY_TEXT_WRAP_NEWLINES,
+							})
+						);
+					}
+					#endif
+				}
+			}
+		}
+		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
+		RenderClayCommandArray(&app->clay, &gfx, &clayRenderCommands);
+	}
+	EndFrame();
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
