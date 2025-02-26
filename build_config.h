@@ -30,12 +30,12 @@ Description:
 #define BUILD_SHADERS 0
 
 // Compiles piggen/main.c to either dynamic or static library
-#define BUILD_PIG_CORE_LIB            1
+#define BUILD_PIG_CORE_LIB            0
 // Same as above but only compiles if the dll doesn't already exist in the _build folder
 #define BUILD_PIG_CORE_LIB_IF_NEEDED  1
 
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
-#define BUILD_APP_EXE  1
+#define BUILD_APP_EXE  0
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
 #define BUILD_APP_DLL  1
 // Runs the %PROJECT_EXE_NAME%.exe

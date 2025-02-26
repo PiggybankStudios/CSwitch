@@ -36,12 +36,14 @@ struct FileOption
 	Str8 name;
 	FileOptionType type;
 	u64 numEmptyLinesAfter;
+	Str8 valueStr;
+	uxx fileContentsStartIndex;
+	uxx fileContentsEndIndex;
 	union
 	{
 		bool valueBool;
 		i32 valueI32;
 		r32 valueR32;
-		Str8 valueStr;
 	};
 };
 

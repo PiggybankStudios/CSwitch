@@ -202,6 +202,8 @@
 			"void AppCloseFile()",
 			"void AppOpenFile()",
 			"void BeginClayUIRender(ClayUI* clay, v2 windowSize, r32 elapsedMs, bool isMouseOverOther, v2 mousePos, bool isMouseDown, v2 mouseScrollDelta)",
+			"void SetOptionValue(FileOption* option, Str8 newValueStr)",
+			"void UpdateOptionValueInFile(FileOption* option)",
 		],
 		"custom_globals":
 		[

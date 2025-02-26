@@ -47,9 +47,10 @@ void AppCloseFile()
 		{
 			VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
 			FreeStr8(stdHeap, &option->name);
-			if (option->type == FileOptionType_Str) { FreeStr8(stdHeap, &option->valueStr); }
+			FreeStr8(stdHeap, &option->valueStr);
 		}
 		VarArrayClear(&app->fileOptions);
+		platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 		app->isFileOpen = false;
 	}
 }
@@ -70,6 +71,8 @@ void AppOpenFile(FilePath filePath)
 	while (LineParserGetLine(&lineParser, &fullLine))
 	{
 		Str8 line = TrimWhitespace(fullLine);
+		uxx lineStartIndex = lineParser.lineBeginByteIndex + (uxx)(line.chars - fullLine.chars);
+		uxx lineEndIndex = lineStartIndex + line.length;
 		if (StrExactStartsWith(line, StrLit("#define")) && (StrExactEndsWith(line, StrLit(" 0")) || StrExactEndsWith(line, StrLit(" 1"))))
 		{
 			FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
@@ -79,6 +82,9 @@ void AppOpenFile(FilePath filePath)
 			newOption->name = AllocStr8(stdHeap, newOption->name);
 			newOption->type = FileOptionType_Bool;
 			newOption->valueBool = StrExactEndsWith(line, StrLit(" 1"));
+			newOption->fileContentsStartIndex = lineEndIndex-1;
+			newOption->fileContentsEndIndex = lineEndIndex;
+			newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
 			prevOption = newOption;
 		}
 		else if (IsEmptyStr(line) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
@@ -87,7 +93,58 @@ void AppOpenFile(FilePath filePath)
 		}
 	}
 	
+	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->filePath), PROJECT_READABLE_NAME_STR));
 	app->isFileOpen = true;
+}
+
+void UpdateOptionValueInFile(FileOption* option)
+{
+	ScratchBegin(scratch);
+	NotNull(option);
+	NotNullStr(option->valueStr);
+	if (!StrExactEquals(option->valueStr, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex)))
+	{
+		uxx sliceLength = option->fileContentsEndIndex - option->fileContentsStartIndex;
+		Str8 fileBeginning = StrSlice(app->fileContents, 0, option->fileContentsStartIndex);
+		Str8 fileEnd = StrSliceFrom(app->fileContents, option->fileContentsEndIndex);
+		Str8 newFileContents = JoinStringsInArena(scratch, fileBeginning, option->valueStr, false);
+		newFileContents = JoinStringsInArena(scratch, newFileContents, fileEnd, false);
+		bool writeResult = OsWriteTextFile(app->filePath, newFileContents);
+		if (writeResult)
+		{
+			if (newFileContents.length != app->fileContents.length)
+			{
+				i64 byteOffset = (i64)newFileContents.length - (i64)app->fileContents.length;
+				VarArrayLoop(&app->fileOptions, oIndex)
+				{
+					VarArrayLoopGet(FileOption, otherOption, &app->fileOptions, oIndex);
+					if (otherOption != option && otherOption->fileContentsStartIndex >= option->fileContentsEndIndex) { option->fileContentsStartIndex += byteOffset; option->fileContentsEndIndex += byteOffset; }
+				}
+			}
+			option->fileContentsEndIndex = option->fileContentsStartIndex + option->valueStr.length;
+			
+			FreeStr8(stdHeap, &app->fileContents);
+			app->fileContents = AllocStr8(stdHeap, newFileContents);
+		}
+		else
+		{
+			PrintLine_E("Failed to write %llu byte%s to file \"%.*s\"!", (u64)newFileContents.length, Plural(newFileContents.length, "s"), StrPrint(app->filePath));
+			FreeStr8(stdHeap, &option->valueStr);
+			option->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex));
+		}
+	}
+	ScratchEnd(scratch);
+}
+
+void SetOptionValue(FileOption* option, Str8 newValueStr)
+{
+	NotNull(option);
+	if (!StrExactEquals(option->valueStr, newValueStr))
+	{
+		FreeStr8(stdHeap, &option->valueStr);
+		option->valueStr = AllocStr8(stdHeap, newValueStr);
+		UpdateOptionValueInFile(option);
+	}
 }
 
 #endif //BUILD_WITH_SOKOL_GFX

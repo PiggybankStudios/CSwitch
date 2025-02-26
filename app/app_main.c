@@ -297,6 +297,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							if (ClayOptionBtn(option->name, option->valueBool ? StrLit("1") : StrLit("0"), option->valueBool))
 							{
 								option->valueBool = !option->valueBool;
+								SetOptionValue(option, option->valueBool ? StrLit("1") : StrLit("0"));
 							} Clay__CloseElement();
 						}
 						else
