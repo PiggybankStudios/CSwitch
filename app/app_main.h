@@ -68,6 +68,9 @@ struct AppData
 	bool isFileOpen;
 	Str8 filePath;
 	Str8 fileContents;
+	OsFileWriteTime fileWriteTime;
+	bool gotFileWriteTime;
+	u64 lastWriteTimeCheck;
 	VarArray fileOptions; //FileOption
 };
 

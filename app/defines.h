@@ -27,6 +27,8 @@ Date:   02\25\2025
 #define LINE_BREAK_EXTRA_UI_GAP    4 //px
 #define MAX_LINE_BREAKS_CONSIDERED 4 //lines
 
+#define CHECK_FILE_WRITE_TIME_PERIOD 500 //ms
+
 #define TEXT_WHITE           NewColor(221, 222, 224, 255) //FFDDDEE0
 #define TEXT_LIGHT_GRAY      NewColor(175, 177, 179, 255) //FFAFB1B3
 #define TEXT_GRAY            NewColor(107, 112, 120, 255) //FF6B7078
