@@ -24,6 +24,8 @@ for /f "delims=" %%i in ('%extract_define% BUILD_INTO_SINGLE_UNIT') do set BUILD
 for /f "delims=" %%i in ('%extract_define% BUILD_WINDOWS') do set BUILD_WINDOWS=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_LINUX') do set BUILD_LINUX=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_SHADERS') do set BUILD_SHADERS=%%i
+for /f "delims=" %%i in ('%extract_define% BUNDLE_RESOURCES_ZIP') do set BUNDLE_RESOURCES_ZIP=%%i
+for /f "delims=" %%i in ('%extract_define% BUNDLE_RESOURCES_ZIP_IF_NEEDED') do set BUNDLE_RESOURCES_ZIP_IF_NEEDED=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_LIB') do set BUILD_PIG_CORE_LIB=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_PIG_CORE_LIB_IF_NEEDED') do set BUILD_PIG_CORE_LIB_IF_NEEDED=%%i
 for /f "delims=" %%i in ('%extract_define% BUILD_APP_EXE') do set BUILD_APP_EXE=%%i
@@ -95,13 +97,13 @@ set common_cl_flags=%common_cl_flags% /wd4130 /wd4201 /wd4324 /wd4458 /wd4505 /w
 :: -Wno-unused-function = unused function 'MeowExpandSeed'
 set common_clang_flags=%common_clang_flags% -Wno-switch -Wno-unused-function
 :: /I = Adds an include directory to search in when resolving #includes
-set common_cl_flags=%common_cl_flags% /I"%root%" /I"%app%" /I"%core%"
+set common_cl_flags=%common_cl_flags% /I"." /I"%root%" /I"%app%" /I"%core%"
 :: -I = Add directory to the end of the list of include search paths
 :: -lm = Include the math library (required for stuff like sinf, atan, etc.)
 :: -ldl = Needed for dlopen and similar functions
 :: -mssse3 = For MeowHash to work we need sse3 support
 :: -maes = For MeowHash to work we need aes support
-set linux_clang_flags=-lm -ldl -L "." -I "../%root%" -I "../%app%" -I "../%core%" -mssse3 -maes
+set linux_clang_flags=-lm -ldl -L "." -I ".." -I "../%root%" -I "../%app%" -I "../%core%" -mssse3 -maes
 if "%DEBUG_BUILD%"=="1" (
 	REM /MDd = ?
 	REM /Od = Optimization level: Debug
@@ -152,6 +154,21 @@ if "%DUMP_PREPROCESSOR%"=="1" (
 
 for /F "tokens=1-4 delims=:.," %%a in ("%time%") do (
 	set /A "build_start_time=(((%%a*60)+1%%b %% 100)*60+1%%c %% 100)*100+1%%d %% 100"
+)
+
+:: +--------------------------------------------------------------+
+:: |                        Pack Resources                        |
+:: +--------------------------------------------------------------+
+set resources_zip_path=resources.zip
+set resources_h_path=%app%\resources_zip.h
+set resources_c_path=resources_zip.c
+if "%BUNDLE_RESOURCES_ZIP_IF_NEEDED%"=="1" (
+	if not exist %resources_c_path% (
+		set BUNDLE_RESOURCES_ZIP=1
+	)
+)
+if "%BUNDLE_RESOURCES_ZIP%"=="1" (
+	python %scripts%\pack_resources.py %root%\_data\resources %resources_zip_path% %resources_h_path% %resources_c_path%
 )
 
 :: +--------------------------------------------------------------+

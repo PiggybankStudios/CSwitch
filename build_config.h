@@ -18,16 +18,24 @@ Description:
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD  1
-
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
 #define BUILD_INTO_SINGLE_UNIT  0
+// The .exe will use the resources_zip.h/c file instead of loading resources from disk
+#define USE_BUNDLED_RESOURCES   0
+
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 0
+#define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX   0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0
+
+
+// This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
+#define BUNDLE_RESOURCES_ZIP            0
+// Same as above but only if the resources_zip.c doesn't already exist in the _build folder
+#define BUNDLE_RESOURCES_ZIP_IF_NEEDED  1
 
 // Compiles piggen/main.c to either dynamic or static library
 #define BUILD_PIG_CORE_LIB            1
@@ -40,6 +48,8 @@ Description:
 #define BUILD_APP_DLL  1
 // Runs the %PROJECT_EXE_NAME%.exe
 #define RUN_APP        0
+
+
 
 // Copies the exe and dlls to the _data folder so they can be run alongside the resources folder more easily
 // Our debugger projects usually run the exe from the _build folder but with working directory set to the _data folder

@@ -29,6 +29,7 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_resources.h"
 #include "app_main.h"
 
 // +--------------------------------------------------------------+
@@ -47,6 +48,7 @@ static Arena* stdHeap = nullptr;
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
 #include "main2d_shader.glsl.h"
+#include "app_resources.c"
 #include "app_helpers.c"
 #include "app_clay.c"
 
@@ -104,6 +106,8 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	AppData* appData = AllocType(AppData, inPlatformInfo->platformStdHeap);
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
+	
+	InitAppResources(&app->resources);
 	
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();

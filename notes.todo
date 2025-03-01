@@ -1,7 +1,5 @@
 
 # TODO List:
-	[!] Watch file for changes, reload if the file is edited
-	[ ] Get rid of need for resources folder
 	[ ] Open most recent file automatically
 	[ ] Open->Recent Files->...
 	[ ] File->Reset option that resets the file back to what it was when it was opened
@@ -19,6 +17,8 @@
 	[ ] 
 
 # Finished List:
+	[X] Get rid of need for resources folder
+	[X] Watch file for changes, reload if the file is edited
 	[X] Drag+Drop file to open
 	[X] Open file from command-line argument (also Sublime Text hotkey to open)
 	[X] Fix highlight of buttons while mouse is outside window

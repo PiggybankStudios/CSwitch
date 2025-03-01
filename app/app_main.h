@@ -52,6 +52,7 @@ struct AppData
 {
 	bool initialized;
 	RandomSeries random;
+	AppResources resources;
 	
 	Shader mainShader;
 	Font uiFont;
