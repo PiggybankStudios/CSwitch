@@ -85,7 +85,7 @@ uxx AddFileWatch(VarArray* watches, FilePath path, uxx checkPeriod)
 	VarArrayLoop(watches, wIndex)
 	{
 		VarArrayLoopGet(FileWatch, watch, watches, wIndex);
-		if (!watch->id == 0)
+		if (watch->id == 0)
 		{
 			emptySlot = watch;
 			break;
@@ -95,10 +95,11 @@ uxx AddFileWatch(VarArray* watches, FilePath path, uxx checkPeriod)
 	FileWatch* newWatch = nullptr;
 	if (emptySlot != nullptr)
 	{
-		newWatch = emptySlot;
 		uxx watchIndex = 0;
-		VarArrayGetIndexOf(FileWatch, watches, newWatch, &watchIndex);
-		newWatch->id = watchIndex+1;
+		bool foundIndex = VarArrayGetIndexOf(FileWatch, watches, emptySlot, &watchIndex);
+		Assert(foundIndex);
+		emptySlot->id = watchIndex+1;
+		newWatch = emptySlot;
 	}
 	else
 	{
@@ -132,7 +133,7 @@ void RemoveFileWatch(VarArray* watches, uxx watchId)
 	Assert(watchId != 0);
 	Assert(watchId <= watches->length);
 	FileWatch* watch = VarArrayGetHard(FileWatch, watches, watchId-1);
-	Assert(watch->id != 0);
+	Assert(watch->id == watchId);
 	if (watch->numReferences <= 1)
 	{
 		FreeFileWatch(stdHeap, watch); //this sets watch->id to 0
@@ -149,7 +150,7 @@ bool HasFileWatchChangedWithDelay(const VarArray* watches, uxx watchId, u64 dela
 	Assert(watchId != 0);
 	Assert(watchId <= watches->length);
 	const FileWatch* watch = VarArrayGetHard(FileWatch, watches, watchId-1);
-	Assert(watch->id != 0);
+	Assert(watch->id == watchId);
 	if (watch->changed)
 	{
 		if (delayMs > 0)
@@ -172,7 +173,7 @@ void ClearFileWatchChanged(VarArray* watches, uxx watchId)
 	Assert(watchId != 0);
 	Assert(watchId <= watches->length);
 	FileWatch* watch = VarArrayGetHard(FileWatch, watches, watchId-1);
-	Assert(watch->id != 0);
+	Assert(watch->id == watchId);
 	watch->fileExists = OsDoesFileExist(watch->fullPath);
 	if (watch->fileExists)
 	{

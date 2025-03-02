@@ -31,6 +31,9 @@ Date:   02\25\2025
 #define LINE_BREAK_EXTRA_UI_GAP    4 //px
 #define MAX_LINE_BREAKS_CONSIDERED 4 //lines
 
+#define CHECK_RECENT_FILES_WRITE_TIME_PERIOD 1000 //ms
+#define RECENT_FILES_RELOAD_DELAY            100 //ms
+
 #define CHECK_FILE_WRITE_TIME_PERIOD 300 //ms
 #define FILE_RELOAD_DELAY            100 //ms
 

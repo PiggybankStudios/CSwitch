@@ -132,6 +132,8 @@ void AppLoadRecentFilesList()
 			}
 			
 			PrintLine_D("Loaded %llu recent file%s from \"%.*s\"", app->recentFiles.length, Plural(app->recentFiles.length, "s"), StrPrint(savePath));
+			if (app->recentFilesWatchId == 0) { app->recentFilesWatchId = AddFileWatch(&app->fileWatches, savePath, CHECK_RECENT_FILES_WRITE_TIME_PERIOD); }
+			else { ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId); }
 		}
 		else { PrintLine_W("No recent files save found at \"%.*s\"", StrPrint(savePath)); }
 	}
@@ -160,6 +162,15 @@ void AppSaveRecentFilesList()
 			Assert(writeSuccess);
 		}
 		OsCloseFile(&fileHandle);
+		
+		if (app->recentFilesWatchId == 0)
+		{
+			app->recentFilesWatchId = AddFileWatch(&app->fileWatches, savePath, CHECK_RECENT_FILES_WRITE_TIME_PERIOD);
+		}
+		else
+		{
+			ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
+		}
 	}
 	else { PrintLine_E("Failed to save recent files list to \"%.*s\"", StrPrint(savePath)); }
 	
@@ -207,6 +218,8 @@ void AppRememberRecentFile(FilePath filePath)
 		}
 	}
 	
+	AppSaveRecentFilesList();
+	
 	ScratchEnd(scratch);
 }
 
@@ -247,7 +260,7 @@ void AppCloseFile()
 	if (app->isFileOpen)
 	{
 		RemoveFileWatch(&app->fileWatches, app->fileWatchId);
-		app->fileWatchId = UINTXX_MAX;
+		app->fileWatchId = 0;
 		FreeStr8(stdHeap, &app->filePath);
 		FreeStr8WithNt(stdHeap, &app->fileContents);
 		VarArrayLoop(&app->fileOptions, oIndex)

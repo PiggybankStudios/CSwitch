@@ -96,7 +96,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r3
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .padding = { 4, 4, 4, 4 } },
+		.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), }, .padding = { 4, 4, 16, 16 } },
 		.backgroundColor = ToClayColor(backgroundColor),
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
 		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },

@@ -98,6 +98,7 @@ struct AppData
 	VarArray fileOptions; //FileOption
 	
 	VarArray recentFiles; //RecentFile
+	uxx recentFilesWatchId;
 };
 
 #endif //  _APP_MAIN_H

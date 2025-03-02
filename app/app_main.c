@@ -147,23 +147,33 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileOption, &app->fileOptions, stdHeap);
 	
+	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
+	AppLoadRecentFilesList();
+	
+	bool wasCmdPathGiven = false;
+	//NOTE: Not really sure if we need to handle multiple argument paths being passed.
+	// I guess if the first one fails doesn't point to a real file we can
+	// open secondary one(s) but that really isn't super intuitive behavior
 	uxx argIndex = 0;
 	Str8 pathArgument = GetNamelessProgramArg(platformInfo->programArgs, argIndex);
 	while (!IsEmptyStr(pathArgument))
 	{
+		wasCmdPathGiven = true;
 		if (OsDoesFileExist(pathArgument))
 		{
 			AppOpenFile(pathArgument);
 			if (app->isFileOpen) { break; }
+		}
+		else
+		{
+			PrintLine_E("Command line path does not point to a file: \"%.*s\"", StrPrint(pathArgument));
 		}
 		
 		argIndex++;
 		GetNamelessProgramArg(platformInfo->programArgs, argIndex);
 	}
 	
-	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
-	AppLoadRecentFilesList();
-	if (app->recentFiles.length > 0)
+	if (!wasCmdPathGiven && app->recentFiles.length > 0)
 	{
 		RecentFile* mostRecentFile = VarArrayGetLast(RecentFile, &app->recentFiles);
 		AppOpenFile(mostRecentFile->path);
@@ -191,7 +201,13 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	UpdateFileWatches(&app->fileWatches);
 	
 	bool refreshScreen = false;
-	if (AppCheckForFileChanges()) { refreshScreen = true; }
+	if (app->isFileOpen && AppCheckForFileChanges()) { refreshScreen = true; }
+	if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
+	{
+		ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
+		AppLoadRecentFilesList();
+		refreshScreen = true;
+	}
 	if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
@@ -282,7 +298,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						
 						if (app->recentFiles.length > 0)
 						{
-							if (ClayTopSubmenu("Open Recent", app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH))
+							if (ClayTopSubmenu("Open Recent >", app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH))
 							{
 								for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 								{
@@ -300,6 +316,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								if (ClayBtn("Clear Recent Files", app->recentFiles.length > 0))
 								{
 									AppClearRecentFiles();
+									AppSaveRecentFilesList();
 									app->isOpenRecentSubmenuOpen = false;
 									app->isFileMenuOpen = false;
 								} Clay__CloseElement();

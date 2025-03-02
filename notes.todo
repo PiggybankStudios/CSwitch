@@ -1,6 +1,6 @@
 
 # TODO List:
-	( ) If two instances of CSwitch are open at the same time, they will contend over the recent_files.txt list, they should cooperate properly somehow
+	( ) For some reason we hang forever in PathFileExistsA if you pass a path that doesn't exist as a command line argument
 	[ ] Consider comment syntax on the line so we can find lines that have comments after the value portion
 	[ ] Add support for commented out defines
 	[ ] File->Reset option that resets the file back to what it was when it was opened
@@ -20,9 +20,16 @@
 	[?] Add a "project" system that saves a set of configuration values somewhere the user decides. Then we can have stuff like telling it to ignore (aka hide) particular defines, or ignoring files or sub-folders when doing multi-file display.
 	[ ] Automatically shorten strings that don't fit into the space given to them by Clay. This would allow the display of the file in the topbar to actually show more and more text as you make the window larger. It could also help when the window is skinny enough that the value portion of each button overlaps with the name. We probably need some metadata about each string to determine what it should do when it can't fit
 	[ ] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
+	[ ] Add tooltips that show full path when hovering over the display path in topbar, and recent file buttons
+	[ ] Add support for tooltips that can extend outside the main window (i.e. they have their own host window)
+	[ ] Add hotkeys like Ctrl+W to close file, Ctrl+O to open file (maybe something to open most recent file?), Ctrl+E to reopen the file that was just closed?, something to toggle topmost, etc.
+	[ ] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
+	[ ] Add support for custom theme(s)
+	[ ] Add a "Settings" window that can be opened from the "File" menu
 	[ ] 
 
 # Finished List:
+	(X) If two instances of CSwitch are open at the same time, they will contend over the recent_files.txt list, they should cooperate properly somehow
 	(X) "true"/"false" change are causing file corruption because the values differ in length?
 	(X) Window focus is messed up at the beginning? Causing us to not be able to click on things until we click on the window titlebar?
 	[X] Support for true/false defines
