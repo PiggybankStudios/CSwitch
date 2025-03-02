@@ -161,6 +161,11 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
 	AppLoadRecentFilesList();
+	if (app->recentFiles.length > 0)
+	{
+		RecentFile* mostRecentFile = VarArrayGetLast(RecentFile, &app->recentFiles);
+		AppOpenFile(mostRecentFile->path);
+	}
 	
 	app->initialized = true;
 	ScratchEnd(scratch);
@@ -281,7 +286,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
 									Str8 fileName = GetUniqueDisplayPath(recentFile->path);
 									bool isOpenFile = (app->isFileOpen && StrAnyCaseEquals(app->filePath, recentFile->path));
-									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), !isOpenFile))
+									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), !isOpenFile && recentFile->fileExists))
 									{
 										AppOpenFile(recentFile->path);
 										app->isOpenRecentSubmenuOpen = false;
@@ -386,10 +391,26 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
 						if (option->type == FileOptionType_Bool)
 						{
-							if (ClayOptionBtn(option->name, option->valueBool ? StrLit("1") : StrLit("0"), option->valueBool))
+							//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
+							if (ClayOptionBtn(option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
 							{
 								option->valueBool = !option->valueBool;
-								SetOptionValue(option, option->valueBool ? StrLit("1") : StrLit("0"));
+								if (StrExactEquals(option->valueStr, StrLit("false")))
+								{
+									SetOptionValue(option, StrLit("true"));
+								}
+								else if (StrExactEquals(option->valueStr, StrLit("true")))
+								{
+									SetOptionValue(option, StrLit("false"));
+								}
+								else if (StrExactEquals(option->valueStr, StrLit("0")))
+								{
+									SetOptionValue(option, StrLit("1"));
+								}
+								else
+								{
+									SetOptionValue(option, StrLit("0"));
+								}
 							} Clay__CloseElement();
 						}
 						else

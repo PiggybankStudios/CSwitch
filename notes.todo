@@ -1,6 +1,5 @@
 
 # TODO List:
-	[ ] Open most recent file automatically
 	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Undo/Redo
 	[ ] Multiple tabs
@@ -13,9 +12,12 @@
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
 	[ ] Add a "Help" menu that gives info (version number?)
 	[ ] Add a notification like system where we can tell the user about notable warnings/errors
+	[ ] Save the window size (and position?) and restore to the same size/position on startup (careful of monitor changes meaning our old location is invalid!)
+	[ ] Add a confirmation dialog when doing non-reversable actions (like clearing recent files)
 	[ ] 
 
 # Finished List:
+	[X] Open most recent file automatically
 	[X] Open->Recent Files->...
 	[X] Get rid of need for resources folder
 	[X] Watch file for changes, reload if the file is edited

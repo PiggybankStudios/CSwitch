@@ -51,6 +51,7 @@ typedef struct RecentFile RecentFile;
 struct RecentFile
 {
 	Str8 path;
+	bool fileExists;
 };
 
 typedef struct AppData AppData;

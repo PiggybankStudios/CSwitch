@@ -24,7 +24,7 @@ Date:   02\25\2025
 #define TOPBAR_HEIGHT   24 //px
 #define FILE_DROPDOWN_WIDTH 100 //px
 #define OPEN_RECENT_DROPDOWN_WIDTH 300 //px
-#define FILE_PATH_DISPLAY_MAX_LENGTH 36 //chars
+#define FILE_PATH_DISPLAY_MAX_LENGTH 30 //chars
 #define WINDOW_DROPDOWN_WIDTH 130 //px
 
 #define OPTION_UI_GAP              2 //px

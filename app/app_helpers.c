@@ -39,6 +39,24 @@ void LoadWindowIcon()
 }
 #endif //BUILD_WITH_SOKOL_APP
 
+void AppGetFileWriteTime()
+{
+	Assert(app->isFileOpen);
+	Result getWriteTimeResult = OsGetFileWriteTime(app->filePath, &app->fileWriteTime);
+	if (getWriteTimeResult == Result_Success)
+	{
+		app->gotFileWriteTime = true;
+		app->lastWriteTimeCheck = (appIn != nullptr) ? appIn->programTime : 0;
+	}
+	else
+	{
+		app->gotFileWriteTime = false;
+		PrintLine_W("Failed to get file write time for \"%.*s\": %s", StrPrint(app->filePath), GetResultStr(getWriteTimeResult));
+		WriteLine_W("We will not be able to detect external file changes, you may lose work if you edit the file while this program is open");
+	}
+}
+
+//TODO: If we see that the file write time has changed right before we go to change the file, maybe we should reload the file instead? Let external edits take precident?
 void UpdateOptionValueInFile(FileOption* option)
 {
 	ScratchBegin(scratch);
@@ -66,6 +84,9 @@ void UpdateOptionValueInFile(FileOption* option)
 			
 			FreeStr8(stdHeap, &app->fileContents);
 			app->fileContents = AllocStr8(stdHeap, newFileContents);
+			
+			//Since we just wrote to the file, make sure we immediately updated out file write time so we don't think it was an external change
+			AppGetFileWriteTime();
 		}
 		else
 		{
@@ -123,6 +144,7 @@ void AppLoadRecentFilesList()
 					RecentFile* newFile = VarArrayAdd(RecentFile, &app->recentFiles);
 					NotNull(newFile);
 					newFile->path = AllocStr8(stdHeap, fileLine);
+					newFile->fileExists = OsDoesFileExist(newFile->path);
 				}
 			}
 			
@@ -191,6 +213,7 @@ void AppRememberRecentFile(FilePath filePath)
 		NotNull(newRecentFile);
 		ClearPointer(newRecentFile);
 		newRecentFile->path = AllocStr8(stdHeap, fullPath);
+		newRecentFile->fileExists = true;
 		NotNull(newRecentFile->path.chars);
 		
 		while (app->recentFiles.length > RECENT_FILES_MAX_LENGTH)
@@ -272,21 +295,34 @@ void AppOpenFile(FilePath filePath)
 		Str8 line = TrimWhitespace(fullLine);
 		uxx lineStartIndex = lineParser.lineBeginByteIndex + (uxx)(line.chars - fullLine.chars);
 		uxx lineEndIndex = lineStartIndex + line.length;
-		if (StrExactStartsWith(line, StrLit("#define")) && (StrExactEndsWith(line, StrLit(" 0")) || StrExactEndsWith(line, StrLit(" 1"))))
+		const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
+		bool isOption = false;
+		Str8 defineStr = StrLit("#define");
+		for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
 		{
-			FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
-			NotNull(newOption);
-			ClearPointer(newOption);
-			newOption->name = TrimWhitespace(StrSlice(line, 7, line.length - 2));
-			newOption->name = AllocStr8(stdHeap, newOption->name);
-			newOption->type = FileOptionType_Bool;
-			newOption->valueBool = StrExactEndsWith(line, StrLit(" 1"));
-			newOption->fileContentsStartIndex = lineEndIndex-1;
-			newOption->fileContentsEndIndex = lineEndIndex;
-			newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
-			prevOption = newOption;
+			Str8 boolValueStr = StrLit(possibleBoolValues[vIndex]);
+			if (line.length >= defineStr.length + 1 + boolValueStr.length &&
+				StrExactStartsWith(line, defineStr) &&
+				StrExactEndsWith(line, boolValueStr) &&
+				IsCharWhitespace(line.chars[line.length-boolValueStr.length-1], false))
+			{
+				FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
+				NotNull(newOption);
+				ClearPointer(newOption);
+				newOption->name = TrimWhitespace(StrSlice(line, defineStr.length, line.length - boolValueStr.length));
+				newOption->name = AllocStr8(stdHeap, newOption->name);
+				newOption->type = FileOptionType_Bool;
+				newOption->valueBool = ((vIndex%2) == 0);
+				newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
+				newOption->fileContentsEndIndex = lineEndIndex;
+				newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
+				prevOption = newOption;
+				isOption = true;
+				break;
+			}
 		}
-		else if (IsEmptyStr(line) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
+		
+		if (!isOption && IsEmptyStr(line) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
 		{
 			IncrementU64(prevOption->numEmptyLinesAfter);
 		}
@@ -295,18 +331,7 @@ void AppOpenFile(FilePath filePath)
 	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->filePath), PROJECT_READABLE_NAME_STR));
 	app->isFileOpen = true;
 	
-	Result getWriteTimeResult = OsGetFileWriteTime(filePath, &app->fileWriteTime);
-	if (getWriteTimeResult == Result_Success)
-	{
-		app->gotFileWriteTime = true;
-		app->lastWriteTimeCheck = (appIn != nullptr) ? appIn->programTime : 0;
-	}
-	else
-	{
-		app->gotFileWriteTime = false;
-		PrintLine_W("Failed to get file write time for \"%.*s\": %s", StrPrint(filePath), GetResultStr(getWriteTimeResult));
-		WriteLine_W("We will not be able to detect external file changes, you may lose work if you edit the file while this program is open");
-	}
+	AppGetFileWriteTime();
 	
 	AppRememberRecentFile(filePath);
 }
