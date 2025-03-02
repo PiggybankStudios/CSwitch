@@ -189,6 +189,7 @@ int main()
 {
 	Arena stdHeapLocal = ZEROED;
 	InitArenaStdHeap(&stdHeapLocal);
+	// FlagSet(stdHeapLocal.flags, ArenaFlag_AddPaddingForDebug);
 	platformData = AllocType(PlatformData, &stdHeapLocal);
 	NotNull(platformData);
 	ClearPointer(platformData);
@@ -196,6 +197,7 @@ int main()
 	stdHeap = &platformData->stdHeap;
 	InitArenaStdHeap(&platformData->stdHeapAllowFreeWithoutSize);
 	FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AllowFreeWithoutSize);
+	// FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AddPaddingForDebug);
 	InitScratchArenasVirtual(Gigabytes(4));
 	
 	ScratchBegin(loadScratch);
