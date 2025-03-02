@@ -170,7 +170,7 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		}
 		
 		argIndex++;
-		GetNamelessProgramArg(platformInfo->programArgs, argIndex);
+		pathArgument = GetNamelessProgramArg(platformInfo->programArgs, argIndex);
 	}
 	
 	if (!wasCmdPathGiven && app->recentFiles.length > 0)

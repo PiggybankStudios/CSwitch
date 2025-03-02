@@ -1,6 +1,5 @@
 
 # TODO List:
-	( ) For some reason we hang forever in PathFileExistsA if you pass a path that doesn't exist as a command line argument
 	[ ] Consider comment syntax on the line so we can find lines that have comments after the value portion
 	[ ] Add support for commented out defines
 	[ ] File->Reset option that resets the file back to what it was when it was opened
@@ -26,9 +25,15 @@
 	[ ] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
 	[ ] Add support for custom theme(s)
 	[ ] Add a "Settings" window that can be opened from the "File" menu
+	[ ] Find running instances of CSwitch on startup and use IPC to reroute command line arguments to that instance rather than opening a second instance
+	[ ] Make a Sublime Text hotkey to open CSwitch to the current file
+	[ ] Add a search bar that can be used to filter the buttons
+	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
+	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[ ] 
 
 # Finished List:
+	(X) For some reason we hang forever in PathFileExistsA if you pass a path that doesn't exist as a command line argument
 	(X) If two instances of CSwitch are open at the same time, they will contend over the recent_files.txt list, they should cooperate properly somehow
 	(X) "true"/"false" change are causing file corruption because the values differ in length?
 	(X) Window focus is messed up at the beginning? Causing us to not be able to click on things until we click on the window titlebar?
