@@ -25,9 +25,7 @@ struct AppInput
 	MouseState mouse;
 	//TODO: Add ControllerStates
 	
-	#if BUILD_WITH_SOKOL_APP
 	sapp_mouse_cursor cursorType;
-	#endif
 	bool isFullscreen;
 	bool isFullscreenChanged;
 	bool isMinimized;
@@ -48,8 +46,6 @@ struct AppInput
 #define GET_NATIVE_WINDOW_HANDLE_DEF(functionName) const void* functionName()
 typedef GET_NATIVE_WINDOW_HANDLE_DEF(GetNativeWindowHandle_f);
 
-#if BUILD_WITH_SOKOL_APP
-
 #define GET_SOKOL_SWAPCHAIN_DEF(functionName) sg_swapchain functionName()
 typedef GET_SOKOL_SWAPCHAIN_DEF(GetSokolSwapchain_f);
 
@@ -68,20 +64,16 @@ typedef SET_WINDOW_ICON_DEF(SetWindowIcon_f);
 #define SET_WINDOW_TOPMOST_DEF(functionName) void functionName(bool topmost)
 typedef SET_WINDOW_TOPMOST_DEF(SetWindowTopmost_f);
 
-#endif //BUILD_WITH_SOKOL_APP
-
 typedef struct PlatformApi PlatformApi;
 struct PlatformApi
 {
 	GetNativeWindowHandle_f* GetNativeWindowHandle;
-	#if BUILD_WITH_SOKOL_APP
 	GetSokolSwapchain_f* GetSokolSwapchain;
 	SetMouseLocked_f* SetMouseLocked;
 	SetMouseCursorType_f* SetMouseCursorType;
 	SetWindowTitle_f* SetWindowTitle;
 	SetWindowIcon_f* SetWindowIcon;
 	SetWindowTopmost_f* SetWindowTopmost;
-	#endif
 };
 
 // +--------------------------------------------------------------+

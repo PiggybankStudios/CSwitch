@@ -74,6 +74,7 @@ ProgramArgs programArgs = ZEROED;
 // |                    Platform Source Files                     |
 // +--------------------------------------------------------------+
 #include "platform_api.c"
+#include "platform_helpers.c"
 
 #if BUILD_WITH_RAYLIB
 void RaylibLogCallback(int logLevel, const char* text, va_list args)
@@ -179,13 +180,9 @@ void PlatDoUpdate(void)
 }
 
 // +--------------------------------------------------------------+
-// |                       Main Entry Point                       |
+// |                   Platform Initialization                    |
 // +--------------------------------------------------------------+
-#if BUILD_WITH_SOKOL_APP
 void PlatSappInit(void)
-#else
-int main()
-#endif
 {
 	Arena stdHeapLocal = ZEROED;
 	InitArenaStdHeap(&stdHeapLocal);
@@ -202,20 +199,8 @@ int main()
 	
 	ScratchBegin(loadScratch);
 	
-	#if BUILD_WITH_RAYLIB
-	SetTraceLogCallback(RaylibLogCallback);
-	InitWindow(800, 600, PROJECT_READABLE_NAME_STR);
-	SetWindowMinSize(400, 200);
-	SetWindowState(FLAG_WINDOW_RESIZABLE);
-	SetTargetFPS(60);
-	#endif //BUILD_WITH_RAYLIB
-	
-	InitVarArray(Str8, &platformData->appInputs[0].droppedFilePaths, stdHeap);
-	InitVarArray(Str8, &platformData->appInputs[1].droppedFilePaths, stdHeap);
-	InitKeyboardState(&platformData->appInputs[0].keyboard);
-	InitKeyboardState(&platformData->appInputs[1].keyboard);
-	InitMouseState(&platformData->appInputs[0].mouse);
-	InitMouseState(&platformData->appInputs[1].mouse);
+	InitAppInput(&platformData->appInputs[0]);
+	InitAppInput(&platformData->appInputs[1]);
 	platformData->currentAppInput = &platformData->appInputs[0];
 	platformData->oldAppInput = &platformData->appInputs[1];
 	
@@ -230,14 +215,12 @@ int main()
 	NotNull(platform);
 	ClearPointer(platform);
 	platform->GetNativeWindowHandle = Plat_GetNativeWindowHandle;
-	#if BUILD_WITH_SOKOL_APP
 	platform->GetSokolSwapchain = Plat_GetSokolSwapchain;
 	platform->SetMouseLocked = Plat_SetMouseLocked;
 	platform->SetMouseCursorType = Plat_SetMouseCursorType;
 	platform->SetWindowTitle = Plat_SetWindowTitle;
 	platform->SetWindowIcon = Plat_SetWindowIcon;
 	platform->SetWindowTopmost = Plat_SetWindowTopmost;
-	#endif
 	
 	#if BUILD_INTO_SINGLE_UNIT
 	{
@@ -267,7 +250,6 @@ int main()
 	
 	//TODO: Should we do an early call into app dll to get options?
 	
-	#if BUILD_WITH_SOKOL_GFX
 	InitSokolGraphics((sg_desc){
 		// .buffer_pool_size = ?; //int
 		// .image_pool_size = ?; //int
@@ -294,7 +276,6 @@ int main()
 	gfx.prevFontFlow.glyphs = AllocArray(FontFlowGlyph, stdHeap, gfx.prevFontFlow.numGlyphsAlloc);
 	NotNull(gfx.prevFontFlow.glyphs);
 	#endif
-	#endif
 	
 	bool topmostFlagValue = FindNamedProgramArgBoolEx(&programArgs, StrLit("top"), StrLit("topmost"), false, 0);
 	Plat_SetWindowTopmost(topmostFlagValue);
@@ -303,32 +284,6 @@ int main()
 	NotNull(platformData->appMemoryPntr);
 	
 	ScratchEnd(loadScratch);
-	
-	// +--------------------------------------------------------------+
-	// |                        Main Game Loop                        |
-	// +--------------------------------------------------------------+
-	#if BUILD_WITH_RAYLIB
-	while (!WindowShouldClose())
-	{
-		//Grab all scratch arenas so we can ensure they get reset at the end of each frame
-		ScratchBegin(scratch1);
-		ScratchBegin1(scratch2, scratch1);
-		ScratchBegin2(scratch3, scratch1, scratch2);
-		
-		PlatDoUpdate();
-		
-		ScratchEnd(scratch1);
-		ScratchEnd(scratch2);
-		ScratchEnd(scratch3);
-	}
-	#if !BUILD_INTO_SINGLE_UNIT
-	CloseWindow();
-	#endif
-	#endif //BUILD_WITH_RAYLIB
-	
-	#if !BUILD_WITH_SOKOL_APP
-	return 0;
-	#endif
 }
 
 #if BUILD_WITH_SOKOL_APP
@@ -348,6 +303,7 @@ void PlatSappEvent(const sapp_event* event)
 		handledEvent = HandleSokolKeyboardAndMouseEvents(
 			event,
 			platformData->currentAppInput->programTime, //TODO: Calculate a more accurate programTime to pass here!
+			NewV2i((i32)sapp_width(), (i32)sapp_height()),
 			&platformData->currentAppInput->keyboard,
 			&platformData->currentAppInput->mouse,
 			sapp_mouse_locked()

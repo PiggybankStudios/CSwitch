@@ -1,10 +1,10 @@
 
 # TODO List:
+	( ) "true"/"false" change are causing file corruption because the values differ in length?
 	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Undo/Redo
 	[ ] Multiple tabs
 	[ ] Consider comment syntax on the line so we can find lines that have comments after the value portion
-	[ ] Support for true/false defines
 	[ ] Reduce memory usage
 	[ ] Measure and reduce CPU load while idle
 	[ ] Add smoother scrolling
@@ -17,6 +17,8 @@
 	[ ] 
 
 # Finished List:
+	(X) Window focus is messed up at the beginning? Causing us to not be able to click on things until we click on the window titlebar?
+	[X] Support for true/false defines
 	[X] Open most recent file automatically
 	[X] Open->Recent Files->...
 	[X] Get rid of need for resources folder

@@ -19,9 +19,9 @@ Description:
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD  1
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  0
+#define BUILD_INTO_SINGLE_UNIT  1
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
-#define USE_BUNDLED_RESOURCES   0
+#define USE_BUNDLED_RESOURCES   1
 
 
 // Build .exe binaries for Windows platform
@@ -38,12 +38,12 @@ Description:
 #define BUNDLE_RESOURCES_ZIP_IF_NEEDED  1
 
 // Compiles piggen/main.c to either dynamic or static library
-#define BUILD_PIG_CORE_LIB            0
+#define BUILD_PIG_CORE_LIB            1
 // Same as above but only compiles if the dll doesn't already exist in the _build folder
 #define BUILD_PIG_CORE_LIB_IF_NEEDED  1
 
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
-#define BUILD_APP_EXE  0
+#define BUILD_APP_EXE  1
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
 #define BUILD_APP_DLL  1
 // Runs the %PROJECT_EXE_NAME%.exe
