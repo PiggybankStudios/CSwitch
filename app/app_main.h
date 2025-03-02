@@ -54,12 +54,29 @@ struct RecentFile
 	bool fileExists;
 };
 
+typedef struct FileWatch FileWatch;
+struct FileWatch
+{
+	uxx id; //this is just the index+1 (meaning 0 can be used as an "invalid" id)
+	uxx checkPeriod;
+	uxx numReferences;
+	FilePath path;
+	FilePath fullPath;
+	bool changed;
+	u64 lastCheck;
+	u64 lastChangeTime;
+	bool fileExists;
+	bool gotWriteTime;
+	OsFileWriteTime writeTime;
+};
+
 typedef struct AppData AppData;
 struct AppData
 {
 	bool initialized;
 	RandomSeries random;
 	AppResources resources;
+	VarArray fileWatches; //FileWatch
 	
 	Shader mainShader;
 	Font uiFont;
@@ -77,9 +94,7 @@ struct AppData
 	bool isFileOpen;
 	Str8 filePath;
 	Str8 fileContents;
-	OsFileWriteTime fileWriteTime;
-	bool gotFileWriteTime;
-	u64 lastWriteTimeCheck;
+	uxx fileWatchId;
 	VarArray fileOptions; //FileOption
 	
 	VarArray recentFiles; //RecentFile

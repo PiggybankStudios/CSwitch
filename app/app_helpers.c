@@ -6,8 +6,6 @@ Description:
 	** None
 */
 
-#if BUILD_WITH_SOKOL_GFX
-
 ImageData LoadImageData(Arena* arena, const char* path)
 {
 	ScratchBegin1(scratch, arena);
@@ -23,7 +21,6 @@ ImageData LoadImageData(Arena* arena, const char* path)
 	return imageData;
 }
 
-#if BUILD_WITH_SOKOL_APP
 void LoadWindowIcon()
 {
 	ScratchBegin(scratch);
@@ -36,24 +33,6 @@ void LoadWindowIcon()
 	iconImageDatas[5] = LoadImageData(scratch, "resources/image/icon_256.png");
 	platform->SetWindowIcon(ArrayCount(iconImageDatas), &iconImageDatas[0]);
 	ScratchEnd(scratch);
-}
-#endif //BUILD_WITH_SOKOL_APP
-
-void AppGetFileWriteTime()
-{
-	Assert(app->isFileOpen);
-	Result getWriteTimeResult = OsGetFileWriteTime(app->filePath, &app->fileWriteTime);
-	if (getWriteTimeResult == Result_Success)
-	{
-		app->gotFileWriteTime = true;
-		app->lastWriteTimeCheck = (appIn != nullptr) ? appIn->programTime : 0;
-	}
-	else
-	{
-		app->gotFileWriteTime = false;
-		PrintLine_W("Failed to get file write time for \"%.*s\": %s", StrPrint(app->filePath), GetResultStr(getWriteTimeResult));
-		WriteLine_W("We will not be able to detect external file changes, you may lose work if you edit the file while this program is open");
-	}
 }
 
 //TODO: If we see that the file write time has changed right before we go to change the file, maybe we should reload the file instead? Let external edits take precident?
@@ -90,7 +69,7 @@ void UpdateOptionValueInFile(FileOption* option)
 			app->fileContents = AllocStr8(stdHeap, newFileContents);
 			
 			//Since we just wrote to the file, make sure we immediately updated out file write time so we don't think it was an external change
-			AppGetFileWriteTime();
+			ClearFileWatchChanged(&app->fileWatches, app->fileWatchId);
 		}
 		else
 		{
@@ -267,6 +246,8 @@ void AppCloseFile()
 {
 	if (app->isFileOpen)
 	{
+		RemoveFileWatch(&app->fileWatches, app->fileWatchId);
+		app->fileWatchId = UINTXX_MAX;
 		FreeStr8(stdHeap, &app->filePath);
 		FreeStr8WithNt(stdHeap, &app->fileContents);
 		VarArrayLoop(&app->fileOptions, oIndex)
@@ -335,42 +316,24 @@ void AppOpenFile(FilePath filePath)
 	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->filePath), PROJECT_READABLE_NAME_STR));
 	app->isFileOpen = true;
 	
-	AppGetFileWriteTime();
+	app->fileWatchId = AddFileWatch(&app->fileWatches, app->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
 	
 	AppRememberRecentFile(filePath);
 }
 
-bool CheckForFileChanges()
+bool AppCheckForFileChanges()
 {
 	bool didFileChange = false;
-	if (app->isFileOpen && app->gotFileWriteTime)
+	if (HasFileWatchChangedWithDelay(&app->fileWatches, app->fileWatchId, FILE_RELOAD_DELAY))
 	{
-		if (TimeSinceBy(appIn->programTime, app->lastWriteTimeCheck) > CHECK_FILE_WRITE_TIME_PERIOD)
-		{
-			OsFileWriteTime newWriteTime = ZEROED;
-			Result getWriteTimeResult = OsGetFileWriteTime(app->filePath, &newWriteTime);
-			if (getWriteTimeResult == Result_Success)
-			{
-				if (MyMemCompare(&newWriteTime, &app->fileWriteTime, sizeof(OsFileWriteTime)) != 0)
-				{
-					WriteLine_N("File changed externally! Reloading...");
-					ScratchBegin(scratch);
-					//NOTE: We have to allocate the string in scratch because AppOpenFile is going to deallocate app->filePath before it allocates the new one
-					Str8 filePathAlloc = AllocStrAndCopy(scratch, app->filePath.length, app->filePath.chars, false);
-					AppOpenFile(filePathAlloc);
-					ScratchEnd(scratch);
-					didFileChange = true;
-				}
-			}
-			else
-			{
-				app->gotFileWriteTime = false;
-				PrintLine_W("Failed to get file write time for \"%.*s\": %s", StrPrint(app->filePath), GetResultStr(getWriteTimeResult));
-				WriteLine_W("We will not be able to detect external file changes, you may lose work if you edit the file while this program is open");
-			}
-		}
+		ClearFileWatchChanged(&app->fileWatches, app->fileWatchId);
+		WriteLine_N("File changed externally! Reloading...");
+		ScratchBegin(scratch);
+		//NOTE: We have to allocate the string in scratch because AppOpenFile is going to deallocate app->filePath before it allocates the new one
+		Str8 filePathAlloc = AllocStrAndCopy(scratch, app->filePath.length, app->filePath.chars, false);
+		AppOpenFile(filePathAlloc);
+		ScratchEnd(scratch);
+		didFileChange = true;
 	}
 	return didFileChange;
 }
-
-#endif //BUILD_WITH_SOKOL_GFX

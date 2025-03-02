@@ -49,6 +49,7 @@ static Arena* stdHeap = nullptr;
 // +--------------------------------------------------------------+
 #include "main2d_shader.glsl.h"
 #include "app_resources.c"
+#include "app_file_watch.c"
 #include "app_helpers.c"
 #include "app_clay.c"
 
@@ -143,6 +144,7 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
 	
+	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileOption, &app->fileOptions, stdHeap);
 	
 	uxx argIndex = 0;
@@ -186,9 +188,10 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	bool shouldContinueRunning = true;
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
 	
+	UpdateFileWatches(&app->fileWatches);
 	
 	bool refreshScreen = false;
-	if (CheckForFileChanges()) { refreshScreen = true; }
+	if (AppCheckForFileChanges()) { refreshScreen = true; }
 	if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
