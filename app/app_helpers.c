@@ -77,7 +77,11 @@ void UpdateOptionValueInFile(FileOption* option)
 				VarArrayLoop(&app->fileOptions, oIndex)
 				{
 					VarArrayLoopGet(FileOption, otherOption, &app->fileOptions, oIndex);
-					if (otherOption != option && otherOption->fileContentsStartIndex >= option->fileContentsEndIndex) { option->fileContentsStartIndex += byteOffset; option->fileContentsEndIndex += byteOffset; }
+					if (otherOption != option && otherOption->fileContentsStartIndex >= option->fileContentsEndIndex)
+					{
+						otherOption->fileContentsStartIndex += byteOffset;
+						otherOption->fileContentsEndIndex += byteOffset;
+					}
 				}
 			}
 			option->fileContentsEndIndex = option->fileContentsStartIndex + option->valueStr.length;
