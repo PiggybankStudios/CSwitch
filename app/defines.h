@@ -9,6 +9,9 @@ Date:   02\25\2025
 
 #define NUM_FRAMES_BEFORE_SLEEP 8 //frames
 
+#define RECENT_FILES_SAVE_FILEPATH "recent_files.txt"
+#define RECENT_FILES_MAX_LENGTH    16 //files
+
 #define UI_FONT_NAME  "Consolas"
 #define UI_FONT_SIZE  12
 #define UI_FONT_STYLE FontStyleFlag_None
@@ -20,7 +23,8 @@ Date:   02\25\2025
 #define DEFAULT_WINDOW_SIZE NewV2i(360, 500)
 #define TOPBAR_HEIGHT   24 //px
 #define FILE_DROPDOWN_WIDTH 100 //px
-#define FILE_PATH_DISPLAY_MAX_LENGTH 40 //chars
+#define OPEN_RECENT_DROPDOWN_WIDTH 300 //px
+#define FILE_PATH_DISPLAY_MAX_LENGTH 36 //chars
 #define WINDOW_DROPDOWN_WIDTH 130 //px
 
 #define OPTION_UI_GAP              2 //px

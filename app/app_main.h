@@ -47,6 +47,12 @@ struct FileOption
 	};
 };
 
+typedef struct RecentFile RecentFile;
+struct RecentFile
+{
+	Str8 path;
+};
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -65,6 +71,7 @@ struct AppData
 	u16 clayMainFontId;
 	bool isFileMenuOpen;
 	bool isWindowMenuOpen;
+	bool isOpenRecentSubmenuOpen;
 	
 	bool isFileOpen;
 	Str8 filePath;
@@ -73,6 +80,8 @@ struct AppData
 	bool gotFileWriteTime;
 	u64 lastWriteTimeCheck;
 	VarArray fileOptions; //FileOption
+	
+	VarArray recentFiles; //RecentFile
 };
 
 #endif //  _APP_MAIN_H

@@ -159,6 +159,9 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		GetNamelessProgramArg(platformInfo->programArgs, argIndex);
 	}
 	
+	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
+	AppLoadRecentFilesList();
+	
 	app->initialized = true;
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -183,11 +186,19 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	if (CheckForFileChanges()) { refreshScreen = true; }
 	if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
+	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
+	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Middle) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Middle)) { refreshScreen = true; }
 	if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
 	if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
 	if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
 	else { app->numFramesConsecutivelyRendered++; }
-	if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP) { ScratchEnd(scratch); ScratchEnd(scratch2); ScratchEnd(scratch3); return shouldContinueRunning; }
+	if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
+	{
+		ScratchEnd(scratch);
+		ScratchEnd(scratch2);
+		ScratchEnd(scratch3);
+		return shouldContinueRunning;
+	}
 	
 	v2i screenSizei = appIn->screenSize;
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
@@ -200,6 +211,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		Str8 droppedFilePath = *VarArrayGetFirst(Str8, &appIn->droppedFilePaths);
 		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(droppedFilePath));
 		AppOpenFile(droppedFilePath);
+	}
+	
+	if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Right))
+	{
+		Str8 appDataPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
+		PrintLine_D("appDataPath: \"%.*s\"", StrPrint(appDataPath));
 	}
 	
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
@@ -240,7 +257,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
 				})
 				{
-					if (ClayTopBtn("File", &app->isFileMenuOpen, FILE_DROPDOWN_WIDTH))
+					if (ClayTopBtn("File", &app->isFileMenuOpen, app->isOpenRecentSubmenuOpen, FILE_DROPDOWN_WIDTH))
 					{
 						if (ClayBtn("Open", true))
 						{
@@ -255,6 +272,39 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
 						} Clay__CloseElement();
 						
+						if (app->recentFiles.length > 0)
+						{
+							if (ClayTopSubmenu("Open Recent", app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH))
+							{
+								for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
+								{
+									RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
+									Str8 fileName = GetUniqueDisplayPath(recentFile->path);
+									bool isOpenFile = (app->isFileOpen && StrAnyCaseEquals(app->filePath, recentFile->path));
+									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), !isOpenFile))
+									{
+										AppOpenFile(recentFile->path);
+										app->isOpenRecentSubmenuOpen = false;
+										app->isFileMenuOpen = false;
+									} Clay__CloseElement();
+								}
+								
+								if (ClayBtn("Clear Recent Files", app->recentFiles.length > 0))
+								{
+									AppClearRecentFiles();
+									app->isOpenRecentSubmenuOpen = false;
+									app->isFileMenuOpen = false;
+								} Clay__CloseElement();
+								
+								Clay__CloseElement();
+								Clay__CloseElement();
+							} Clay__CloseElement();
+						}
+						else
+						{
+							if (ClayBtn("Open Recent", false)) { } Clay__CloseElement();
+						}
+						
 						if (ClayBtn("Close", app->isFileOpen))
 						{
 							AppCloseFile();
@@ -264,7 +314,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						Clay__CloseElement();
 					} Clay__CloseElement();
 					
-					if (ClayTopBtn("Window", &app->isWindowMenuOpen, WINDOW_DROPDOWN_WIDTH))
+					if (ClayTopBtn("Window", &app->isWindowMenuOpen, false, WINDOW_DROPDOWN_WIDTH))
 					{
 						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "- Disable" : "+ Enable"), TARGET_IS_WINDOWS))
 						{
@@ -397,6 +447,8 @@ EXPORT_FUNC(AppClosing) APP_CLOSING_DEF(AppClosing)
 	#if BUILD_WITH_IMGUI
 	igSaveIniSettingsToDisk(app->imgui->io->IniFilename);
 	#endif
+	
+	AppSaveRecentFilesList();
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);

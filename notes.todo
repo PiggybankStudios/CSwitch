@@ -1,7 +1,6 @@
 
 # TODO List:
 	[ ] Open most recent file automatically
-	[ ] Open->Recent Files->...
 	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Undo/Redo
 	[ ] Multiple tabs
@@ -17,6 +16,7 @@
 	[ ] 
 
 # Finished List:
+	[X] Open->Recent Files->...
 	[X] Get rid of need for resources folder
 	[X] Watch file for changes, reload if the file is edited
 	[X] Drag+Drop file to open

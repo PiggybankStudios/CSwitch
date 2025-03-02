@@ -39,6 +39,203 @@ void LoadWindowIcon()
 }
 #endif //BUILD_WITH_SOKOL_APP
 
+void UpdateOptionValueInFile(FileOption* option)
+{
+	ScratchBegin(scratch);
+	NotNull(option);
+	NotNullStr(option->valueStr);
+	if (!StrExactEquals(option->valueStr, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex)))
+	{
+		Str8 fileBeginning = StrSlice(app->fileContents, 0, option->fileContentsStartIndex);
+		Str8 fileEnd = StrSliceFrom(app->fileContents, option->fileContentsEndIndex);
+		Str8 newFileContents = JoinStringsInArena(scratch, fileBeginning, option->valueStr, false);
+		newFileContents = JoinStringsInArena(scratch, newFileContents, fileEnd, false);
+		bool writeResult = OsWriteTextFile(app->filePath, newFileContents);
+		if (writeResult)
+		{
+			if (newFileContents.length != app->fileContents.length)
+			{
+				i64 byteOffset = (i64)newFileContents.length - (i64)app->fileContents.length;
+				VarArrayLoop(&app->fileOptions, oIndex)
+				{
+					VarArrayLoopGet(FileOption, otherOption, &app->fileOptions, oIndex);
+					if (otherOption != option && otherOption->fileContentsStartIndex >= option->fileContentsEndIndex) { option->fileContentsStartIndex += byteOffset; option->fileContentsEndIndex += byteOffset; }
+				}
+			}
+			option->fileContentsEndIndex = option->fileContentsStartIndex + option->valueStr.length;
+			
+			FreeStr8(stdHeap, &app->fileContents);
+			app->fileContents = AllocStr8(stdHeap, newFileContents);
+		}
+		else
+		{
+			PrintLine_E("Failed to write %llu byte%s to file \"%.*s\"!", (u64)newFileContents.length, Plural(newFileContents.length, "s"), StrPrint(app->filePath));
+			FreeStr8(stdHeap, &option->valueStr);
+			option->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex));
+		}
+	}
+	ScratchEnd(scratch);
+}
+
+void SetOptionValue(FileOption* option, Str8 newValueStr)
+{
+	NotNull(option);
+	if (!StrExactEquals(option->valueStr, newValueStr))
+	{
+		FreeStr8(stdHeap, &option->valueStr);
+		option->valueStr = AllocStr8(stdHeap, newValueStr);
+		UpdateOptionValueInFile(option);
+	}
+}
+
+void AppClearRecentFiles()
+{
+	VarArrayLoop(&app->recentFiles, rIndex)
+	{
+		VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
+		FreeStr8(stdHeap, &recentFile->path);
+	}
+	VarArrayClear(&app->recentFiles);
+}
+
+void AppLoadRecentFilesList()
+{
+	ScratchBegin(scratch);
+	FilePath settingsFolderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), false);
+	FilePath savePath = PrintInArenaStr(scratch, "%.*s%s%s",
+		StrPrint(settingsFolderPath),
+		DoesPathHaveTrailingSlash(settingsFolderPath) ? "" : "/",
+		RECENT_FILES_SAVE_FILEPATH
+	);
+	
+	if (OsDoesFileExist(savePath))
+	{
+		Str8 fileContent = Str8_Empty;
+		if (OsReadTextFile(savePath, scratch, &fileContent))
+		{
+			AppClearRecentFiles();
+			LineParser parser = NewLineParser(fileContent);
+			Str8 fileLine = ZEROED;
+			while (LineParserGetLine(&parser, &fileLine))
+			{
+				if (!IsEmptyStr(fileLine))
+				{
+					RecentFile* newFile = VarArrayAdd(RecentFile, &app->recentFiles);
+					NotNull(newFile);
+					newFile->path = AllocStr8(stdHeap, fileLine);
+				}
+			}
+			
+			PrintLine_D("Loaded %llu recent file%s from \"%.*s\"", app->recentFiles.length, Plural(app->recentFiles.length, "s"), StrPrint(savePath));
+		}
+		else { PrintLine_W("No recent files save found at \"%.*s\"", StrPrint(savePath)); }
+	}
+	ScratchEnd(scratch);
+}
+
+void AppSaveRecentFilesList()
+{
+	ScratchBegin(scratch);
+	FilePath settingsFolderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
+	FilePath savePath = PrintInArenaStr(scratch, "%.*s%s%s",
+		StrPrint(settingsFolderPath),
+		DoesPathHaveTrailingSlash(settingsFolderPath) ? "" : "/",
+		RECENT_FILES_SAVE_FILEPATH
+	);
+	
+	OsFile fileHandle = ZEROED;
+	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Write, false, &fileHandle))
+	{
+		VarArrayLoop(&app->recentFiles, rIndex)
+		{
+			VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
+			bool writeSuccess = OsWriteToOpenTextFile(&fileHandle, recentFile->path);
+			Assert(writeSuccess);
+			writeSuccess = OsWriteToOpenTextFile(&fileHandle, StrLit("\n"));
+			Assert(writeSuccess);
+		}
+		OsCloseFile(&fileHandle);
+	}
+	else { PrintLine_E("Failed to save recent files list to \"%.*s\"", StrPrint(savePath)); }
+	
+	ScratchEnd(scratch);
+}
+
+void AppRememberRecentFile(FilePath filePath)
+{
+	ScratchBegin(scratch);
+	Str8 fullPath = OsGetFullPath(scratch, filePath);
+	bool alreadyExists = false;
+	VarArrayLoop(&app->recentFiles, rIndex)
+	{
+		VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
+		if (StrAnyCaseEquals(recentFile->path, fullPath))
+		{
+			alreadyExists = true;
+			if (rIndex+1 < app->recentFiles.length)
+			{
+				//Move this path to the end of the array
+				RecentFile temp;
+				MyMemCopy(&temp, recentFile, sizeof(RecentFile));
+				VarArrayRemove(RecentFile, &app->recentFiles, recentFile);
+				RecentFile* newRecentFile = VarArrayAdd(RecentFile, &app->recentFiles);
+				MyMemCopy(newRecentFile, &temp, sizeof(RecentFile));
+				break;
+			}
+		}
+	}
+	
+	if (!alreadyExists)
+	{
+		RecentFile* newRecentFile = VarArrayAdd(RecentFile, &app->recentFiles);
+		NotNull(newRecentFile);
+		ClearPointer(newRecentFile);
+		newRecentFile->path = AllocStr8(stdHeap, fullPath);
+		NotNull(newRecentFile->path.chars);
+		
+		while (app->recentFiles.length > RECENT_FILES_MAX_LENGTH)
+		{
+			RecentFile* firstFile = VarArrayGetFirst(RecentFile, &app->recentFiles);
+			FreeStr8(stdHeap, &firstFile->path);
+			VarArrayRemoveFirst(RecentFile, &app->recentFiles);
+		}
+	}
+	
+	ScratchEnd(scratch);
+}
+
+Str8 GetUniqueDisplayPath(FilePath filePath)
+{
+	if (IsEmptyStr(filePath)) { return filePath; }
+	uxx numParts = CountPathParts(filePath, false);
+	if (numParts == 1) { return filePath; }
+	for (uxx pIndex = 0; pIndex < numParts; pIndex++)
+	{
+		// Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
+		Str8 pathPart = GetPathPart(filePath, numParts-1 - pIndex, false);
+		uxx partStartIndex = (uxx)(pathPart.chars - filePath.chars);
+		Str8 subPath = StrSliceFrom(filePath, partStartIndex);
+		bool foundConflict = false;
+		VarArrayLoop(&app->recentFiles, rIndex)
+		{
+			VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
+			if (!StrAnyCaseEquals(recentFile->path, filePath) &&
+				StrAnyCaseEndsWith(recentFile->path, subPath))
+			{
+				foundConflict = true;
+				break;
+			}
+		}
+		
+		if (!foundConflict)
+		{
+			return subPath;
+		}
+	}
+	return filePath;
+	
+}
+
 void AppCloseFile()
 {
 	if (app->isFileOpen)
@@ -110,6 +307,8 @@ void AppOpenFile(FilePath filePath)
 		PrintLine_W("Failed to get file write time for \"%.*s\": %s", StrPrint(filePath), GetResultStr(getWriteTimeResult));
 		WriteLine_W("We will not be able to detect external file changes, you may lose work if you edit the file while this program is open");
 	}
+	
+	AppRememberRecentFile(filePath);
 }
 
 bool CheckForFileChanges()
@@ -143,55 +342,6 @@ bool CheckForFileChanges()
 		}
 	}
 	return didFileChange;
-}
-
-void UpdateOptionValueInFile(FileOption* option)
-{
-	ScratchBegin(scratch);
-	NotNull(option);
-	NotNullStr(option->valueStr);
-	if (!StrExactEquals(option->valueStr, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex)))
-	{
-		Str8 fileBeginning = StrSlice(app->fileContents, 0, option->fileContentsStartIndex);
-		Str8 fileEnd = StrSliceFrom(app->fileContents, option->fileContentsEndIndex);
-		Str8 newFileContents = JoinStringsInArena(scratch, fileBeginning, option->valueStr, false);
-		newFileContents = JoinStringsInArena(scratch, newFileContents, fileEnd, false);
-		bool writeResult = OsWriteTextFile(app->filePath, newFileContents);
-		if (writeResult)
-		{
-			if (newFileContents.length != app->fileContents.length)
-			{
-				i64 byteOffset = (i64)newFileContents.length - (i64)app->fileContents.length;
-				VarArrayLoop(&app->fileOptions, oIndex)
-				{
-					VarArrayLoopGet(FileOption, otherOption, &app->fileOptions, oIndex);
-					if (otherOption != option && otherOption->fileContentsStartIndex >= option->fileContentsEndIndex) { option->fileContentsStartIndex += byteOffset; option->fileContentsEndIndex += byteOffset; }
-				}
-			}
-			option->fileContentsEndIndex = option->fileContentsStartIndex + option->valueStr.length;
-			
-			FreeStr8(stdHeap, &app->fileContents);
-			app->fileContents = AllocStr8(stdHeap, newFileContents);
-		}
-		else
-		{
-			PrintLine_E("Failed to write %llu byte%s to file \"%.*s\"!", (u64)newFileContents.length, Plural(newFileContents.length, "s"), StrPrint(app->filePath));
-			FreeStr8(stdHeap, &option->valueStr);
-			option->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex));
-		}
-	}
-	ScratchEnd(scratch);
-}
-
-void SetOptionValue(FileOption* option, Str8 newValueStr)
-{
-	NotNull(option);
-	if (!StrExactEquals(option->valueStr, newValueStr))
-	{
-		FreeStr8(stdHeap, &option->valueStr);
-		option->valueStr = AllocStr8(stdHeap, newValueStr);
-		UpdateOptionValueInFile(option);
-	}
 }
 
 #endif //BUILD_WITH_SOKOL_GFX

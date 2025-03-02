@@ -132,7 +132,8 @@ if "%DEBUG_BUILD%"=="1" (
 :: User32.lib = Needed for os_font.h for CreateFontA, etc.
 :: Gdi32.lib = Needed for os_font.h for GetForegroundWindow and GetDC
 :: Ole32.lib = Needed for CoInitializeEx, CoCreateInstance, etc.
-set common_ld_flags=-incremental:no /NOLOGO User32.lib Gdi32.lib Ole32.lib
+:: Shell32.lib = Needed for SHGetSpecialFolderPathA
+set common_ld_flags=-incremental:no /NOLOGO User32.lib Gdi32.lib Ole32.lib Shell32.lib
 set pig_core_ld_flags=
 set platform_ld_flags=
 
