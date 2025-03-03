@@ -12,20 +12,16 @@ enum FileOptionType
 {
 	FileOptionType_None = 0,
 	FileOptionType_Bool,
-	FileOptionType_I32,
-	FileOptionType_R32,
-	FileOptionType_Str,
+	FileOptionType_CommentDefine,
 	FileOptionType_Count,
 };
 const char* GetFileOptionTypeStr(FileOptionType enumValue)
 {
 	switch (enumValue)
 	{
-		case FileOptionType_None:  return "None";
-		case FileOptionType_Bool:  return "Bool";
-		case FileOptionType_I32:   return "I32";
-		case FileOptionType_R32:   return "R32";
-		case FileOptionType_Str:   return "Str";
+		case FileOptionType_None:          return "None";
+		case FileOptionType_Bool:          return "Bool";
+		case FileOptionType_CommentDefine: return "CommentDefine";
 		default: return "Unknown";
 	}
 }
@@ -42,6 +38,7 @@ struct FileOption
 	union
 	{
 		bool valueBool;
+		bool isUncommented;
 		i32 valueI32;
 		r32 valueR32;
 	};

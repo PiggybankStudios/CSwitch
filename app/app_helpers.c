@@ -285,42 +285,101 @@ void AppOpenFile(FilePath filePath)
 	app->fileContents = fileContents;
 	app->filePath = AllocStr8(stdHeap, filePath);
 	
+	Str8 commentStartStr = StrLit("//");
 	LineParser lineParser = NewLineParser(fileContents);
 	Str8 fullLine = Str8_Empty;
 	FileOption* prevOption = nullptr;
 	while (LineParserGetLine(&lineParser, &fullLine))
 	{
 		Str8 line = TrimWhitespace(fullLine);
-		uxx lineStartIndex = lineParser.lineBeginByteIndex + (uxx)(line.chars - fullLine.chars);
-		uxx lineEndIndex = lineStartIndex + line.length;
-		const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
+		Str8 lineComment = Str8_Empty;
+		uxx commentSlashesIndex = StrExactFind(line, commentStartStr);
+		if (commentSlashesIndex < line.length)
+		{
+			lineComment = StrSliceFrom(line, commentSlashesIndex);
+			line = StrSlice(line, 0, commentSlashesIndex);
+			line = TrimWhitespace(line);
+		}
+		
 		bool isOption = false;
 		Str8 defineStr = StrLit("#define");
-		for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
+		if (IsEmptyStr(line) && !IsEmptyStr(lineComment))
 		{
-			Str8 boolValueStr = StrLit(possibleBoolValues[vIndex]);
-			if (line.length >= defineStr.length + 1 + boolValueStr.length &&
-				StrExactStartsWith(line, defineStr) &&
-				StrExactEndsWith(line, boolValueStr) &&
-				IsCharWhitespace(line.chars[line.length-boolValueStr.length-1], false))
+			uxx commentStartIndex = lineParser.lineBeginByteIndex + (uxx)(lineComment.chars - fullLine.chars);
+			Str8 commentContents = TrimWhitespace(StrSliceFrom(lineComment, commentStartStr.length));
+			if (StrExactStartsWith(commentContents, defineStr))
 			{
-				FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
-				NotNull(newOption);
-				ClearPointer(newOption);
-				newOption->name = TrimWhitespace(StrSlice(line, defineStr.length, line.length - boolValueStr.length));
-				newOption->name = AllocStr8(stdHeap, newOption->name);
-				newOption->type = FileOptionType_Bool;
-				newOption->valueBool = ((vIndex%2) == 0);
-				newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
-				newOption->fileContentsEndIndex = lineEndIndex;
-				newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
-				prevOption = newOption;
-				isOption = true;
-				break;
+				uxx defineStartIndex = lineParser.lineBeginByteIndex + (uxx)(commentContents.chars - fullLine.chars);
+				Str8 namePart = TrimWhitespace(StrSliceFrom(commentContents, defineStr.length));
+				if (!IsEmptyStr(namePart))
+				{
+					FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
+					NotNull(newOption);
+					ClearPointer(newOption);
+					newOption->name = AllocStr8(stdHeap, namePart);
+					newOption->type = FileOptionType_CommentDefine;
+					newOption->isUncommented = false;
+					newOption->fileContentsStartIndex = commentStartIndex;
+					newOption->fileContentsEndIndex = defineStartIndex;
+					newOption->valueStr = AllocStr8(stdHeap, commentStartStr);
+					prevOption = newOption;
+					isOption = true;
+				}
+			}
+		}
+		else if (StrExactStartsWith(line, defineStr))
+		{
+			uxx lineStartIndex = lineParser.lineBeginByteIndex + (uxx)(line.chars - fullLine.chars);
+			uxx lineEndIndex = lineStartIndex + line.length;
+			const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
+			for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
+			{
+				Str8 boolValueStr = StrLit(possibleBoolValues[vIndex]);
+				if (line.length >= defineStr.length + 1 + boolValueStr.length &&
+					StrExactEndsWith(line, boolValueStr) &&
+					IsCharWhitespace(line.chars[line.length-boolValueStr.length-1], false))
+				{
+					FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
+					NotNull(newOption);
+					ClearPointer(newOption);
+					newOption->name = TrimWhitespace(StrSlice(line, defineStr.length, line.length - boolValueStr.length));
+					newOption->name = AllocStr8(stdHeap, newOption->name);
+					newOption->type = FileOptionType_Bool;
+					newOption->valueBool = ((vIndex%2) == 0);
+					newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
+					newOption->fileContentsEndIndex = lineEndIndex;
+					newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
+					prevOption = newOption;
+					isOption = true;
+					break;
+				}
+			}
+			
+			if (!isOption)
+			{
+				// If we trim the part after the #define and we find
+				// that the leftover part is a valid C identifier then
+				// we can treat this #define as something that can be
+				// commented out because it has no value
+				Str8 namePart = TrimWhitespace(StrSliceFrom(line, defineStr.length));
+				if (IsValidIdentifier(namePart.length, namePart.chars, false, false, false))
+				{
+					FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
+					NotNull(newOption);
+					ClearPointer(newOption);
+					newOption->name = AllocStr8(stdHeap, namePart);
+					newOption->type = FileOptionType_CommentDefine;
+					newOption->isUncommented = true;
+					newOption->fileContentsStartIndex = lineStartIndex;
+					newOption->fileContentsEndIndex = lineStartIndex;
+					newOption->valueStr = Str8_Empty;
+					prevOption = newOption;
+					isOption = true;
+				}
 			}
 		}
 		
-		if (!isOption && IsEmptyStr(line) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
+		if (!isOption && IsEmptyStr(line) && IsEmptyStr(lineComment) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
 		{
 			IncrementU64(prevOption->numEmptyLinesAfter);
 		}

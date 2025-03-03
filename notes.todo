@@ -1,7 +1,5 @@
 
 # TODO List:
-	[ ] Consider comment syntax on the line so we can find lines that have comments after the value portion
-	[ ] Add support for commented out defines
 	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Undo/Redo
 	[ ] Multiple tabs
@@ -30,9 +28,12 @@
 	[ ] Add a search bar that can be used to filter the buttons
 	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
+	[ ] Add command line arguments that tell CSwitch where to position itself on screen. Either absolute coordinates, or maybe like relative coordinates from top-left, top-right, bottom-right, bottom-left, left-middle, top-middle, right-middle, or bottom-middle
 	[ ] 
 
 # Finished List:
+	[X] Add support for commented out defines
+	[X] Consider comment syntax on the line so we can find lines that have comments after the value portion
 	(X) For some reason we hang forever in PathFileExistsA if you pass a path that doesn't exist as a command line argument
 	(X) If two instances of CSwitch are open at the same time, they will contend over the recent_files.txt list, they should cooperate properly somehow
 	(X) "true"/"false" change are causing file corruption because the values differ in length?

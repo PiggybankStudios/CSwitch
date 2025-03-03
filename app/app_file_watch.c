@@ -67,7 +67,6 @@ uxx AddFileWatch(VarArray* watches, FilePath path, uxx checkPeriod)
 	NotNullStr(path);
 	ScratchBegin1(scratch, watches->arena);
 	FilePath fullPath = OsGetFullPath(scratch, path);
-	FileWatch* existingWatch = nullptr;
 	VarArrayLoop(watches, wIndex)
 	{
 		VarArrayLoopGet(FileWatch, watch, watches, wIndex);

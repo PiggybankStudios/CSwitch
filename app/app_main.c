@@ -433,6 +433,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								}
 							} Clay__CloseElement();
 						}
+						else if (option->type == FileOptionType_CommentDefine)
+						{
+							if (ClayOptionBtn(ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+							{
+								option->isUncommented = !option->isUncommented;
+								SetOptionValue(option, StrLit(option->isUncommented ? "" : "// "));
+							} Clay__CloseElement();
+						}
 						else
 						{
 							if (ClayOptionBtn(option->name, StrLit("-"), false))
