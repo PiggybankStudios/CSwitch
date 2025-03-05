@@ -378,38 +378,30 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						Clay__CloseElement();
 					} Clay__CloseElement();
 					
-					CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
+					// CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
 					
 					if (app->isFileOpen)
 					{
-						Str8 filePathTrimmed = app->filePath;
-						if (filePathTrimmed.length > FILE_PATH_DISPLAY_MAX_LENGTH)
+						CLAY({ .id=CLAY_ID("FilePathArea"), .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } })
 						{
-							Str8 fileNamePart = GetFileNamePart(app->filePath, true);
-							uxx fileNameStartIndex = (uxx)(fileNamePart.chars - app->filePath.chars);
-							uxx ellipsesPos = (fileNameStartIndex > 0) ? (fileNameStartIndex/2) : (filePathTrimmed.length/2);
-							uxx numCharsToCut = filePathTrimmed.length - 3 - FILE_PATH_DISPLAY_MAX_LENGTH;
-							if (ellipsesPos > numCharsToCut/2)
+							rec availableRec = GetClayElementDrawRec(CLAY_ID("FilePathArea"));
+							uxx numCharsEstimate = UINTXX_MAX;
+							if (availableRec.Width > 0)
 							{
-								Str8 firstPart = StrSlice(filePathTrimmed, 0, ellipsesPos - numCharsToCut/2);
-								Str8 secondPart = StrSliceFrom(filePathTrimmed, ellipsesPos + (numCharsToCut+1)/2);
-								filePathTrimmed = PrintInArenaStr(scratch, "%.*s...%.*s", StrPrint(firstPart), StrPrint(secondPart));
+								v2 charSize = MeasureTextEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, StrLit("W")).visualRec.Size;
+								numCharsEstimate = (uxx)MaxI32(1, FloorR32i(availableRec.Width / charSize.Width));
 							}
-							else
-							{
-								Str8 lastPart = StrSliceFrom(filePathTrimmed, filePathTrimmed.length - FILE_PATH_DISPLAY_MAX_LENGTH + 3);
-								filePathTrimmed = PrintInArenaStr(scratch, "...%.*s", StrPrint(lastPart));
-							}
+							Str8 filePathTrimmed = ShortenFilePath(scratch, app->filePath, numCharsEstimate, StrLit("..."));
+							CLAY_TEXT(
+								ToClayString(filePathTrimmed),
+								CLAY_TEXT_CONFIG({
+									.fontId = app->clayUiFontId,
+									.fontSize = UI_FONT_SIZE,
+									.textColor = ToClayColor(TEXT_LIGHT_GRAY),
+								})
+							);
+							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 						}
-						CLAY_TEXT(
-							ToClayString(filePathTrimmed),
-							CLAY_TEXT_CONFIG({
-								.fontId = app->clayUiFontId,
-								.fontSize = UI_FONT_SIZE,
-								.textColor = ToClayColor(TEXT_LIGHT_GRAY),
-							})
-						);
-						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 					}
 				}
 				
@@ -487,7 +479,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					
 					rec optionsListDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
 					Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
-					#if 1
 					r32 scrollbarYPercent = 0.0f;
 					r32 scrollbarSizePercent = 1.0f;
 					if (optionsListScrollData.found && optionsListScrollData.contentDimensions.height > optionsListScrollData.scrollContainerDimensions.height)
@@ -532,7 +523,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							}) {}
 						}
 					}
-					#endif
 				}
 			}
 		}
