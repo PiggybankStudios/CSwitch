@@ -30,6 +30,7 @@
 	[ ] Add command line arguments that tell CSwitch where to position itself on screen. Either absolute coordinates, or maybe like relative coordinates from top-left, top-right, bottom-right, bottom-left, left-middle, top-middle, right-middle, or bottom-middle
 	[ ] Add support for dragging scroll bar with left-click
 	[ ] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
+	[ ] Add a button+hotkey to open the file in a text editor (also maybe to open the folder where the file resides in Explorer)
 	[ ] 
 
 # Finished List:

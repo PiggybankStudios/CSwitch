@@ -9,5 +9,4 @@ A simple project to turn on/off defines in a C header file quickly. This project
 5. Clicking a button will toggle the value between 1 and 0 (and immediately write to the file)
 
 # Screenshot
-![Screenshot2](/_media/screenshot2.png)
-![Screenshot3](/_media/screenshot3.png)
+![Screenshot](/_media/screenshot4.png)
