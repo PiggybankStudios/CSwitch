@@ -6,19 +6,19 @@ Description:
 	** Holds various functions that comprise common widgets for Clay
 */
 
-bool IsMouseOverClay(Clay_ElementId clayId)
+bool IsMouseOverClay(ClayId clayId)
 {
 	return appIn->mouse.isOverWindow && Clay_PointerOver(clayId);
 }
 
-//Call Clay__CloseElement once if false, three times if true (i.e. twicfe inside the if statement and once after)
-bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen, r32 dropDownWidth)
+//Call Clay__CloseElement once if false, three times if true (i.e. twice inside the if statement and once after)
+bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
-	Clay_ElementId btnId = ToClayId(btnIdStr);
-	Clay_ElementId menuId = ToClayId(menuIdStr);
+	ClayId btnId = ToClayId(btnIdStr);
+	ClayId menuId = ToClayId(menuIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
 	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
@@ -63,10 +63,12 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen, r32 dropDo
 		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 			.layout = {
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
-				.sizing = {
-					.width = CLAY_SIZING_FIXED(dropDownWidth),
+				.padding = {
+					.left = 1,
+					.right = 1,
+					.top = 2,
+					.bottom = 2,
 				},
-				.padding = CLAY_PADDING_ALL(2),
 				.childGap = 2,
 			},
 			.backgroundColor = ToClayColor(BACKGROUND_GRAY),
@@ -78,15 +80,32 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen, r32 dropDo
 	return *isOpenPntr;
 }
 
-bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r32 dropDownWidth)
+#define CLAY_ICON(texturePntr, size, color) CLAY({      \
+	.layout = {                                         \
+		.sizing = {                                     \
+			.width = CLAY_SIZING_FIXED((size).Width),   \
+			.height = CLAY_SIZING_FIXED((size).Height), \
+		},                                              \
+	},                                                  \
+	.image = {                                          \
+		.imageData = (texturePntr),                     \
+		.sourceDimensions = {                           \
+			.width = (r32)((texturePntr)->Width),       \
+			.height = (r32)((texturePntr)->Height),     \
+		},                                              \
+	},                                                  \
+	.backgroundColor = ToClayColor(color),              \
+}) {}
+
+bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r32 dropDownWidth, Texture* icon)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopSubmenu", btnText);
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopSubmenuMenu", btnText);
 	Str8 menuListIdStr = PrintInArenaStr(scratch, "%s_TopSubmenuMenuList", btnText);
-	Clay_ElementId btnId = ToClayId(btnIdStr);
-	Clay_ElementId menuId = ToClayId(menuIdStr);
-	Clay_ElementId menuListId = ToClayId(menuListIdStr);
+	ClayId btnId = ToClayId(btnIdStr);
+	ClayId menuId = ToClayId(menuIdStr);
+	ClayId menuListId = ToClayId(menuListIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
 	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
@@ -101,14 +120,21 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r3
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
 		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
 	});
-	CLAY_TEXT(
-		ToClayString(StrLit(btnText)),
-		CLAY_TEXT_CONFIG({
-			.fontId = app->clayUiFontId,
-			.fontSize = UI_FONT_SIZE,
-			.textColor = ToClayColor(TEXT_WHITE),
-		})
-	);
+	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = 8 }, } })
+	{
+		if (icon != nullptr)
+		{
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE), TEXT_WHITE);
+		}
+		CLAY_TEXT(
+			ToClayString(StrLit(btnText)),
+			CLAY_TEXT_CONFIG({
+				.fontId = app->clayUiFontId,
+				.fontSize = UI_FONT_SIZE,
+				.textColor = ToClayColor(TEXT_WHITE),
+			})
+		);
+	}
 	if (!isParentOpen) { *isOpenPntr = false; }
 	if (isParentOpen && IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
 	if (*isOpenPntr == true && !isHovered) { *isOpenPntr = false; }
@@ -149,11 +175,11 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r3
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled)
+bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled, Texture* icon)
 {
 	ScratchBegin(scratch);
 	Str8 fullIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(idStr));
-	Clay_ElementId btnId = ToClayId(fullIdStr);
+	ClayId btnId = ToClayId(fullIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backgroundColor = !isEnabled ? BACKGROUND_BLACK : (isPressed ? SELECTED_BLUE : (isHovered ? HOVERED_BLUE : Transparent));
@@ -163,31 +189,38 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled)
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = {
-			.padding = CLAY_PADDING_ALL(4),
+			.padding = { .top = 8, .bottom = 8, .left = 4, .right = 4, },
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
 		.backgroundColor = ToClayColor(backgroundColor),
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
 		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
 	});
-	CLAY_TEXT(
-		ToClayString(btnText),
-		CLAY_TEXT_CONFIG({
-			.fontId = app->clayUiFontId,
-			.fontSize = MAIN_FONT_SIZE,
-			.textColor = ToClayColor(TEXT_WHITE),
-		})
-	);
+	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = 8 }, } })
+	{
+		if (icon != nullptr)
+		{
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE), TEXT_WHITE);
+		}
+		CLAY_TEXT(
+			ToClayString(btnText),
+			CLAY_TEXT_CONFIG({
+				.fontId = app->clayUiFontId,
+				.fontSize = MAIN_FONT_SIZE,
+				.textColor = ToClayColor(TEXT_WHITE),
+			})
+		);
+	}
 	ScratchEnd(scratch);
 	return (isHovered && isEnabled && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
-bool ClayBtnStr(Str8 btnText, bool isEnabled)
+bool ClayBtnStr(Str8 btnText, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStrEx(btnText, btnText, isEnabled);
+	return ClayBtnStrEx(btnText, btnText, isEnabled, icon);
 }
-bool ClayBtn(const char* btnText, bool isEnabled)
+bool ClayBtn(const char* btnText, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStr(StrLit(btnText), isEnabled);
+	return ClayBtnStr(StrLit(btnText), isEnabled, icon);
 }
 
 //Call Clay__CloseElement once after if statement
@@ -195,7 +228,7 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(nameStr));
-	Clay_ElementId btnId = ToClayId(btnIdStr);
+	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;

@@ -29,6 +29,7 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_icons.h"
 #include "app_resources.h"
 #include "app_main.h"
 
@@ -112,6 +113,18 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();
+	
+	for (uxx iIndex = 1; iIndex < AppIcon_Count; iIndex++)
+	{
+		AppIcon iconEnum = (AppIcon)iIndex;
+		const char* iconPath = GetAppIconPath(iconEnum);
+		if (iconPath != nullptr)
+		{
+			ImageData iconImageData = LoadImageData(scratch, iconPath);
+			app->icons[iIndex] = InitTexture(stdHeap, StrLit(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
+			Assert(app->icons[iIndex].error == Result_Success);
+		}
+	}
 	
 	InitRandomSeriesDefault(&app->random);
 	SeedRandomSeriesU64(&app->random, OsGetCurrentTimestamp(false));
@@ -281,9 +294,9 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
 				})
 				{
-					if (ClayTopBtn("File", &app->isFileMenuOpen, app->isOpenRecentSubmenuOpen, FILE_DROPDOWN_WIDTH))
+					if (ClayTopBtn("File", &app->isFileMenuOpen, app->isOpenRecentSubmenuOpen))
 					{
-						if (ClayBtn("Open", true))
+						if (ClayBtn("Open...", true, &app->icons[AppIcon_OpenFile]))
 						{
 							Str8 selectedPath = Str8_Empty;
 							Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
@@ -291,6 +304,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							{
 								PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
 								AppOpenFile(selectedPath);
+								app->isFileMenuOpen = false;
 							}
 							else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
 							else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
@@ -298,14 +312,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						
 						if (app->recentFiles.length > 0)
 						{
-							if (ClayTopSubmenu("Open Recent >", app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH))
+							if (ClayTopSubmenu("Open Recent >", app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH, &app->icons[AppIcon_OpenRecent]))
 							{
 								for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 								{
 									RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
 									Str8 fileName = GetUniqueDisplayPath(recentFile->path);
 									bool isOpenFile = (app->isFileOpen && StrAnyCaseEquals(app->filePath, recentFile->path));
-									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), !isOpenFile && recentFile->fileExists))
+									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), !isOpenFile && recentFile->fileExists, nullptr))
 									{
 										AppOpenFile(recentFile->path);
 										app->isOpenRecentSubmenuOpen = false;
@@ -313,7 +327,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									} Clay__CloseElement();
 								}
 								
-								if (ClayBtn("Clear Recent Files", app->recentFiles.length > 0))
+								if (ClayBtn("Clear Recent Files", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
 								{
 									AppClearRecentFiles();
 									AppSaveRecentFilesList();
@@ -327,28 +341,37 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						}
 						else
 						{
-							if (ClayBtn("Open Recent", false)) { } Clay__CloseElement();
+							if (ClayBtn("Open Recent >", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
 						}
 						
-						if (ClayBtn("Close", app->isFileOpen))
+						if (ClayBtn("Close File", app->isFileOpen, &app->icons[AppIcon_CloseFile]))
 						{
 							AppCloseFile();
+							app->isFileMenuOpen = false;
 						} Clay__CloseElement();
 						
 						Clay__CloseElement();
 						Clay__CloseElement();
 					} Clay__CloseElement();
 					
-					if (ClayTopBtn("Window", &app->isWindowMenuOpen, false, WINDOW_DROPDOWN_WIDTH))
+					if (ClayTopBtn("Window", &app->isWindowMenuOpen, false))
 					{
-						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "- Disable" : "+ Enable"), TARGET_IS_WINDOWS))
+						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 						{
 							platform->SetWindowTopmost(!appIn->isWindowTopmost);
 						} Clay__CloseElement();
 						
-						if (ClayBtn("Close", true))
+						#if DEBUG_BUILD
+						if (ClayBtn(ScratchPrint("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), true, &app->icons[AppIcon_Debug]))
+						{
+							Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+						} Clay__CloseElement();
+						#endif
+						
+						if (ClayBtn("Close Window", true, &app->icons[AppIcon_CloseWindow]))
 						{
 							shouldContinueRunning = false;
+							app->isFileMenuOpen = false;
 						} Clay__CloseElement();
 						
 						Clay__CloseElement();
@@ -390,82 +413,124 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					}
 				}
 				
-				// +==============================+
-				// |         Options List         |
-				// +==============================+
 				CLAY({
 					.layout = {
-						.layoutDirection = CLAY_TOP_TO_BOTTOM,
-						.childGap = OPTION_UI_GAP,
-						.padding = CLAY_PADDING_ALL(4),
-						.sizing = {
-							.height=CLAY_SIZING_GROW(0),
-							.width=CLAY_SIZING_GROW(0)
-						},
-					},
-					.scroll = { .vertical=true },
+						.layoutDirection = CLAY_LEFT_TO_RIGHT,
+						.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+					}
 				})
 				{
-					VarArrayLoop(&app->fileOptions, oIndex)
+					// +==============================+
+					// |         Options List         |
+					// +==============================+
+					CLAY({ .id = CLAY_ID("OptionsList"),
+						.layout = {
+							.layoutDirection = CLAY_TOP_TO_BOTTOM,
+							.childGap = OPTION_UI_GAP,
+							.padding = CLAY_PADDING_ALL(4),
+							.sizing = {
+								.height = CLAY_SIZING_GROW(0),
+								.width = CLAY_SIZING_GROW(0)
+							},
+						},
+						.scroll = { .vertical=true },
+					})
 					{
-						VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
-						if (option->type == FileOptionType_Bool)
+						VarArrayLoop(&app->fileOptions, oIndex)
 						{
-							//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-							if (ClayOptionBtn(option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
+							VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
+							if (option->type == FileOptionType_Bool)
 							{
-								option->valueBool = !option->valueBool;
-								if (StrExactEquals(option->valueStr, StrLit("false")))
+								//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
+								if (ClayOptionBtn(option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
 								{
-									SetOptionValue(option, StrLit("true"));
-								}
-								else if (StrExactEquals(option->valueStr, StrLit("true")))
-								{
-									SetOptionValue(option, StrLit("false"));
-								}
-								else if (StrExactEquals(option->valueStr, StrLit("0")))
-								{
-									SetOptionValue(option, StrLit("1"));
-								}
-								else
-								{
-									SetOptionValue(option, StrLit("0"));
-								}
-							} Clay__CloseElement();
-						}
-						else if (option->type == FileOptionType_CommentDefine)
-						{
-							if (ClayOptionBtn(ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+									option->valueBool = !option->valueBool;
+									if (StrExactEquals(option->valueStr, StrLit("false")))
+									{
+										SetOptionValue(option, StrLit("true"));
+									}
+									else if (StrExactEquals(option->valueStr, StrLit("true")))
+									{
+										SetOptionValue(option, StrLit("false"));
+									}
+									else if (StrExactEquals(option->valueStr, StrLit("0")))
+									{
+										SetOptionValue(option, StrLit("1"));
+									}
+									else
+									{
+										SetOptionValue(option, StrLit("0"));
+									}
+								} Clay__CloseElement();
+							}
+							else if (option->type == FileOptionType_CommentDefine)
 							{
-								option->isUncommented = !option->isUncommented;
-								SetOptionValue(option, StrLit(option->isUncommented ? "" : "// "));
-							} Clay__CloseElement();
-						}
-						else
-						{
-							if (ClayOptionBtn(option->name, StrLit("-"), false))
+								if (ClayOptionBtn(ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+								{
+									option->isUncommented = !option->isUncommented;
+									SetOptionValue(option, StrLit(option->isUncommented ? "" : "// "));
+								} Clay__CloseElement();
+							}
+							else
 							{
-								//TODO: Implement me!
-							} Clay__CloseElement();
-						}
-						if (option->numEmptyLinesAfter > 0)
-						{
-							CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
+								if (ClayOptionBtn(option->name, StrLit("-"), false))
+								{
+									//TODO: Implement me!
+								} Clay__CloseElement();
+							}
+							if (option->numEmptyLinesAfter > 0)
+							{
+								CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
+							}
 						}
 					}
 					
-					#if 0
-					if (app->isFileOpen)
+					rec optionsListDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+					Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+					#if 1
+					r32 scrollbarYPercent = 0.0f;
+					r32 scrollbarSizePercent = 1.0f;
+					if (optionsListScrollData.found && optionsListScrollData.contentDimensions.height > optionsListScrollData.scrollContainerDimensions.height)
 					{
-						CLAY_TEXT(
-							ToClayString(app->fileContents),
-							CLAY_TEXT_CONFIG({
-								.fontId = app->clayMainFontId,
-								.fontSize = MAIN_FONT_SIZE,
-								.textColor = ToClayColor(TEXT_WHITE),
-								.wrapMode = CLAY_TEXT_WRAP_NEWLINES,
-							})
-						);
+						scrollbarSizePercent = ClampR32(optionsListScrollData.scrollContainerDimensions.height / optionsListScrollData.contentDimensions.height, 0.0f, 1.0f);
+						scrollbarYPercent = ClampR32(-optionsListScrollData.scrollPosition->y / (optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
+					}
+					
+					if (optionsListScrollData.found && scrollbarSizePercent < 1.0f)
+					{
+						CLAY({ .id = CLAY_ID("OptionsScrollGutter"),
+							.layout = {
+								.layoutDirection = CLAY_TOP_TO_BOTTOM,
+								.padding = { .left = 1, },
+								.sizing = {
+									.width = CLAY_SIZING_FIXED(SCROLLBAR_WIDTH),
+									.height = CLAY_SIZING_GROW(0)
+								},
+							},
+							.backgroundColor = ToClayColor(BACKGROUND_BLACK),
+						})
+						{
+							rec scrollGutterDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsScrollGutter"));
+							v2 scrollBarSize = NewV2(
+								SCROLLBAR_WIDTH - 2,
+								optionsListDrawRec.Height * scrollbarSizePercent
+							);
+							r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+							CLAY({ .id = CLAY_ID("OptionsScrollBar"),
+								.floating = {
+									.attachTo = CLAY_ATTACH_TO_PARENT,
+									.offset = { .x = 1, .y = scrollBarOffsetY },
+								},
+								.layout = {
+									.sizing = {
+										.width = CLAY_SIZING_FIXED(scrollBarSize.X),
+										.height = CLAY_SIZING_FIXED(scrollBarSize.Y),
+									},
+								},
+								.backgroundColor = ToClayColor(OUTLINE_GRAY),
+								.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2),
+							}) {}
+						}
 					}
 					#endif
 				}

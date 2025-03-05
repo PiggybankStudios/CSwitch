@@ -1,12 +1,12 @@
 
 # TODO List:
-	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Undo/Redo
+	[ ] Support external edits as an Undoable change
+	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Multiple tabs
 	[ ] Reduce memory usage
 	[ ] Measure and reduce CPU load while idle
 	[ ] Add smoother scrolling
-	[ ] Add a scrollbar
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
 	[ ] Add a "Help" menu that gives info (version number?)
 	[ ] Add a notification like system where we can tell the user about notable warnings/errors
@@ -20,7 +20,6 @@
 	[ ] Add tooltips that show full path when hovering over the display path in topbar, and recent file buttons
 	[ ] Add support for tooltips that can extend outside the main window (i.e. they have their own host window)
 	[ ] Add hotkeys like Ctrl+W to close file, Ctrl+O to open file (maybe something to open most recent file?), Ctrl+E to reopen the file that was just closed?, something to toggle topmost, etc.
-	[ ] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
 	[ ] Add support for custom theme(s)
 	[ ] Add a "Settings" window that can be opened from the "File" menu
 	[ ] Find running instances of CSwitch on startup and use IPC to reroute command line arguments to that instance rather than opening a second instance
@@ -29,9 +28,13 @@
 	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[ ] Add command line arguments that tell CSwitch where to position itself on screen. Either absolute coordinates, or maybe like relative coordinates from top-left, top-right, bottom-right, bottom-left, left-middle, top-middle, right-middle, or bottom-middle
+	[ ] Add support for dragging scroll bar with left-click
+	[ ] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
 	[ ] 
 
 # Finished List:
+	[X] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
+	[X] Add a scrollbar
 	[X] Add support for commented out defines
 	[X] Consider comment syntax on the line so we can find lines that have comments after the value portion
 	(X) For some reason we hang forever in PathFileExistsA if you pass a path that doesn't exist as a command line argument

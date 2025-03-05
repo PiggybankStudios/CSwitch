@@ -78,6 +78,7 @@ struct AppData
 	Shader mainShader;
 	Font uiFont;
 	Font mainFont;
+	Texture icons[AppIcon_Count];
 	
 	u64 numFramesConsecutivelyRendered;
 	

@@ -8,6 +8,8 @@ Date:   02\25\2025
 #define _DEFINES_H
 
 #define NUM_FRAMES_BEFORE_SLEEP 8 //frames
+#define TOPBAR_ICONS_SIZE  16 //px
+#define TOPBAR_ICONS_PADDING  8 //px
 
 #define RECENT_FILES_SAVE_FILEPATH "recent_files.txt"
 #define RECENT_FILES_MAX_LENGTH    16 //files
@@ -22,10 +24,9 @@ Date:   02\25\2025
 
 #define DEFAULT_WINDOW_SIZE NewV2i(360, 500)
 #define TOPBAR_HEIGHT   24 //px
-#define FILE_DROPDOWN_WIDTH 100 //px
 #define OPEN_RECENT_DROPDOWN_WIDTH 300 //px
 #define FILE_PATH_DISPLAY_MAX_LENGTH 30 //chars
-#define WINDOW_DROPDOWN_WIDTH 130 //px
+#define SCROLLBAR_WIDTH   10 //px
 
 #define OPTION_UI_GAP              2 //px
 #define LINE_BREAK_EXTRA_UI_GAP    4 //px
