@@ -258,17 +258,23 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 			.fontId = app->clayMainFontId,
 			.fontSize = MAIN_FONT_SIZE,
 			.textColor = ToClayColor(textColor),
+			.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+			.userData = { .contraction = app->clipNamesOnLeftSide ? TextContraction_ClipLeft : TextContraction_ClipRight },
 		})
 	);
-	CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } });
-	CLAY_TEXT(
-		ToClayString(valueStr),
-		CLAY_TEXT_CONFIG({
-			.fontId = app->clayMainFontId,
-			.fontSize = MAIN_FONT_SIZE,
-			.textColor = ToClayColor(valueColor),
-		})
-	);
+	CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
+	if (!IsEmptyStr(valueStr))
+	{
+		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(4) } } }) {} //ensure 4px padding between name and value
+		CLAY_TEXT(
+			ToClayString(valueStr),
+			CLAY_TEXT_CONFIG({
+				.fontId = app->clayMainFontId,
+				.fontSize = MAIN_FONT_SIZE,
+				.textColor = ToClayColor(valueColor),
+			})
+		);
+	}
 	ScratchEnd(scratch);
 	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }

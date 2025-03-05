@@ -17,6 +17,8 @@ enum AppIcon
 	AppIcon_CloseFile,
 	AppIcon_TopmostEnabled,
 	AppIcon_TopmostDisabled,
+	AppIcon_ClipLeft,
+	AppIcon_ClipRight,
 	AppIcon_Debug,
 	AppIcon_CloseWindow,
 	AppIcon_Count,
@@ -32,6 +34,8 @@ const char* GetAppIconStr(AppIcon enumValue)
 		case AppIcon_CloseFile:       return "CloseFile";
 		case AppIcon_TopmostEnabled:  return "TopmostEnabled";
 		case AppIcon_TopmostDisabled: return "TopmostDisabled";
+		case AppIcon_ClipLeft:        return "ClipLeft";
+		case AppIcon_ClipRight:       return "ClipRight";
 		case AppIcon_Debug:           return "Debug";
 		case AppIcon_CloseWindow:     return "CloseWindow";
 		default: return "Unknown";
@@ -47,6 +51,8 @@ const char* GetAppIconPath(AppIcon enumValue)
 		case AppIcon_CloseFile:       return "resources/image/close_file.png";
 		case AppIcon_TopmostEnabled:  return "resources/image/topmost_on.png";
 		case AppIcon_TopmostDisabled: return "resources/image/topmost_off.png";
+		case AppIcon_ClipLeft:        return "resources/image/clip_left.png";
+		case AppIcon_ClipRight:       return "resources/image/clip_right.png";
 		case AppIcon_Debug:           return "resources/image/debug.png";
 		case AppIcon_CloseWindow:     return "resources/image/close_window.png";
 		default: return nullptr;

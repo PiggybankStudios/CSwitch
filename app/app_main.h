@@ -97,6 +97,9 @@ struct AppData
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
+	
+	//User Options
+	bool clipNamesOnLeftSide;
 };
 
 #endif //  _APP_MAIN_H

@@ -354,11 +354,16 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						Clay__CloseElement();
 					} Clay__CloseElement();
 					
-					if (ClayTopBtn("Window", &app->isWindowMenuOpen, false))
+					if (ClayTopBtn("View", &app->isWindowMenuOpen, false))
 					{
 						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 						{
 							platform->SetWindowTopmost(!appIn->isWindowTopmost);
+						} Clay__CloseElement();
+						
+						if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+						{
+							app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
 						} Clay__CloseElement();
 						
 						#if DEBUG_BUILD
@@ -368,40 +373,31 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						} Clay__CloseElement();
 						#endif
 						
-						if (ClayBtn("Close Window", true, &app->icons[AppIcon_CloseWindow]))
-						{
-							shouldContinueRunning = false;
-							app->isFileMenuOpen = false;
-						} Clay__CloseElement();
+						// if (ClayBtn("Close Window", true, &app->icons[AppIcon_CloseWindow]))
+						// {
+						// 	shouldContinueRunning = false;
+						// 	app->isFileMenuOpen = false;
+						// } Clay__CloseElement();
 						
 						Clay__CloseElement();
 						Clay__CloseElement();
 					} Clay__CloseElement();
 					
-					// CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
 					
 					if (app->isFileOpen)
 					{
-						CLAY({ .id=CLAY_ID("FilePathArea"), .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } })
-						{
-							rec availableRec = GetClayElementDrawRec(CLAY_ID("FilePathArea"));
-							uxx numCharsEstimate = UINTXX_MAX;
-							if (availableRec.Width > 0)
-							{
-								v2 charSize = MeasureTextEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, StrLit("W")).visualRec.Size;
-								numCharsEstimate = (uxx)MaxI32(1, FloorR32i(availableRec.Width / charSize.Width));
-							}
-							Str8 filePathTrimmed = ShortenFilePath(scratch, app->filePath, numCharsEstimate, StrLit("..."));
-							CLAY_TEXT(
-								ToClayString(filePathTrimmed),
-								CLAY_TEXT_CONFIG({
-									.fontId = app->clayUiFontId,
-									.fontSize = UI_FONT_SIZE,
-									.textColor = ToClayColor(TEXT_LIGHT_GRAY),
-								})
-							);
-							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
-						}
+						CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
+						CLAY_TEXT(
+							ToClayString(app->filePath),
+							CLAY_TEXT_CONFIG({
+								.fontId = app->clayUiFontId,
+								.fontSize = UI_FONT_SIZE,
+								.textColor = ToClayColor(TEXT_LIGHT_GRAY),
+								.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+								.userData = { .contraction = TextContraction_ClipLeft },
+							})
+						);
+						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 					}
 				}
 				
