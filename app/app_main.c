@@ -131,7 +131,17 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
 	
-	FontCharRange fontCharRanges[] = { FontCharRange_ASCII, FontCharRange_LatinExt, };
+	Str8 ellipsisStr = StrLit(UNICODE_ELLIPSIS_STR);
+	PrintLine_D("ellipsisStr is %llu bytes", ellipsisStr.length);
+	for (uxx bIndex = 0; bIndex < ellipsisStr.length; bIndex++) { PrintLine_D("\t0X%02X", ellipsisStr.bytes[bIndex]); }
+	
+	FontCharRange fontCharRanges[] = {
+		FontCharRange_ASCII,
+		FontCharRange_LatinExt,
+		NewFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
+		NewFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
+	};
+	
 	{
 		app->uiFont = InitFont(stdHeap, StrLit("uiFont"));
 		Result attachResult = AttachOsTtfFileToFont(&app->uiFont, StrLit(UI_FONT_NAME), UI_FONT_SIZE, UI_FONT_STYLE);
@@ -312,7 +322,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						
 						if (app->recentFiles.length > 0)
 						{
-							if (ClayTopSubmenu("Open Recent >", app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH, &app->icons[AppIcon_OpenRecent]))
+							if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH, &app->icons[AppIcon_OpenRecent]))
 							{
 								for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 								{
@@ -341,7 +351,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						}
 						else
 						{
-							if (ClayBtn("Open Recent >", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
+							if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
 						}
 						
 						if (ClayBtn("Close File", app->isFileOpen, &app->icons[AppIcon_CloseFile]))
@@ -394,7 +404,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								.fontSize = UI_FONT_SIZE,
 								.textColor = ToClayColor(TEXT_LIGHT_GRAY),
 								.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
-								.userData = { .contraction = TextContraction_ClipLeft },
+								.userData = { .contraction = TextContraction_EllipseFilePath },
 							})
 						);
 						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
@@ -524,6 +534,16 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
 		RenderClayCommandArray(&app->clay, &gfx, &clayRenderCommands);
+		
+		#if 0
+		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+		BindFontEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+		rec textRec = NewRec(50, screenSize.Height/2, mousePos.X - 50, fontAtlas->lineHeight);
+		if (textRec.Width < 5) { textRec.Width = 5; }
+		DrawRectangleOutline(textRec, 2, MonokaiRed);
+		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
+		DrawText(shortenedPath, NewV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
+		#endif
 	}
 	EndFrame();
 	

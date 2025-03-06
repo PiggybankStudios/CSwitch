@@ -259,7 +259,7 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 			.fontSize = MAIN_FONT_SIZE,
 			.textColor = ToClayColor(textColor),
 			.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
-			.userData = { .contraction = app->clipNamesOnLeftSide ? TextContraction_ClipLeft : TextContraction_ClipRight },
+			.userData = { .contraction = app->clipNamesOnLeftSide ? TextContraction_EllipseLeft : TextContraction_EllipseRight },
 		})
 	);
 	CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
