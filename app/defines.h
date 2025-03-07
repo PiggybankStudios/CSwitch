@@ -48,4 +48,6 @@ Date:   02\25\2025
 #define SELECTED_BLUE        NewColor(0, 121, 166, 255)   //FF0079A6
 #define ERROR_RED            NewColor(255, 102, 102, 255) //FFFF6666
 
+#define WIN32_TOOLTIP_ID 100 //arbitrary ID
+
 #endif //  _DEFINES_H

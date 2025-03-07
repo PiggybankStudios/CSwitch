@@ -206,6 +206,7 @@
 			"UNICODE_RIGHT_ARROW_CODEPOINT",
 			"UNICODE_RIGHT_ARROW_STR",
 			"USE_BUNDLED_RESOURCES",
+			"WIN32_TOOLTIP_ID",
 		],
 		"custom_functions":
 		[

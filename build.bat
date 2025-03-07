@@ -134,6 +134,7 @@ if "%DEBUG_BUILD%"=="1" (
 :: Ole32.lib = Needed for CoInitializeEx, CoCreateInstance, etc.
 :: Shell32.lib = Needed for SHGetSpecialFolderPathA
 :: Shlwapi.lib = Needed for PathFileExistsA
+:: Comctl32.lib = Needed for native Windows tooltips TODO: Add this back when we get Windows tooltips works
 set common_ld_flags=-incremental:no /NOLOGO User32.lib Gdi32.lib Ole32.lib Shell32.lib Shlwapi.lib
 set pig_core_ld_flags=
 set platform_ld_flags=

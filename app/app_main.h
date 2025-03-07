@@ -98,6 +98,11 @@ struct AppData
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
 	
+	#if 0
+	TOOLINFO tooltipInfo;
+	HWND tooltipWindowHandle;
+	#endif
+	
 	//User Options
 	bool clipNamesOnLeftSide;
 };

@@ -25,6 +25,10 @@ Description:
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
 
+#if 0
+#include "Commctrl.h"
+#endif
+
 #if BUILD_WITH_RAYLIB
 #include "third_party/raylib/raylib.h"
 #endif

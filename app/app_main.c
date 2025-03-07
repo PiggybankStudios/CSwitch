@@ -25,6 +25,10 @@ Description:
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
 
+#if 0
+#include "Commctrl.h"
+#endif
+
 // +--------------------------------------------------------------+
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
@@ -202,6 +206,15 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		AppOpenFile(mostRecentFile->path);
 	}
 	
+	#if 0
+	INITCOMMONCONTROLSEX commonControls = ZEROED;
+	commonControls.dwSize = sizeof(commonControls);
+	commonControls.dwICC = ICC_WIN95_CLASSES;
+	BOOL initResult = InitCommonControlsEx(&commonControls);
+	Assert(initResult == TRUE);
+	app->tooltipWindowHandle = NULL;
+	#endif
+	
 	app->initialized = true;
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -223,7 +236,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	
 	UpdateFileWatches(&app->fileWatches);
 	
-	bool refreshScreen = false;
+	bool refreshScreen = true; //TODO: Change me back!
 	if (app->isFileOpen && AppCheckForFileChanges()) { refreshScreen = true; }
 	if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 	{
@@ -250,6 +263,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	v2i screenSizei = appIn->screenSize;
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	// v2 screenCenter = Div(screenSize, 2.0f);
+	v2i mousePosi = RoundV2i(appIn->mouse.position);
 	v2 mousePos = appIn->mouse.position;
 	
 	if (appIn->droppedFilePaths.length > 0)
@@ -260,11 +274,54 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		AppOpenFile(droppedFilePath);
 	}
 	
-	if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Right))
+	#if 0
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T))
 	{
-		Str8 appDataPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
-		PrintLine_D("appDataPath: \"%.*s\"", StrPrint(appDataPath));
+		HWND windowHandle = (HWND)platform->GetNativeWindowHandle();
+		if (app->tooltipWindowHandle == NULL)
+		{
+			WriteLine_O("Opening tooltip...");
+			POINT mouseScreenPos = { mousePosi.X, mousePosi.Y };
+		    ClientToScreen(windowHandle, &mouseScreenPos);
+		    PrintLine_D("Mouse Global Coordinates: (%d, %d)", mouseScreenPos.x, mouseScreenPos.y);
+		    
+			app->tooltipWindowHandle = CreateWindowEx(
+				WS_EX_TOPMOST, TOOLTIPS_CLASS,
+				NULL,
+				WS_POPUP | TTS_ALWAYSTIP | TTS_NOPREFIX,
+				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+				windowHandle,
+				NULL, NULL, NULL
+			);
+			Assert(app->tooltipWindowHandle != NULL);
+			ClearStruct(app->tooltipInfo);
+			app->tooltipInfo.cbSize = sizeof(TOOLINFO);
+			app->tooltipInfo.uFlags = TTF_TRACK | TTF_ABSOLUTE;
+			app->tooltipInfo.hwnd = windowHandle;
+			app->tooltipInfo.uId = 1;
+			app->tooltipInfo.lParam = 1;
+			app->tooltipInfo.hinst = NULL;
+			app->tooltipInfo.lpszText = (LPSTR)AllocAndCopyCharsNt(stdHeap, "Hello Windows!", true);
+			// app->tooltipInfo.rect = (RECT){ .left = mouseScreenPos.x, .top = mouseScreenPos.y, .right = mouseScreenPos.x+1, .bottom = mouseScreenPos.y+1 };
+			// app->tooltipInfo.rect = (RECT){ 0, 0, 0, 0 };
+		    
+			LRESULT addToolResult = SendMessageA(app->tooltipWindowHandle, TTM_ADDTOOL, 0, (LPARAM)&app->tooltipInfo);
+			if (addToolResult != TRUE) { DWORD errorCode = GetLastError(); PrintLine_D("SendMessage(TTM_ADDTOOL) failed: %s %d", Win32_GetErrorCodeStr(errorCode), errorCode); }
+			// SendMessage(app->tooltipWindowHandle, TTM_SETTITLE, 0, 0);
+			// SendMessage(app->tooltipWindowHandle, TTM_SETMAXTIPWIDTH, 0, 400);
+			SendMessage(app->tooltipWindowHandle, TTM_TRACKPOSITION, 0, (LPARAM)MAKELONG(mouseScreenPos.x, mouseScreenPos.y+20));
+			SendMessage(app->tooltipWindowHandle, TTM_TRACKACTIVATE, TRUE, (LPARAM)&app->tooltipInfo);
+			// SendMessage(app->tooltipWindowHandle, TTM_GETDELAYTIME, TTDT_AUTOPOP, 0);
+			// SendMessage(app->tooltipWindowHandle, TTM_POP, 0, 0);
+		}
+		else
+		{
+			WriteLine_O("Closing tooltip");
+			DestroyWindow(app->tooltipWindowHandle);
+			app->tooltipWindowHandle = NULL;
+		}
 	}
+	#endif
 	
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
 	{
