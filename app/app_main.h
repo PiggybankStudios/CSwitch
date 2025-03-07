@@ -35,6 +35,7 @@ struct FileOption
 	Str8 valueStr;
 	uxx fileContentsStartIndex;
 	uxx fileContentsEndIndex;
+	// TODO: Add tooltips to all the options!
 	union
 	{
 		bool valueBool;
@@ -67,6 +68,31 @@ struct FileWatch
 	OsFileWriteTime writeTime;
 };
 
+typedef struct TooltipRegion TooltipRegion;
+struct TooltipRegion
+{
+	u64 id;
+	u64 delay;
+	Str8 displayStr;
+	Arena* arena;
+	rec mainRec;
+};
+
+typedef struct TooltipState TooltipState;
+struct TooltipState
+{
+	Arena* arena;
+	u64 lastMouseMoveTime;
+	v2 lastMouseMovePos;
+	u64 lastMouseMoveRegionId;
+	bool isOpen;
+	u64 regionId;
+	rec mainRec;
+	v2 focusPos;
+	Str8 displayStr;
+	TextMeasure displayStrMeasure;
+};
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -94,6 +120,7 @@ struct AppData
 	Str8 fileContents;
 	uxx fileWatchId;
 	VarArray fileOptions; //FileOption
+	u64 filePathTooltipId;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
@@ -102,6 +129,10 @@ struct AppData
 	TOOLINFO tooltipInfo;
 	HWND tooltipWindowHandle;
 	#endif
+	
+	u64 nextTooltipId;
+	VarArray tooltipRegions;
+	TooltipState tooltip;
 	
 	//User Options
 	bool clipNamesOnLeftSide;

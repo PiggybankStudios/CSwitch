@@ -271,6 +271,18 @@ void AppCloseFile()
 		}
 		VarArrayClear(&app->fileOptions);
 		platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
+		VarArrayLoop(&app->tooltipRegions, rIndex)
+		{
+			VarArrayLoopGet(TooltipRegion, region, &app->tooltipRegions, rIndex);
+			if (region->id == app->filePathTooltipId)
+			{
+				FreeStr8(region->arena, &region->displayStr);
+				ClearPointer(region);
+				VarArrayRemoveAt(TooltipRegion, &app->tooltipRegions, rIndex);
+				break;
+			}
+		}
+		app->filePathTooltipId = 0;
 		app->isFileOpen = false;
 	}
 }
@@ -389,6 +401,17 @@ void AppOpenFile(FilePath filePath)
 	app->isFileOpen = true;
 	
 	app->fileWatchId = AddFileWatch(&app->fileWatches, app->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
+	
+	TooltipRegion* newTooltip = VarArrayAdd(TooltipRegion, &app->tooltipRegions);
+	NotNull(newTooltip);
+	ClearPointer(newTooltip);
+	newTooltip->id = app->nextTooltipId;
+	app->nextTooltipId++;
+	newTooltip->arena = stdHeap;
+	newTooltip->displayStr = AllocStr8(newTooltip->arena, app->filePath);
+	newTooltip->mainRec = Rec_Zero;
+	newTooltip->delay = DEFAULT_TOOLTIP_DELAY;
+	app->filePathTooltipId = newTooltip->id;
 	
 	AppRememberRecentFile(filePath);
 }

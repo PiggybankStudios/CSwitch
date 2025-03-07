@@ -56,6 +56,7 @@ static Arena* stdHeap = nullptr;
 #include "app_resources.c"
 #include "app_file_watch.c"
 #include "app_helpers.c"
+#include "app_tooltips.c"
 #include "app_clay.c"
 
 // +==============================+
@@ -171,6 +172,10 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
 	
+	InitTooltipState(stdHeap, &app->tooltip);
+	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
+	app->nextTooltipId = 1;
+	
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileOption, &app->fileOptions, stdHeap);
 	
@@ -273,6 +278,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(droppedFilePath));
 		AppOpenFile(droppedFilePath);
 	}
+	
+	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	
 	#if 0
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T))
@@ -454,16 +461,19 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					if (app->isFileOpen)
 					{
 						CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
-						CLAY_TEXT(
-							ToClayString(app->filePath),
-							CLAY_TEXT_CONFIG({
-								.fontId = app->clayUiFontId,
-								.fontSize = UI_FONT_SIZE,
-								.textColor = ToClayColor(TEXT_LIGHT_GRAY),
-								.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
-								.userData = { .contraction = TextContraction_EllipseFilePath },
-							})
-						);
+						CLAY({ .id = CLAY_ID("FilePathDisplay") })
+						{
+							CLAY_TEXT(
+								ToClayString(app->filePath),
+								CLAY_TEXT_CONFIG({
+									.fontId = app->clayUiFontId,
+									.fontSize = UI_FONT_SIZE,
+									.textColor = ToClayColor(TEXT_LIGHT_GRAY),
+									.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+									.userData = { .contraction = TextContraction_EllipseFilePath },
+								})
+							);
+						}
 						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 					}
 				}
@@ -591,6 +601,18 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
 		RenderClayCommandArray(&app->clay, &gfx, &clayRenderCommands);
+		
+		if (app->filePathTooltipId != 0)
+		{
+			TooltipRegion* region = FindTooltipRegionById(&app->tooltipRegions, app->filePathTooltipId);
+			if (region != nullptr)
+			{
+				rec filePathDisplayRec = GetClayElementDrawRec(CLAY_ID("FilePathDisplay"));
+				region->mainRec = filePathDisplayRec;
+			}
+		}
+		
+		RenderTooltip(&app->tooltip);
 		
 		#if 0
 		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);

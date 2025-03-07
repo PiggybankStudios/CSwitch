@@ -15,9 +15,8 @@
 	[ ] If something writes to the file externally multiple times in a row, or maybe slowly, can we ever end up in a spot where we fail to read the file because it is locked? Should we have a sort of delay after we see the write time change? Or maybe a retry pattern if we fail to read it once or twice? Do we ever tell the user we can't open the file anymore? Should we close the file if we see the file got deleted? (again worry about if the file is getting deleted for a short time and then recreated, maybe we wait a bit before really considering the file deleted)
 	[ ] Support for searching a folder (maybe recursively?) for all files that have defines and displaying them all in one list, with little separators to indicate which file the option resides in
 	[?] Add a "project" system that saves a set of configuration values somewhere the user decides. Then we can have stuff like telling it to ignore (aka hide) particular defines, or ignoring files or sub-folders when doing multi-file display.
-	[ ] Automatically shorten strings that don't fit into the space given to them by Clay. This would allow the display of the file in the topbar to actually show more and more text as you make the window larger. It could also help when the window is skinny enough that the value portion of each button overlaps with the name. We probably need some metadata about each string to determine what it should do when it can't fit
 	[ ] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
-	[ ] Add tooltips that show full path when hovering over the display path in topbar, and recent file buttons
+	[ ] Add tooltips that show full path when hovering over the recent file buttons
 	[ ] Add support for tooltips that can extend outside the main window (i.e. they have their own host window)
 	[ ] Add hotkeys like Ctrl+W to close file, Ctrl+O to open file (maybe something to open most recent file?), Ctrl+E to reopen the file that was just closed?, something to toggle topmost, etc.
 	[ ] Add support for custom theme(s)
@@ -34,6 +33,8 @@
 	[ ] 
 
 # Finished List:
+	[X] Add tooltips that show full path when hovering over the display path in topbar, and recent file buttons
+	[X] Automatically shorten strings that don't fit into the space given to them by Clay. This would allow the display of the file in the topbar to actually show more and more text as you make the window larger. It could also help when the window is skinny enough that the value portion of each button overlaps with the name. We probably need some metadata about each string to determine what it should do when it can't fit
 	[X] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
 	[X] Add a scrollbar
 	[X] Add support for commented out defines
