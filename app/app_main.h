@@ -35,7 +35,7 @@ struct FileOption
 	Str8 valueStr;
 	uxx fileContentsStartIndex;
 	uxx fileContentsEndIndex;
-	// TODO: Add tooltips to all the options!
+	u64 tooltipId;
 	union
 	{
 		bool valueBool;
@@ -73,6 +73,8 @@ struct TooltipRegion
 {
 	u64 id;
 	u64 delay;
+	bool enabled;
+	u64 layer; //higher numbers have higher priority when disambiguating overlapping regions
 	Str8 displayStr;
 	Arena* arena;
 	rec mainRec;

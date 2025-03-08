@@ -255,6 +255,15 @@ Str8 GetUniqueDisplayPath(FilePath filePath)
 	
 }
 
+void FreeFileOption(FileOption* option)
+{
+	NotNull(option);
+	FreeStr8(stdHeap, &option->name);
+	FreeStr8(stdHeap, &option->valueStr);
+	RemoveTooltipRegionById(&app->tooltipRegions, option->tooltipId);
+	ClearPointer(option);
+}
+
 void AppCloseFile()
 {
 	if (app->isFileOpen)
@@ -266,22 +275,11 @@ void AppCloseFile()
 		VarArrayLoop(&app->fileOptions, oIndex)
 		{
 			VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
-			FreeStr8(stdHeap, &option->name);
-			FreeStr8(stdHeap, &option->valueStr);
+			FreeFileOption(option);
 		}
 		VarArrayClear(&app->fileOptions);
 		platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
-		VarArrayLoop(&app->tooltipRegions, rIndex)
-		{
-			VarArrayLoopGet(TooltipRegion, region, &app->tooltipRegions, rIndex);
-			if (region->id == app->filePathTooltipId)
-			{
-				FreeStr8(region->arena, &region->displayStr);
-				ClearPointer(region);
-				VarArrayRemoveAt(TooltipRegion, &app->tooltipRegions, rIndex);
-				break;
-			}
-		}
+		RemoveTooltipRegionById(&app->tooltipRegions, app->filePathTooltipId);
 		app->filePathTooltipId = 0;
 		app->isFileOpen = false;
 	}
@@ -292,6 +290,7 @@ void AppOpenFile(FilePath filePath)
 	Str8 fileContents = Str8_Empty;
 	bool openResult = OsReadTextFile(filePath, stdHeap, &fileContents);
 	if (!openResult) { PrintLine_E("Failed to open file at \"%.*s\"", StrPrint(filePath)); return; }
+	ScratchBegin(scratch);
 	
 	if (app->isFileOpen) { AppCloseFile(); }
 	app->fileContents = fileContents;
@@ -303,6 +302,7 @@ void AppOpenFile(FilePath filePath)
 	FileOption* prevOption = nullptr;
 	while (LineParserGetLine(&lineParser, &fullLine))
 	{
+		uxx scratchMark = ArenaGetMark(scratch);
 		Str8 line = TrimWhitespace(fullLine);
 		Str8 lineComment = Str8_Empty;
 		uxx commentSlashesIndex = StrExactFind(line, commentStartStr);
@@ -334,6 +334,8 @@ void AppOpenFile(FilePath filePath)
 					newOption->fileContentsStartIndex = commentStartIndex;
 					newOption->fileContentsEndIndex = defineStartIndex;
 					newOption->valueStr = AllocStr8(stdHeap, commentStartStr);
+					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
+					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
 					prevOption = newOption;
 					isOption = true;
 				}
@@ -361,6 +363,8 @@ void AppOpenFile(FilePath filePath)
 					newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
 					newOption->fileContentsEndIndex = lineEndIndex;
 					newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
+					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
+					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
 					prevOption = newOption;
 					isOption = true;
 					break;
@@ -385,6 +389,8 @@ void AppOpenFile(FilePath filePath)
 					newOption->fileContentsStartIndex = lineStartIndex;
 					newOption->fileContentsEndIndex = lineStartIndex;
 					newOption->valueStr = Str8_Empty;
+					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
+					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
 					prevOption = newOption;
 					isOption = true;
 				}
@@ -395,25 +401,17 @@ void AppOpenFile(FilePath filePath)
 		{
 			IncrementU64(prevOption->numEmptyLinesAfter);
 		}
+		ArenaResetToMark(scratch, scratchMark);
 	}
 	
 	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->filePath), PROJECT_READABLE_NAME_STR));
 	app->isFileOpen = true;
 	
 	app->fileWatchId = AddFileWatch(&app->fileWatches, app->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
-	
-	TooltipRegion* newTooltip = VarArrayAdd(TooltipRegion, &app->tooltipRegions);
-	NotNull(newTooltip);
-	ClearPointer(newTooltip);
-	newTooltip->id = app->nextTooltipId;
-	app->nextTooltipId++;
-	newTooltip->arena = stdHeap;
-	newTooltip->displayStr = AllocStr8(newTooltip->arena, app->filePath);
-	newTooltip->mainRec = Rec_Zero;
-	newTooltip->delay = DEFAULT_TOOLTIP_DELAY;
-	app->filePathTooltipId = newTooltip->id;
+	app->filePathTooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, app->filePath, DEFAULT_TOOLTIP_DELAY, 1)->id;
 	
 	AppRememberRecentFile(filePath);
+	ScratchEnd(scratch);
 }
 
 bool AppCheckForFileChanges()

@@ -51,6 +51,7 @@ Date:   02\25\2025
 #define WIN32_TOOLTIP_ID 100 //arbitrary ID
 
 #define DEFAULT_TOOLTIP_DELAY 750 //ms
+#define OPTION_NAME_TOOLTIP_DELAY 1500 //ms
 #define TOOLTIP_MAX_MOVE_DIST 5 //px
 #define TOOLTIP_TEXT_MARGIN   NewV2(8, 4) //px
 #define TOOLTIP_MOUSE_UP_OFFSET    5 //px

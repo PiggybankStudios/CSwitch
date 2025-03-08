@@ -55,8 +55,8 @@ static Arena* stdHeap = nullptr;
 #include "main2d_shader.glsl.h"
 #include "app_resources.c"
 #include "app_file_watch.c"
-#include "app_helpers.c"
 #include "app_tooltips.c"
+#include "app_helpers.c"
 #include "app_clay.c"
 
 // +==============================+
@@ -602,13 +602,39 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
 		RenderClayCommandArray(&app->clay, &gfx, &clayRenderCommands);
 		
+		// +==============================+
+		// |    Update TooltipRegions     |
+		// +==============================+
 		if (app->filePathTooltipId != 0)
 		{
 			TooltipRegion* region = FindTooltipRegionById(&app->tooltipRegions, app->filePathTooltipId);
 			if (region != nullptr)
 			{
 				rec filePathDisplayRec = GetClayElementDrawRec(CLAY_ID("FilePathDisplay"));
-				region->mainRec = filePathDisplayRec;
+				region->mainRec = InflateRecY(filePathDisplayRec, 8);
+			}
+		}
+		VarArrayLoop(&app->fileOptions, oIndex)
+		{
+			VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
+			if (option->tooltipId != 0)
+			{
+				TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, option->tooltipId);
+				NotNull(tooltip);
+				tooltip->enabled = false;
+				Str8 buttonUiId = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
+				rec buttonDrawRec = GetClayElementDrawRec(ToClayId(buttonUiId));
+				rec scrollDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+				if (scrollDrawRec.Width > 0 && scrollDrawRec.Height > 0 &&
+					buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+				{
+					buttonDrawRec = OverlapPartRec(buttonDrawRec, scrollDrawRec);
+					if (buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+					{
+						tooltip->enabled = true;
+						tooltip->mainRec = buttonDrawRec;
+					}
+				}
 			}
 		}
 		

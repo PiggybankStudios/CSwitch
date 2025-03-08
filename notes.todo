@@ -1,5 +1,6 @@
 
 # TODO List:
+	( ) When scrolled down the list, clicking "File" or "View" toggles the button that is below!
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
 	[ ] File->Reset option that resets the file back to what it was when it was opened
@@ -33,7 +34,7 @@
 	[ ] 
 
 # Finished List:
-	[X] Add tooltips that show full path when hovering over the display path in topbar, and recent file buttons
+	[X] Add tooltips that show full path when hovering over the display path in topbar
 	[X] Automatically shorten strings that don't fit into the space given to them by Clay. This would allow the display of the file in the topbar to actually show more and more text as you make the window larger. It could also help when the window is skinny enough that the value portion of each button overlaps with the name. We probably need some metadata about each string to determine what it should do when it can't fit
 	[X] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
 	[X] Add a scrollbar

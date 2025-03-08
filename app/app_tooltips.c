@@ -9,6 +9,16 @@ Description:
 	** moves or other app changes)
 */
 
+void FreeTooltipRegion(TooltipRegion* region)
+{
+	NotNull(region);
+	if (region->arena != nullptr)
+	{
+		FreeStr8(region->arena, &region->displayStr);
+	}
+	ClearPointer(region);
+}
+
 void InitTooltipState(Arena* arena, TooltipState* tooltip)
 {
 	NotNull(arena);
@@ -35,6 +45,38 @@ TooltipRegion* FindTooltipRegionById(VarArray* tooltipRegions, u64 id)
 		if (region->id == id) { return region; }
 	}
 	return nullptr;
+}
+
+TooltipRegion* AddTooltipRegion(VarArray* tooltipRegions, rec mainRec, Str8 displayStr, u64 delay, u64 layer)
+{
+	NotNull(tooltipRegions);
+	NotNullStr(displayStr);
+	TooltipRegion* newRegion = VarArrayAdd(TooltipRegion, tooltipRegions);
+	NotNull(newRegion);
+	ClearPointer(newRegion);
+	newRegion->id = app->nextTooltipId;
+	app->nextTooltipId++;
+	newRegion->arena = stdHeap;
+	newRegion->displayStr = AllocStr8(newRegion->arena, displayStr);
+	newRegion->delay = delay;
+	newRegion->mainRec = mainRec;
+	newRegion->enabled = true;
+	return newRegion;
+}
+
+void RemoveTooltipRegionById(VarArray* tooltipRegions, u64 id)
+{
+	NotNull(tooltipRegions);
+	VarArrayLoop(tooltipRegions, rIndex)
+	{
+		VarArrayLoopGet(TooltipRegion, region, tooltipRegions, rIndex);
+		if (region->id == id)
+		{
+			FreeTooltipRegion(region);
+			VarArrayRemoveAt(TooltipRegion, tooltipRegions, rIndex);
+			break;
+		}
+	}
 }
 
 void UpdateTooltipPlacement(TooltipState* tooltip, v2 screenSize)
@@ -97,10 +139,19 @@ void UpdateTooltipState(VarArray* tooltipRegions, TooltipState* tooltip)
 	else
 	{
 		TooltipRegion* hoveredRegion = nullptr;
-		VarArrayLoop(tooltipRegions, rIndex)
+		if (appIn->mouse.isOverWindow)
 		{
-			VarArrayLoopGet(TooltipRegion, region, tooltipRegions, rIndex);
-			if (IsInsideRec(region->mainRec, mousePos)) { hoveredRegion = region; break; }
+			VarArrayLoop(tooltipRegions, rIndex)
+			{
+				VarArrayLoopGet(TooltipRegion, region, tooltipRegions, rIndex);
+				if (region->enabled && IsInsideRec(region->mainRec, mousePos))
+				{
+					if (hoveredRegion == nullptr || hoveredRegion->layer < region->layer)
+					{
+						hoveredRegion = region;
+					}
+				}
+			}
 		}
 		
 		bool resetMoveTracking = false;

@@ -227,7 +227,7 @@ bool ClayBtn(const char* btnText, bool isEnabled, Texture* icon)
 bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 {
 	ScratchBegin(scratch);
-	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(nameStr));
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(nameStr));
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
