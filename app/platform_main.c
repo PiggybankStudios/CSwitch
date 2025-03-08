@@ -388,13 +388,26 @@ sapp_desc sokol_main(int argc, char* argv[])
 	ParseProgramArgs(&localStdHeap, (uxx)argc, &argv[0], &programArgs);
 	#endif
 	
+	v2 windowSize = DEFAULT_WINDOW_SIZE;
+	Str8 sizeStr = FindNamedProgramArgStr(&programArgs, StrLit("size"), StrLit("s"), Str8_Empty);
+	if (!IsEmptyStr(sizeStr))
+	{
+		v2 newSize = V2_Zero_Const;
+		if (TryParseV2(sizeStr, &newSize, nullptr))
+		{
+			windowSize = newSize;
+		}
+	}
+	if (windowSize.Width < MIN_WINDOW_SIZE.Width) { windowSize.Width = MIN_WINDOW_SIZE.Width; }
+	if (windowSize.Height < MIN_WINDOW_SIZE.Height) { windowSize.Height = MIN_WINDOW_SIZE.Height; }
+	
 	return (sapp_desc){
 		.init_cb = PlatSappInit,
 		.frame_cb = PlatDoUpdate,
 		.cleanup_cb = PlatSappCleanup,
 		.event_cb = PlatSappEvent,
-		.width = DEFAULT_WINDOW_SIZE.Width,
-		.height = DEFAULT_WINDOW_SIZE.Height,
+		.width = RoundR32i(windowSize.Width),
+		.height = RoundR32i(windowSize.Height),
 		.window_title = "Loading...",
 		.icon.sokol_default = false,
 		.logger.func = SokolLogCallback,

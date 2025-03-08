@@ -60,6 +60,7 @@ TooltipRegion* AddTooltipRegion(VarArray* tooltipRegions, rec mainRec, Str8 disp
 	newRegion->displayStr = AllocStr8(newRegion->arena, displayStr);
 	newRegion->delay = delay;
 	newRegion->mainRec = mainRec;
+	newRegion->layer = layer;
 	newRegion->enabled = true;
 	return newRegion;
 }

@@ -268,7 +268,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	v2i screenSizei = appIn->screenSize;
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	// v2 screenCenter = Div(screenSize, 2.0f);
-	v2i mousePosi = RoundV2i(appIn->mouse.position);
+	// v2i mousePosi = RoundV2i(appIn->mouse.position);
 	v2 mousePos = appIn->mouse.position;
 	
 	if (appIn->droppedFilePaths.length > 0)
@@ -470,6 +470,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									.fontSize = UI_FONT_SIZE,
 									.textColor = ToClayColor(TEXT_LIGHT_GRAY),
 									.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+									.wrapMode = CLAY_TEXT_WRAP_NONE,
 									.userData = { .contraction = TextContraction_EllipseFilePath },
 								})
 							);
