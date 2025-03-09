@@ -237,8 +237,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	
 	UpdateFileWatches(&app->fileWatches);
 	
-	bool refreshScreen = true; //TODO: Change me back!
+	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
+	
+	bool refreshScreen = false;
 	if (app->isFileOpen && AppCheckForFileChanges()) { refreshScreen = true; }
+	if (app->tooltip.isOpen) { refreshScreen = true; }
 	if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 	{
 		ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
@@ -249,6 +252,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
 	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Middle) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Middle)) { refreshScreen = true; }
+	for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyboardKeyDown(&appIn->keyboard, (Key)keyIndex) || IsKeyboardKeyReleased(&appIn->keyboard, (Key)keyIndex)) { refreshScreen = true; break; } }
 	if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
 	if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
 	if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
@@ -274,8 +278,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(droppedFilePath));
 		AppOpenFile(droppedFilePath);
 	}
-	
-	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	
 	#if 0
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T))
@@ -326,6 +328,64 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
+	// +========================================+
+	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
+	// +========================================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+		{
+			shouldContinueRunning = false;
+		}
+		else
+		{
+			//TODO: Close the current tab once we have support for tabs
+			AppCloseFile();
+		}
+	}
+	
+	// +==============================+
+	// |     Handle Ctrl+O Hotkey     |
+	// +==============================+
+	bool shouldOpenFile = false;
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		shouldOpenFile = true;
+	}
+	
+	// +==============================+
+	// |     Handle Ctrl+E Hotkey     |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		if (app->recentFiles.length > 0)
+		{
+			RecentFile* mostRecentFile = VarArrayGetLast(RecentFile, &app->recentFiles);
+			AppOpenFile(mostRecentFile->path);
+		}
+	}
+	
+	// +==============================+
+	// |     Handle Ctrl+T Hotkey     |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		platform->SetWindowTopmost(!appIn->isWindowTopmost);
+	}
+	
+	// +==============================+
+	// |     Handle Tilde Hotkey      |
+	// +==============================+
+	#if DEBUG_BUILD
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde))
+	{
+		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+	}
+	#endif
+	
+	// +==============================+
+	// |          Rendering           |
+	// +==============================+
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
 	{
 		BindShader(&app->mainShader);
@@ -340,10 +400,16 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		
 		BeginClayUIRender(&app->clay.clay, screenSize, 16.6f, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left), appIn->mouse.scrollDelta);
 		{
+			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
 			CLAY({ .id = CLAY_ID("FullscreenContainer"),
 				.layout = {
 					.layoutDirection = CLAY_TOP_TO_BOTTOM,
 					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+					.padding = CLAY_PADDING_ALL(fullscreenBorderThickness)
+				},
+				.border = {
+					.color=ToClayColor(SELECTED_BLUE),
+					.width=CLAY_BORDER_OUTSIDE(fullscreenBorderThickness),
 				},
 			})
 			{
@@ -368,16 +434,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					{
 						if (ClayBtn("Open...", true, &app->icons[AppIcon_OpenFile]))
 						{
-							Str8 selectedPath = Str8_Empty;
-							Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
-							if (openResult == Result_Success)
-							{
-								PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
-								AppOpenFile(selectedPath);
-								app->isFileMenuOpen = false;
-							}
-							else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
-							else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
+							shouldOpenFile = true;
+							app->isFileMenuOpen = false;
 						} Clay__CloseElement();
 						
 						if (app->recentFiles.length > 0)
@@ -454,9 +512,10 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					} Clay__CloseElement();
 					
 					
+					CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
+					
 					if (app->isFileOpen)
 					{
-						CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
 						CLAY({ .id = CLAY_ID("FilePathDisplay") })
 						{
 							CLAY_TEXT(
@@ -473,6 +532,26 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						}
 						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 					}
+					
+					#if DEBUG_BUILD
+					//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
+					CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
+						.layout = {
+							.sizing={ .width=CLAY_SIZING_FIXED(4), .height=CLAY_SIZING_GROW(0) },
+							.layoutDirection = CLAY_TOP_TO_BOTTOM,
+						},
+						.backgroundColor = ToClayColor(Black),
+					})
+					{
+						for (uxx pIndex = 0; pIndex < 10; pIndex++)
+						{
+							CLAY({
+								.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), .height = CLAY_SIZING_PERCENT(0.1f) } },
+								.backgroundColor = ToClayColor(((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black),
+							}) {}
+						}
+					}
+					#endif
 				}
 				
 				CLAY({
@@ -648,6 +727,22 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		#endif
 	}
 	EndFrame();
+	
+	// +==============================+
+	// |   Handle Open File Dialog    |
+	// +==============================+
+	if (shouldOpenFile)
+	{
+		Str8 selectedPath = Str8_Empty;
+		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
+		if (openResult == Result_Success)
+		{
+			PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
+			AppOpenFile(selectedPath);
+		}
+		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
+		else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
+	}
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
