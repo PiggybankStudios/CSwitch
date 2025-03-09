@@ -187,6 +187,7 @@
 			"PIG_CORE_BUILDING_AS_DLL",
 			"PIG_CORE_IMPLEMENTATION",
 			"PIG_CORE_INLINE",
+			"PREFER_OPENGL_OVER_D3D11",
 			"Result_Canceled",
 			"Result_WrongFolder",
 			"SELECTED_BLUE",

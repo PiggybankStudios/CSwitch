@@ -188,20 +188,9 @@ void PlatDoUpdate(void)
 // +--------------------------------------------------------------+
 void PlatSappInit(void)
 {
-	Arena stdHeapLocal = ZEROED;
-	InitArenaStdHeap(&stdHeapLocal);
-	// FlagSet(stdHeapLocal.flags, ArenaFlag_AddPaddingForDebug);
-	platformData = AllocType(PlatformData, &stdHeapLocal);
-	NotNull(platformData);
-	ClearPointer(platformData);
-	MyMemCopy(&platformData->stdHeap, &stdHeapLocal, sizeof(Arena));
-	stdHeap = &platformData->stdHeap;
-	InitArenaStdHeap(&platformData->stdHeapAllowFreeWithoutSize);
-	FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AllowFreeWithoutSize);
-	// FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AddPaddingForDebug);
-	InitScratchArenasVirtual(Gigabytes(4));
-	
-	ScratchBegin(loadScratch);
+	ScratchBegin(scratch);
+	ScratchBegin1(scratch2, scratch);
+	ScratchBegin2(scratch3, scratch, scratch2);
 	
 	InitAppInput(&platformData->appInputs[0]);
 	InitAppInput(&platformData->appInputs[1]);
@@ -287,7 +276,9 @@ void PlatSappInit(void)
 	platformData->appMemoryPntr = platformData->appApi.AppInit(platformInfo, platform);
 	NotNull(platformData->appMemoryPntr);
 	
-	ScratchEnd(loadScratch);
+	ScratchEnd(scratch3);
+	ScratchEnd(scratch2);
+	ScratchEnd(scratch);
 }
 
 #if BUILD_WITH_SOKOL_APP
@@ -322,7 +313,7 @@ void PlatSappEvent(const sapp_event* event)
 			case SAPP_EVENTTYPE_TOUCHES_MOVED:     WriteLine_D("Event: TOUCHES_MOVED");     break;
 			case SAPP_EVENTTYPE_TOUCHES_ENDED:     WriteLine_D("Event: TOUCHES_ENDED");     break;
 			case SAPP_EVENTTYPE_TOUCHES_CANCELLED: WriteLine_D("Event: TOUCHES_CANCELLED"); break;
-			case SAPP_EVENTTYPE_RESIZED:           /*PrintLine_D("Event: RESIZED %dx%d / %dx%d", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height);*/ break;
+			case SAPP_EVENTTYPE_RESIZED:           /* PrintLine_D("Event: RESIZED %dx%d / %dx%d on thread %u", event->window_width, event->window_height, event->framebuffer_width, event->framebuffer_height, GetCurrentThreadId()); */ break;
 			case SAPP_EVENTTYPE_ICONIFIED:
 			{
 				if (platformData->currentAppInput != nullptr && platformData->currentAppInput->isMinimized == false)
@@ -371,6 +362,17 @@ void PlatSappEvent(const sapp_event* event)
 					newDroppedFilePaths[fIndex] = AllocStr8(stdHeap, StrLit(filePathPntr));
 				}
 			}break;
+			
+			//NOTE: We currently only get this event when using OpenGL as the rendering backend since D3D11 has weird problems when we try to resize/render inside the WM_PAINT event
+			#if TARGET_IS_WINDOWS
+			//NOTE: I added this event type in order to update/render while the app is resized on Windows
+			case SAPP_EVENTTYPE_RESIZE_RENDER:
+			{
+				PlatDoUpdate();
+				sapp_consume_event(); //This tells Sokol backend that we actually rendered and want a frame flip
+			} break;
+			#endif //TARGET_IS_WINDOWS
+			
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
@@ -378,14 +380,24 @@ void PlatSappEvent(const sapp_event* event)
 
 sapp_desc sokol_main(int argc, char* argv[])
 {
-	Arena localStdHeap = ZEROED;
-	InitArenaStdHeap(&localStdHeap);
+	Arena stdHeapLocal = ZEROED;
+	InitArenaStdHeap(&stdHeapLocal);
+	// FlagSet(stdHeapLocal.flags, ArenaFlag_AddPaddingForDebug);
+	platformData = AllocType(PlatformData, &stdHeapLocal);
+	NotNull(platformData);
+	ClearPointer(platformData);
+	MyMemCopy(&platformData->stdHeap, &stdHeapLocal, sizeof(Arena));
+	stdHeap = &platformData->stdHeap;
+	InitArenaStdHeap(&platformData->stdHeapAllowFreeWithoutSize);
+	FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AllowFreeWithoutSize);
+	// FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AddPaddingForDebug);
+	
 	#if TARGET_IS_WINDOWS
 	Assert(argc >= 1); //First argument on windows is always the path to our .exe
-	ParseProgramArgs(&localStdHeap, (uxx)argc-1, &argv[1], &programArgs);
+	ParseProgramArgs(stdHeap, (uxx)argc-1, &argv[1], &programArgs);
 	#else
 	//TODO: Is the above true for other platforms??
-	ParseProgramArgs(&localStdHeap, (uxx)argc, &argv[0], &programArgs);
+	ParseProgramArgs(stdHeap, (uxx)argc, &argv[0], &programArgs);
 	#endif
 	
 	v2 windowSize = DEFAULT_WINDOW_SIZE;
@@ -400,6 +412,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 	}
 	if (windowSize.Width < MIN_WINDOW_SIZE.Width) { windowSize.Width = MIN_WINDOW_SIZE.Width; }
 	if (windowSize.Height < MIN_WINDOW_SIZE.Height) { windowSize.Height = MIN_WINDOW_SIZE.Height; }
+	
+	InitScratchArenasVirtual(Gigabytes(4));
 	
 	return (sapp_desc){
 		.init_cb = PlatSappInit,

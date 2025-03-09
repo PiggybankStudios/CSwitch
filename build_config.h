@@ -19,9 +19,9 @@ Description:
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD  1
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  1
+#define BUILD_INTO_SINGLE_UNIT  0
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
-#define USE_BUNDLED_RESOURCES   1
+#define USE_BUNDLED_RESOURCES   0
 
 
 // Build .exe binaries for Windows platform
@@ -60,7 +60,7 @@ Description:
 #define DUMP_PREPROCESSOR 0
 // After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
 // file (a text format of WebAssembly that is readable, mostly for debugging purposes)
-#define CONVERT_WASM_TO_WAT 1
+#define CONVERT_WASM_TO_WAT 0
 // Use emcc when compiling the WEB files
 #define USE_EMSCRIPTEN 0
 // Enables auto-profiling on function entry/exit (for clang only). Dumps to a file that can be viewed by spall
@@ -72,6 +72,8 @@ Description:
 #define BUILD_WITH_SOKOL_APP  1
 // Enables using Clay header files
 #define BUILD_WITH_CLAY       1
+// Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
+#define PREFER_OPENGL_OVER_D3D11 1
 
 #define PROJECT_READABLE_NAME C-Switch
 #define PROJECT_FOLDER_NAME   C_Switch

@@ -136,10 +136,6 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
 	
-	Str8 ellipsisStr = StrLit(UNICODE_ELLIPSIS_STR);
-	PrintLine_D("ellipsisStr is %llu bytes", ellipsisStr.length);
-	for (uxx bIndex = 0; bIndex < ellipsisStr.length; bIndex++) { PrintLine_D("\t0X%02X", ellipsisStr.bytes[bIndex]); }
-	
 	FontCharRange fontCharRanges[] = {
 		FontCharRange_ASCII,
 		FontCharRange_LatinExt,

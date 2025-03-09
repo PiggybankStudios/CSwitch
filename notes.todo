@@ -1,6 +1,7 @@
 
 # TODO List:
 	( ) When scrolled down the list, clicking "File" or "View" toggles the button that is below!
+	( ) Figure out how to render while resizing when using D3D11!
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
 	[ ] File->Reset option that resets the file back to what it was when it was opened
@@ -23,7 +24,6 @@
 	[ ] Add support for custom theme(s)
 	[ ] Add a "Settings" window that can be opened from the "File" menu
 	[ ] Find running instances of CSwitch on startup and use IPC to reroute command line arguments to that instance rather than opening a second instance
-	[ ] Make a Sublime Text hotkey to open CSwitch to the current file
 	[ ] Add a search bar that can be used to filter the buttons
 	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
@@ -34,6 +34,7 @@
 	[ ] 
 
 # Finished List:
+	[X] Make a Sublime Text hotkey to open CSwitch to the current file
 	[X] Add tooltips that show full path when hovering over the display path in topbar
 	[X] Automatically shorten strings that don't fit into the space given to them by Clay. This would allow the display of the file in the topbar to actually show more and more text as you make the window larger. It could also help when the window is skinny enough that the value portion of each button overlaps with the name. We probably need some metadata about each string to determine what it should do when it can't fit
 	[X] Add icons for arrow in "Open Recent >" and +/- in "+ Enable Topmost" and maybe a trashcan for "Clear Recent Files"
