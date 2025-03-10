@@ -1,5 +1,5 @@
 # C-Switch
-A simple project to turn on/off defines in a C header file quickly. This project is based on PigCore using sokol_gfx.h and sokol_app.h to make a graphical window.
+A simple project to turn on/off defines in a C header file quickly. This project is based on [PigCore](https://github.com/PiggybankStudios/PigCore), it uses [sokol_gfx.h](https://github.com/floooh/sokol/blob/master/sokol_gfx.h) and [sokol_app.h](https://github.com/floooh/sokol/blob/master/sokol_app.h) to make a graphical window, and [Clay](https://github.com/nicbarker/clay) to do UI layout.
 
 # Usage
 1. Run cswitch.exe
