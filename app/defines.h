@@ -28,9 +28,10 @@ Date:   02\25\2025
 #define OPEN_RECENT_DROPDOWN_WIDTH 300 //px
 #define SCROLLBAR_WIDTH   10 //px
 
-#define OPTION_UI_GAP              2 //px
-#define LINE_BREAK_EXTRA_UI_GAP    4 //px
-#define MAX_LINE_BREAKS_CONSIDERED 4 //lines
+#define OPTION_UI_GAP                    2 //px
+#define OPTIONS_SMOOTH_SCROLLING_DIVISOR 5 //divisor
+#define LINE_BREAK_EXTRA_UI_GAP          4 //px
+#define MAX_LINE_BREAKS_CONSIDERED       4 //lines
 
 #define CHECK_RECENT_FILES_WRITE_TIME_PERIOD 1000 //ms
 #define RECENT_FILES_RELOAD_DELAY            100 //ms
@@ -52,7 +53,7 @@ Date:   02\25\2025
 #define WIN32_TOOLTIP_ID 100 //arbitrary ID
 
 #define DEFAULT_TOOLTIP_DELAY 750 //ms
-#define OPTION_NAME_TOOLTIP_DELAY 1500 //ms
+#define OPTION_NAME_TOOLTIP_DELAY 1000 //ms
 #define TOOLTIP_MAX_MOVE_DIST 5 //px
 #define TOOLTIP_TEXT_MARGIN   NewV2(8, 4) //px
 #define TOOLTIP_MOUSE_UP_OFFSET    5 //px

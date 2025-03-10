@@ -116,6 +116,13 @@ struct AppData
 	bool isFileMenuOpen;
 	bool isWindowMenuOpen;
 	bool isOpenRecentSubmenuOpen;
+	bool wasClayScrollingPrevFrame;
+	bool smoothScrollingEnabled;
+	bool optionTooltipsEnabled;
+	bool sleepingDisabled;
+	#if DEBUG_BUILD
+	bool disableFrameUpdateIndicator;
+	#endif
 	
 	bool isFileOpen;
 	Str8 filePath;

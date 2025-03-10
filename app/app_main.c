@@ -172,6 +172,9 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
 	app->nextTooltipId = 1;
 	
+	app->smoothScrollingEnabled = true;
+	app->optionTooltipsEnabled = true;
+	
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileOption, &app->fileOptions, stdHeap);
 	
@@ -236,11 +239,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
 	
 	UpdateFileWatches(&app->fileWatches);
-	
 	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	
-	bool refreshScreen = false;
+	bool refreshScreen = app->sleepingDisabled;
 	if (app->isFileOpen && AppCheckForFileChanges()) { refreshScreen = true; }
+	if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
 	if (app->tooltip.isOpen) { refreshScreen = true; }
 	if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 	{
@@ -398,7 +401,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
 		
-		BeginClayUIRender(&app->clay.clay, screenSize, 16.6f, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left), appIn->mouse.scrollDelta);
+		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, appIn->mouse.scrollDelta, false);
+		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
 			CLAY({ .id = CLAY_ID("FullscreenContainer"),
@@ -494,10 +498,33 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
 						} Clay__CloseElement();
 						
+						if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), true, &app->icons[AppIcon_SmoothScroll]))
+						{
+							app->smoothScrollingEnabled = !app->smoothScrollingEnabled;
+							app->isWindowMenuOpen = false;
+						} Clay__CloseElement();
+						
+						if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), true, &app->icons[AppIcon_Tooltip]))
+						{
+							app->optionTooltipsEnabled = !app->optionTooltipsEnabled;
+							app->isWindowMenuOpen = false;
+						} Clay__CloseElement();
+						
 						#if DEBUG_BUILD
 						if (ClayBtn(ScratchPrint("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), true, &app->icons[AppIcon_Debug]))
 						{
 							Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+							app->isWindowMenuOpen = false;
+						} Clay__CloseElement();
+						if (ClayBtn(ScratchPrint("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), true, nullptr))
+						{
+							app->sleepingDisabled = !app->sleepingDisabled;
+							app->isWindowMenuOpen = false;
+						} Clay__CloseElement();
+						if (ClayBtn(ScratchPrint("%s Frame Indicator", app->disableFrameUpdateIndicator ? "Enable" : "Disable"), true, nullptr))
+						{
+							app->disableFrameUpdateIndicator = !app->disableFrameUpdateIndicator;
+							app->isWindowMenuOpen = false;
 						} Clay__CloseElement();
 						#endif
 						
@@ -534,21 +561,24 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					}
 					
 					#if DEBUG_BUILD
-					//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
-					CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
-						.layout = {
-							.sizing={ .width=CLAY_SIZING_FIXED(4), .height=CLAY_SIZING_GROW(0) },
-							.layoutDirection = CLAY_TOP_TO_BOTTOM,
-						},
-						.backgroundColor = ToClayColor(Black),
-					})
+					if (!app->disableFrameUpdateIndicator)
 					{
-						for (uxx pIndex = 0; pIndex < 10; pIndex++)
+						//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
+						CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
+							.layout = {
+								.sizing={ .width=CLAY_SIZING_FIXED(4), .height=CLAY_SIZING_GROW(0) },
+								.layoutDirection = CLAY_TOP_TO_BOTTOM,
+							},
+							.backgroundColor = ToClayColor(Black),
+						})
 						{
-							CLAY({
-								.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), .height = CLAY_SIZING_PERCENT(0.1f) } },
-								.backgroundColor = ToClayColor(((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black),
-							}) {}
+							for (uxx pIndex = 0; pIndex < 10; pIndex++)
+							{
+								CLAY({
+									.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), .height = CLAY_SIZING_PERCENT(0.1f) } },
+									.backgroundColor = ToClayColor(((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black),
+								}) {}
+							}
 						}
 					}
 					#endif
@@ -574,7 +604,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								.width = CLAY_SIZING_GROW(0)
 							},
 						},
-						.scroll = { .vertical=true },
+						.scroll = { .vertical=true, .scrollLag = app->smoothScrollingEnabled ? (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR : 0.0f },
 					})
 					{
 						VarArrayLoop(&app->fileOptions, oIndex)
@@ -698,17 +728,20 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, option->tooltipId);
 				NotNull(tooltip);
 				tooltip->enabled = false;
-				Str8 buttonUiId = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
-				rec buttonDrawRec = GetClayElementDrawRec(ToClayId(buttonUiId));
-				rec scrollDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-				if (scrollDrawRec.Width > 0 && scrollDrawRec.Height > 0 &&
-					buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+				if (app->optionTooltipsEnabled)
 				{
-					buttonDrawRec = OverlapPartRec(buttonDrawRec, scrollDrawRec);
-					if (buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+					Str8 buttonUiId = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
+					rec buttonDrawRec = GetClayElementDrawRec(ToClayId(buttonUiId));
+					rec scrollDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+					if (scrollDrawRec.Width > 0 && scrollDrawRec.Height > 0 &&
+						buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
 					{
-						tooltip->enabled = true;
-						tooltip->mainRec = buttonDrawRec;
+						buttonDrawRec = OverlapPartRec(buttonDrawRec, scrollDrawRec);
+						if (buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+						{
+							tooltip->enabled = true;
+							tooltip->mainRec = buttonDrawRec;
+						}
 					}
 				}
 			}

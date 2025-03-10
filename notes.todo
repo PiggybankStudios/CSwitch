@@ -8,7 +8,6 @@
 	[ ] File->Reset option that resets the file back to what it was when it was opened
 	[ ] Reduce memory usage
 	[ ] Measure and reduce CPU load while idle
-	[ ] Add smoother scrolling
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
 	[ ] Add a "Help" menu that gives info (version number?)
 	[ ] Add a notification like system where we can tell the user about notable warnings/errors
@@ -30,9 +29,12 @@
 	[ ] Add support for dragging scroll bar with left-click
 	[ ] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
 	[ ] Add a button+hotkey to open the file in a text editor (also maybe to open the folder where the file resides in Explorer)
+	[ ] Display hotkeys for actions in the dropdown menus
+	[ ] Add support for Home/End and PageUp/PageDown keys
 	[ ] 
 
 # Finished List:
+	[X] Add smoother scrolling
 	[X] Add hotkeys like Ctrl+W to close file, Ctrl+O to open file (maybe something to open most recent file?), Ctrl+E to reopen the file that was just closed?, something to toggle topmost, etc.
 	[X] Make a Sublime Text hotkey to open CSwitch to the current file
 	[X] Add tooltips that show full path when hovering over the display path in topbar
