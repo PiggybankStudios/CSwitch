@@ -2,6 +2,7 @@
 # TODO List:
 	[!] Multiple tabs
 	( ) When scrolled down the list, clicking "File" or "View" toggles the button that is below!
+	( ) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!
 	( ) Figure out how to render while resizing when using D3D11!
 	(!) We should only handle the WM_PAINT event when it's given to us on the main thread!
 	[ ] Undo/Redo
@@ -27,14 +28,14 @@
 	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[ ] Add command line arguments that tell CSwitch where to position itself on screen. Either absolute coordinates, or maybe like relative coordinates from top-left, top-right, bottom-right, bottom-left, left-middle, top-middle, right-middle, or bottom-middle
-	[ ] Add support for dragging scroll bar with left-click
 	[ ] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
 	[ ] Add a button+hotkey to open the file in a text editor (also maybe to open the folder where the file resides in Explorer)
-	[ ] Display hotkeys for actions in the dropdown menus
-	[ ] Add support for Home/End and PageUp/PageDown keys
 	[ ] 
 
 # Finished List:
+	[X] Add support for dragging scroll bar with left-click
+	[X] Add support for Home/End and PageUp/PageDown keys
+	[X] Display hotkeys for actions in the dropdown menus
 	[X] Add smoother scrolling
 	[X] Add hotkeys like Ctrl+W to close file, Ctrl+O to open file (maybe something to open most recent file?), Ctrl+E to reopen the file that was just closed?, something to toggle topmost, etc.
 	[X] Make a Sublime Text hotkey to open CSwitch to the current file

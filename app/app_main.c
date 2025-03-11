@@ -509,6 +509,42 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
+	// +======================================+
+	// | Handle Home/End and PageUp/PageDown  |
+	// +======================================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home))
+	{
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->y = 0; }
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End))
+	{
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		if (optionsListScrollData.found)
+		{
+			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
+			optionsListScrollData.scrollTarget->y = -maxScroll;
+		}
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp))
+	{
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		if (optionsListScrollData.found)
+		{
+			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
+			optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y + optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
+		}
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown))
+	{
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		if (optionsListScrollData.found)
+		{
+			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
+			optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y - optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
+		}
+	}
+	
 	// +==============================+
 	// |          Rendering           |
 	// +==============================+
@@ -807,52 +843,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						#endif
 					}
 					
-					rec optionsListDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-					Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
-					r32 scrollbarYPercent = 0.0f;
-					r32 scrollbarSizePercent = 1.0f;
-					if (optionsListScrollData.found && optionsListScrollData.contentDimensions.height > optionsListScrollData.scrollContainerDimensions.height)
-					{
-						scrollbarSizePercent = ClampR32(optionsListScrollData.scrollContainerDimensions.height / optionsListScrollData.contentDimensions.height, 0.0f, 1.0f);
-						scrollbarYPercent = ClampR32(-optionsListScrollData.scrollPosition->y / (optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
-					}
-					
-					if (optionsListScrollData.found && scrollbarSizePercent < 1.0f)
-					{
-						CLAY({ .id = CLAY_ID("OptionsScrollGutter"),
-							.layout = {
-								.layoutDirection = CLAY_TOP_TO_BOTTOM,
-								.padding = { .left = 1, },
-								.sizing = {
-									.width = CLAY_SIZING_FIXED(SCROLLBAR_WIDTH),
-									.height = CLAY_SIZING_GROW(0)
-								},
-							},
-							.backgroundColor = ToClayColor(BACKGROUND_BLACK),
-						})
-						{
-							rec scrollGutterDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsScrollGutter"));
-							v2 scrollBarSize = NewV2(
-								SCROLLBAR_WIDTH - 2,
-								optionsListDrawRec.Height * scrollbarSizePercent
-							);
-							r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
-							CLAY({ .id = CLAY_ID("OptionsScrollBar"),
-								.floating = {
-									.attachTo = CLAY_ATTACH_TO_PARENT,
-									.offset = { .x = 1, .y = scrollBarOffsetY },
-								},
-								.layout = {
-									.sizing = {
-										.width = CLAY_SIZING_FIXED(scrollBarSize.X),
-										.height = CLAY_SIZING_FIXED(scrollBarSize.Y),
-									},
-								},
-								.backgroundColor = ToClayColor(OUTLINE_GRAY),
-								.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2),
-							}) {}
-						}
-					}
+					ClayScrollbar(CLAY_ID("OptionsList"), StrLit("OptionsListScrollbar"), &app->optionScrollbarState);
 				}
 			}
 		}

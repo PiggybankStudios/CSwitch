@@ -95,6 +95,14 @@ struct TooltipState
 	TextMeasure displayStrMeasure;
 };
 
+typedef struct ScrollbarInteractionState ScrollbarInteractionState;
+struct ScrollbarInteractionState
+{
+	bool isDragging;
+	bool isDraggingSmooth;
+	v2 grabOffset;
+};
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -123,6 +131,7 @@ struct AppData
 	#if DEBUG_BUILD
 	bool enableFrameUpdateIndicator;
 	#endif
+	ScrollbarInteractionState optionScrollbarState;
 	
 	bool isFileOpen;
 	Str8 filePath;

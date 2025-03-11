@@ -309,3 +309,114 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 	ScratchEnd(scratch);
 	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
+
+// Returns whether the scrollbar is currently displayed
+bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, ScrollbarInteractionState* state)
+{
+	NotNull(state);
+	ScratchBegin(scratch);
+	
+	Str8 gutterIdStr = PrintInArenaStr(scratch, "%.*s_Gutter", StrPrint(scrollbarIdStr));
+	ClayId gutterId = ToClayId(gutterIdStr);
+	ClayId scrollbarId = ToClayId(scrollbarIdStr);
+	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(scrollContainerId);
+	r32 scrollbarYPercent = 0.0f;
+	r32 scrollbarSizePercent = 1.0f;
+	if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
+	{
+		scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.height / scrollData.contentDimensions.height, 0.0f, 1.0f);
+		scrollbarYPercent = ClampR32(-scrollData.scrollPosition->y / (scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
+	}
+	
+	bool isScrollbarVisible = (scrollData.found && scrollbarSizePercent < 1.0f);
+	bool isHovered = IsMouseOverClay(scrollbarId);
+	
+	if (isScrollbarVisible)
+	{
+		CLAY({ .id = gutterId,
+			.layout = {
+				.layoutDirection = CLAY_TOP_TO_BOTTOM,
+				.padding = { .left = 1, },
+				.sizing = {
+					.width = CLAY_SIZING_FIXED(SCROLLBAR_WIDTH),
+					.height = CLAY_SIZING_GROW(0)
+				},
+			},
+			.backgroundColor = ToClayColor(BACKGROUND_BLACK),
+		})
+		{
+			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
+			v2 scrollBarSize = NewV2(
+				SCROLLBAR_WIDTH - 2,
+				scrollGutterDrawRec.Height * scrollbarSizePercent
+			);
+			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+			CLAY({ .id = scrollbarId,
+				.floating = {
+					.attachTo = CLAY_ATTACH_TO_PARENT,
+					.offset = { .x = 1, .y = scrollBarOffsetY },
+				},
+				.layout = {
+					.sizing = {
+						.width = CLAY_SIZING_FIXED(scrollBarSize.X),
+						.height = CLAY_SIZING_FIXED(scrollBarSize.Y),
+					},
+				},
+				.backgroundColor = ToClayColor((isHovered || state->isDragging) ? TEXT_GRAY : OUTLINE_GRAY),
+				.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2),
+			}) {}
+		}
+		
+		if (!state->isDragging)
+		{
+			if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+			{
+				if (IsMouseOverClay(scrollbarId))
+				{
+					rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
+					state->isDragging = true;
+					state->isDraggingSmooth = false;
+					state->grabOffset = Sub(appIn->mouse.position, scrollbarDrawRec.TopLeft);
+				}
+				else if (IsMouseOverClay(gutterId))
+				{
+					rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
+					state->isDragging = true;
+					state->isDraggingSmooth = true;
+					state->grabOffset = NewV2(scrollbarDrawRec.Width/2, scrollbarDrawRec.Height/2);
+				}
+			}
+		}
+		
+		if (state->isDragging)
+		{
+			if (!IsMouseBtnDown(&appIn->mouse, MouseBtn_Left))
+			{
+				state->isDragging = false;
+			}
+			else
+			{
+				rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
+				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
+				r32 minY = scrollGutterDrawRec.Y;
+				r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - scrollbarDrawRec.Height;
+				if (maxY > minY)
+				{
+					r32 newScrollbarPos = ClampR32(appIn->mouse.position.Y - state->grabOffset.Y, minY, maxY);
+					r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
+					scrollData.scrollTarget->y = -((scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height) * newScrollbarPercent);
+					if (!state->isDraggingSmooth) { scrollData.scrollPosition->y = scrollData.scrollTarget->y; }
+				}
+			}
+			if (scrollData.scrollPosition->y == scrollData.scrollTarget->y) { state->isDraggingSmooth = false; }
+		}
+	}
+	else if (state->isDragging)
+	{
+		state->isDragging = false;
+		state->grabOffset = V2_Zero;
+	}
+	
+	ScratchEnd(scratch);
+	return isScrollbarVisible;
+}
