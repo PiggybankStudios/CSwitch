@@ -175,7 +175,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r3
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled, Texture* icon)
+bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Texture* icon)
 {
 	ScratchBegin(scratch);
 	Str8 fullIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(idStr));
@@ -196,7 +196,14 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled, Texture* icon)
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
 		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
 	});
-	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = 8 }, } })
+	CLAY({
+		.layout = {
+			.layoutDirection = CLAY_LEFT_TO_RIGHT,
+			.childGap = TOPBAR_ICONS_PADDING,
+			.sizing = { .width = CLAY_SIZING_GROW(0) },
+			.padding = { .right = 0 },
+		},
+	})
 	{
 		if (icon != nullptr)
 		{
@@ -206,21 +213,44 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled, Texture* icon)
 			ToClayString(btnText),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
-				.fontSize = MAIN_FONT_SIZE,
+				.fontSize = UI_FONT_SIZE,
 				.textColor = ToClayColor(TEXT_WHITE),
 			})
 		);
+		if (!IsEmptyStr(hotkeyStr))
+		{
+			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }, } }) {}
+			
+			CLAY({ .id=CLAY_ID("HotkeyDisplay"),
+				.layout = {
+					.layoutDirection = CLAY_LEFT_TO_RIGHT,
+					.padding = CLAY_PADDING_ALL(2),
+				},
+				.border = { .width=CLAY_BORDER_OUTSIDE(1), .color = ToClayColor(TEXT_GRAY) },
+				.cornerRadius = CLAY_CORNER_RADIUS(5),
+			})
+			{
+				CLAY_TEXT(
+					ToClayString(hotkeyStr),
+					CLAY_TEXT_CONFIG({
+						.fontId = app->clayUiFontId,
+						.fontSize = UI_FONT_SIZE,
+						.textColor = ToClayColor(TEXT_GRAY),
+					})
+				);
+			}
+		}
 	}
 	ScratchEnd(scratch);
 	return (isHovered && isEnabled && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
-bool ClayBtnStr(Str8 btnText, bool isEnabled, Texture* icon)
+bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStrEx(btnText, btnText, isEnabled, icon);
+	return ClayBtnStrEx(btnText, btnText, hotkeyStr, isEnabled, icon);
 }
-bool ClayBtn(const char* btnText, bool isEnabled, Texture* icon)
+bool ClayBtn(const char* btnText, const char* hotkeyStr, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStr(StrLit(btnText), isEnabled, icon);
+	return ClayBtnStr(StrLit(btnText), StrLit(hotkeyStr), isEnabled, icon);
 }
 
 //Call Clay__CloseElement once after if statement

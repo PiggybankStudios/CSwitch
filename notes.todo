@@ -3,6 +3,7 @@
 	[!] Multiple tabs
 	( ) When scrolled down the list, clicking "File" or "View" toggles the button that is below!
 	( ) Figure out how to render while resizing when using D3D11!
+	(!) We should only handle the WM_PAINT event when it's given to us on the main thread!
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
 	[ ] File->Reset option that resets the file back to what it was when it was opened

@@ -121,7 +121,7 @@ struct AppData
 	bool optionTooltipsEnabled;
 	bool sleepingDisabled;
 	#if DEBUG_BUILD
-	bool disableFrameUpdateIndicator;
+	bool enableFrameUpdateIndicator;
 	#endif
 	
 	bool isFileOpen;

@@ -97,6 +97,106 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 	appIn = appInput;
 }
 
+#if 0
+#define NO_KEY_IMAGE_SHEET_FRAME_X 7
+#define NO_KEY_IMAGE_SHEET_FRAME_Y 6
+#define NO_KEY_IMAGE_SHEET_FRAME NewV2i(NO_KEY_IMAGE_SHEET_FRAME_X, NO_KEY_IMAGE_SHEET_FRAME_Y)
+v2i GetSheetFrameForKey(Key key, bool isPressed, i32* imageWidth, bool* isWideKey)
+{
+	i32 yOffset = (isPressed ? 7 : 0);
+	i32 yOffsetWide = (isPressed ? 4 : 0);
+	SetOptionalOutPntr(isWideKey, false);
+	SetOptionalOutPntr(imageWidth, 13);
+	switch (key)
+	{
+		case Key_Up:           return NewV2i(0, 0 + yOffset);
+		case Key_Down:         return NewV2i(1, 0 + yOffset);
+		case Key_Left:         return NewV2i(2, 0 + yOffset);
+		case Key_Right:        return NewV2i(3, 0 + yOffset);
+		case Key_F1:           return NewV2i(4, 0 + yOffset);
+		case Key_F2:           return NewV2i(5, 0 + yOffset);
+		case Key_F3:           return NewV2i(6, 0 + yOffset);
+		case Key_F4:           return NewV2i(7, 0 + yOffset);
+		
+		case Key_F5:           return NewV2i(0, 1 + yOffset);
+		case Key_F6:           return NewV2i(1, 1 + yOffset);
+		case Key_F7:           return NewV2i(2, 1 + yOffset);
+		case Key_F8:           return NewV2i(3, 1 + yOffset);
+		case Key_F9:           return NewV2i(4, 1 + yOffset);
+		case Key_F10:          return NewV2i(5, 1 + yOffset);
+		case Key_F11:          return NewV2i(6, 1 + yOffset);
+		case Key_F12:          return NewV2i(7, 1 + yOffset);
+		
+		case Key_A:            return NewV2i(0, 2 + yOffset);
+		case Key_B:            return NewV2i(1, 2 + yOffset);
+		case Key_C:            return NewV2i(2, 2 + yOffset);
+		case Key_D:            return NewV2i(3, 2 + yOffset);
+		case Key_E:            return NewV2i(4, 2 + yOffset);
+		case Key_F:            return NewV2i(5, 2 + yOffset);
+		case Key_G:            return NewV2i(6, 2 + yOffset);
+		case Key_H:            return NewV2i(7, 2 + yOffset);
+		
+		case Key_I:            return NewV2i(0, 3 + yOffset);
+		case Key_J:            return NewV2i(1, 3 + yOffset);
+		case Key_K:            return NewV2i(2, 3 + yOffset);
+		case Key_L:            return NewV2i(3, 3 + yOffset);
+		case Key_M:            return NewV2i(4, 3 + yOffset);
+		case Key_N:            return NewV2i(5, 3 + yOffset);
+		case Key_O:            return NewV2i(6, 3 + yOffset);
+		case Key_P:            return NewV2i(7, 3 + yOffset);
+		
+		case Key_Q:            return NewV2i(0, 4 + yOffset);
+		case Key_R:            return NewV2i(1, 4 + yOffset);
+		case Key_S:            return NewV2i(2, 4 + yOffset);
+		case Key_T:            return NewV2i(3, 4 + yOffset);
+		case Key_U:            return NewV2i(4, 4 + yOffset);
+		case Key_V:            return NewV2i(5, 4 + yOffset);
+		case Key_W:            return NewV2i(6, 4 + yOffset);
+		case Key_X:            return NewV2i(7, 4 + yOffset);
+		
+		case Key_Y:            return NewV2i(0, 5 + yOffset);
+		case Key_Z:            return NewV2i(1, 5 + yOffset);
+		case Key_Period:       return NewV2i(2, 5 + yOffset);
+		case Key_Comma:        return NewV2i(3, 5 + yOffset);
+		// case Key_Question:  return NewV2i(4, 5 + yOffset);
+		case Key_ForwardSlash: return NewV2i(5, 5 + yOffset);
+		// case Key_BackSlash: return NewV2i(6, 5 + yOffset);
+		case Key_Pipe:         return NewV2i(7, 5 + yOffset);
+		
+		case Key_Quote:        return NewV2i(0, 6 + yOffset);
+		case Key_OpenBracket:  return NewV2i(1, 6 + yOffset);
+		case Key_CloseBracket: return NewV2i(2, 6 + yOffset);
+		case Key_Plus:         return NewV2i(3, 6 + yOffset);
+		case Key_Minus:        return NewV2i(4, 6 + yOffset);
+		case Key_Tilde:        return NewV2i(5, 6 + yOffset);
+		// case Key_None:      return NewV2i(6, 6 + yOffset);
+		// case Key_None:      return NewV2i(7, 6 + yOffset);
+		
+		case Key_Tab:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 24); return NewV2i(0, 0 + yOffsetWide);
+		case Key_Escape:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(1, 0 + yOffsetWide);
+		case Key_PrintScreen: SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(2, 0 + yOffsetWide);
+		case Key_Backspace:   SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(3, 0 + yOffsetWide);
+		
+		case Key_Shift:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(0, 1 + yOffsetWide);
+		case Key_PageUp:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 20); return NewV2i(1, 1 + yOffsetWide);
+		case Key_PageDown:    SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 20); return NewV2i(2, 1 + yOffsetWide);
+		case Key_Enter:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(3, 1 + yOffsetWide);
+		
+		case Key_Control:     SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 24); return NewV2i(0, 2 + yOffsetWide);
+		case Key_Alt:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(1, 2 + yOffsetWide);
+		case Key_Space:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 30); return NewV2i(2, 2 + yOffsetWide);
+		case Key_Insert:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(3, 2 + yOffsetWide);
+		
+		case Key_Delete:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(0, 3 + yOffsetWide);
+		case Key_End:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(1, 3 + yOffsetWide);
+		case Key_Home:        SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(2, 3 + yOffsetWide);
+		case Key_Pause:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(3, 3 + yOffsetWide);
+		
+		default: return NewV2i(NO_KEY_IMAGE_SHEET_FRAME_X, NO_KEY_IMAGE_SHEET_FRAME_Y + yOffset);
+	}
+}
+#endif
+
 // +==============================+
 // |           AppInit            |
 // +==============================+
@@ -143,7 +243,27 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		NewFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
 	};
 	
+	// ImageData keysSheet = LoadImageData(scratch, "resources/image/keys16.png");
+	// ImageData keysWideSheet = LoadImageData(scratch, "resources/image/keys16_wide.png");
 	{
+		#if 0
+		uxx numKeyCodepoints = 0;
+		CustomFontGlyph customGlyphs[KEY_CODEPOINT_COUNT];
+		for (uxx keyIndex = 0; keyIndex < KEY_CODEPOINT_COUNT; keyIndex++)
+		{
+			u32 codepoint = (u32)(KEY_FIRST_CODEPOINT + keyIndex);
+			i32 keyGlyphWidth = 0;
+			bool useWideSheet = false;
+			v2i tilePos = GetSheetFrameForKey(GetKeyForCodepoint(codepoint), false, &keyGlyphWidth, &useWideSheet);
+			v2i sheetTileSize = useWideSheet ? NewV2i(32, 16) : FillV2i(16);
+			i32 glyphOffset = (i32)(sheetTileSize.Width - keyGlyphWidth) / 2;
+			customGlyphs[numKeyCodepoints].codepoint = codepoint;
+			customGlyphs[numKeyCodepoints].imageData = useWideSheet ? keysWideSheet : keysSheet;
+			customGlyphs[numKeyCodepoints].sourceRec = NewReci(tilePos.X * sheetTileSize.Width + glyphOffset, tilePos.Y * sheetTileSize.Height, keyGlyphWidth, sheetTileSize.Height);
+			numKeyCodepoints++;
+		}
+		CustomFontCharRange customGlyphsRange = NewCustomFontCharRange(numKeyCodepoints, &customGlyphs[0]);
+		#endif
 		app->uiFont = InitFont(stdHeap, StrLit("uiFont"));
 		Result attachResult = AttachOsTtfFileToFont(&app->uiFont, StrLit(UI_FONT_NAME), UI_FONT_SIZE, UI_FONT_STYLE);
 		Assert(attachResult == Result_Success);
@@ -174,6 +294,9 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	app->smoothScrollingEnabled = true;
 	app->optionTooltipsEnabled = true;
+	#if DEBUG_BUILD
+	app->enableFrameUpdateIndicator = false;
+	#endif
 	
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileOption, &app->fileOptions, stdHeap);
@@ -436,7 +559,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				{
 					if (ClayTopBtn("File", &app->isFileMenuOpen, app->isOpenRecentSubmenuOpen))
 					{
-						if (ClayBtn("Open...", true, &app->icons[AppIcon_OpenFile]))
+						if (ClayBtn("Open...", "Ctrl+O", true, &app->icons[AppIcon_OpenFile]))
 						{
 							shouldOpenFile = true;
 							app->isFileMenuOpen = false;
@@ -451,7 +574,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
 									Str8 fileName = GetUniqueDisplayPath(recentFile->path);
 									bool isOpenFile = (app->isFileOpen && StrAnyCaseEquals(app->filePath, recentFile->path));
-									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), !isOpenFile && recentFile->fileExists, nullptr))
+									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), StrLit(""), !isOpenFile && recentFile->fileExists, nullptr))
 									{
 										AppOpenFile(recentFile->path);
 										app->isOpenRecentSubmenuOpen = false;
@@ -459,7 +582,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									} Clay__CloseElement();
 								}
 								
-								if (ClayBtn("Clear Recent Files", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
+								if (ClayBtn("Clear Recent Files", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
 								{
 									AppClearRecentFiles();
 									AppSaveRecentFilesList();
@@ -473,10 +596,10 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						}
 						else
 						{
-							if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
+							if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
 						}
 						
-						if (ClayBtn("Close File", app->isFileOpen, &app->icons[AppIcon_CloseFile]))
+						if (ClayBtn("Close File", "Ctrl+W", app->isFileOpen, &app->icons[AppIcon_CloseFile]))
 						{
 							AppCloseFile();
 							app->isFileMenuOpen = false;
@@ -488,47 +611,47 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					
 					if (ClayTopBtn("View", &app->isWindowMenuOpen, false))
 					{
-						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
+						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 						{
 							platform->SetWindowTopmost(!appIn->isWindowTopmost);
 						} Clay__CloseElement();
 						
-						if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+						if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), Str8_Empty, true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
 						{
 							app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
 						} Clay__CloseElement();
 						
-						if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), true, &app->icons[AppIcon_SmoothScroll]))
+						if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_SmoothScroll]))
 						{
 							app->smoothScrollingEnabled = !app->smoothScrollingEnabled;
 							app->isWindowMenuOpen = false;
 						} Clay__CloseElement();
 						
-						if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), true, &app->icons[AppIcon_Tooltip]))
+						if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_Tooltip]))
 						{
 							app->optionTooltipsEnabled = !app->optionTooltipsEnabled;
 							app->isWindowMenuOpen = false;
 						} Clay__CloseElement();
 						
 						#if DEBUG_BUILD
-						if (ClayBtn(ScratchPrint("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), true, &app->icons[AppIcon_Debug]))
+						if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("Tilde"), true, &app->icons[AppIcon_Debug]))
 						{
 							Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 							app->isWindowMenuOpen = false;
 						} Clay__CloseElement();
-						if (ClayBtn(ScratchPrint("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), true, nullptr))
+						if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, true, nullptr))
 						{
 							app->sleepingDisabled = !app->sleepingDisabled;
 							app->isWindowMenuOpen = false;
 						} Clay__CloseElement();
-						if (ClayBtn(ScratchPrint("%s Frame Indicator", app->disableFrameUpdateIndicator ? "Enable" : "Disable"), true, nullptr))
+						if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, true, nullptr))
 						{
-							app->disableFrameUpdateIndicator = !app->disableFrameUpdateIndicator;
+							app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
 							app->isWindowMenuOpen = false;
 						} Clay__CloseElement();
-						#endif
+						#endif //DEBUG_BUILD
 						
-						// if (ClayBtn("Close Window", true, &app->icons[AppIcon_CloseWindow]))
+						// if (ClayBtn("Close Window", "Ctrl+Shift+W", true, &app->icons[AppIcon_CloseWindow]))
 						// {
 						// 	shouldContinueRunning = false;
 						// 	app->isFileMenuOpen = false;
@@ -561,7 +684,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					}
 					
 					#if DEBUG_BUILD
-					if (!app->disableFrameUpdateIndicator)
+					if (app->enableFrameUpdateIndicator)
 					{
 						//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
 						CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
@@ -654,6 +777,34 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
 							}
 						}
+						
+						#if DEBUG_BUILD
+						if (!app->isFileOpen)
+						{
+							CLAY({
+								.layout = { .padding = CLAY_PADDING_ALL(1), .layoutDirection = CLAY_LEFT_TO_RIGHT, },
+								.border = { .color = ToClayColor(TEXT_LIGHT_GRAY), .width=CLAY_BORDER_ALL(1) },
+							})
+							{
+								FontAtlas* uiAtlas = GetFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+								NotNull(uiAtlas);
+								FontAtlas* mainAtlas = GetFontAtlas(&app->mainFont, MAIN_FONT_SIZE, MAIN_FONT_STYLE);
+								NotNull(mainAtlas);
+								CLAY({ .id = CLAY_ID("UiFontAtlas"),
+									.layout = {
+										.sizing = { .width = (r32)uiAtlas->texture.Width*4, .height = (r32)uiAtlas->texture.Height*4 },
+									},
+									.image = ToClayImage(&uiAtlas->texture),
+								}) {}
+								CLAY({ .id = CLAY_ID("MainFontAtlas"),
+									.layout = {
+										.sizing = { .width = (r32)mainAtlas->texture.Width*4, .height = (r32)mainAtlas->texture.Height*4 },
+									},
+									.image = ToClayImage(&mainAtlas->texture),
+								}) {}
+							}
+						}
+						#endif
 					}
 					
 					rec optionsListDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
