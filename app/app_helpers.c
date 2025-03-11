@@ -35,63 +35,6 @@ void LoadWindowIcon()
 	ScratchEnd(scratch);
 }
 
-//TODO: If we see that the file write time has changed right before we go to change the file, maybe we should reload the file instead? Let external edits take precident?
-void UpdateOptionValueInFile(FileOption* option)
-{
-	ScratchBegin(scratch);
-	NotNull(option);
-	NotNullStr(option->valueStr);
-	if (!StrExactEquals(option->valueStr, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex)))
-	{
-		Str8 fileBeginning = StrSlice(app->fileContents, 0, option->fileContentsStartIndex);
-		Str8 fileEnd = StrSliceFrom(app->fileContents, option->fileContentsEndIndex);
-		Str8 newFileContents = JoinStringsInArena(scratch, fileBeginning, option->valueStr, false);
-		newFileContents = JoinStringsInArena(scratch, newFileContents, fileEnd, false);
-		bool writeResult = OsWriteTextFile(app->filePath, newFileContents);
-		if (writeResult)
-		{
-			if (newFileContents.length != app->fileContents.length)
-			{
-				i64 byteOffset = (i64)newFileContents.length - (i64)app->fileContents.length;
-				VarArrayLoop(&app->fileOptions, oIndex)
-				{
-					VarArrayLoopGet(FileOption, otherOption, &app->fileOptions, oIndex);
-					if (otherOption != option && otherOption->fileContentsStartIndex >= option->fileContentsEndIndex)
-					{
-						otherOption->fileContentsStartIndex += byteOffset;
-						otherOption->fileContentsEndIndex += byteOffset;
-					}
-				}
-			}
-			option->fileContentsEndIndex = option->fileContentsStartIndex + option->valueStr.length;
-			
-			FreeStr8(stdHeap, &app->fileContents);
-			app->fileContents = AllocStr8(stdHeap, newFileContents);
-			
-			//Since we just wrote to the file, make sure we immediately updated out file write time so we don't think it was an external change
-			ClearFileWatchChanged(&app->fileWatches, app->fileWatchId);
-		}
-		else
-		{
-			PrintLine_E("Failed to write %llu byte%s to file \"%.*s\"!", (u64)newFileContents.length, Plural(newFileContents.length, "s"), StrPrint(app->filePath));
-			FreeStr8(stdHeap, &option->valueStr);
-			option->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex));
-		}
-	}
-	ScratchEnd(scratch);
-}
-
-void SetOptionValue(FileOption* option, Str8 newValueStr)
-{
-	NotNull(option);
-	if (!StrExactEquals(option->valueStr, newValueStr))
-	{
-		FreeStr8(stdHeap, &option->valueStr);
-		option->valueStr = AllocStr8(stdHeap, newValueStr);
-		UpdateOptionValueInFile(option);
-	}
-}
-
 void AppClearRecentFiles()
 {
 	VarArrayLoop(&app->recentFiles, rIndex)
@@ -223,17 +166,19 @@ void AppRememberRecentFile(FilePath filePath)
 	ScratchEnd(scratch);
 }
 
-Str8 GetUniqueDisplayPath(FilePath filePath)
+Str8 GetUniqueRecentFilePath(FilePath filePath)
 {
 	if (IsEmptyStr(filePath)) { return filePath; }
 	uxx numParts = CountPathParts(filePath, false);
 	if (numParts == 1) { return filePath; }
+	
 	for (uxx pIndex = 0; pIndex < numParts; pIndex++)
 	{
 		// Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
 		Str8 pathPart = GetPathPart(filePath, numParts-1 - pIndex, false);
 		uxx partStartIndex = (uxx)(pathPart.chars - filePath.chars);
 		Str8 subPath = StrSliceFrom(filePath, partStartIndex);
+		
 		bool foundConflict = false;
 		VarArrayLoop(&app->recentFiles, rIndex)
 		{
@@ -245,188 +190,38 @@ Str8 GetUniqueDisplayPath(FilePath filePath)
 				break;
 			}
 		}
-		
-		if (!foundConflict)
-		{
-			return subPath;
-		}
+		if (!foundConflict) { return subPath; }
 	}
+	
 	return filePath;
+}
+
+Str8 GetUniqueTabFilePath(FilePath filePath)
+{
+	if (IsEmptyStr(filePath)) { return filePath; }
+	uxx numParts = CountPathParts(filePath, false);
+	if (numParts == 1) { return filePath; }
 	
-}
-
-void FreeFileOption(FileOption* option)
-{
-	NotNull(option);
-	FreeStr8(stdHeap, &option->name);
-	FreeStr8(stdHeap, &option->valueStr);
-	RemoveTooltipRegionById(&app->tooltipRegions, option->tooltipId);
-	ClearPointer(option);
-}
-
-void AppCloseFile()
-{
-	if (app->isFileOpen)
+	for (uxx pIndex = 0; pIndex < numParts; pIndex++)
 	{
-		RemoveFileWatch(&app->fileWatches, app->fileWatchId);
-		app->fileWatchId = 0;
-		FreeStr8(stdHeap, &app->filePath);
-		FreeStr8WithNt(stdHeap, &app->fileContents);
-		VarArrayLoop(&app->fileOptions, oIndex)
-		{
-			VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
-			FreeFileOption(option);
-		}
-		VarArrayClear(&app->fileOptions);
-		platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
-		RemoveTooltipRegionById(&app->tooltipRegions, app->filePathTooltipId);
-		app->filePathTooltipId = 0;
-		app->isFileOpen = false;
-	}
-}
-
-void AppOpenFile(FilePath filePath)
-{
-	Str8 fileContents = Str8_Empty;
-	bool openResult = OsReadTextFile(filePath, stdHeap, &fileContents);
-	if (!openResult) { PrintLine_E("Failed to open file at \"%.*s\"", StrPrint(filePath)); return; }
-	ScratchBegin(scratch);
-	
-	if (app->isFileOpen) { AppCloseFile(); }
-	app->fileContents = fileContents;
-	app->filePath = AllocStr8(stdHeap, filePath);
-	
-	Str8 commentStartStr = StrLit("//");
-	LineParser lineParser = NewLineParser(fileContents);
-	Str8 fullLine = Str8_Empty;
-	FileOption* prevOption = nullptr;
-	while (LineParserGetLine(&lineParser, &fullLine))
-	{
-		uxx scratchMark = ArenaGetMark(scratch);
-		Str8 line = TrimWhitespace(fullLine);
-		Str8 lineComment = Str8_Empty;
-		uxx commentSlashesIndex = StrExactFind(line, commentStartStr);
-		if (commentSlashesIndex < line.length)
-		{
-			lineComment = StrSliceFrom(line, commentSlashesIndex);
-			line = StrSlice(line, 0, commentSlashesIndex);
-			line = TrimWhitespace(line);
-		}
+		// Str8 GetPathPart(FilePath path, ixx partIndex, bool includeEmptyBeginOrEnd)
+		Str8 pathPart = GetPathPart(filePath, numParts-1 - pIndex, false);
+		uxx partStartIndex = (uxx)(pathPart.chars - filePath.chars);
+		Str8 subPath = StrSliceFrom(filePath, partStartIndex);
 		
-		bool isOption = false;
-		Str8 defineStr = StrLit("#define");
-		if (IsEmptyStr(line) && !IsEmptyStr(lineComment))
+		bool foundConflict = false;
+		VarArrayLoop(&app->tabs, tIndex)
 		{
-			uxx commentStartIndex = lineParser.lineBeginByteIndex + (uxx)(lineComment.chars - fullLine.chars);
-			Str8 commentContents = TrimWhitespace(StrSliceFrom(lineComment, commentStartStr.length));
-			if (StrExactStartsWith(commentContents, defineStr))
+			VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
+			if (!StrAnyCaseEquals(tab->filePath, filePath) &&
+				StrAnyCaseEndsWith(tab->filePath, subPath))
 			{
-				uxx defineStartIndex = lineParser.lineBeginByteIndex + (uxx)(commentContents.chars - fullLine.chars);
-				Str8 namePart = TrimWhitespace(StrSliceFrom(commentContents, defineStr.length));
-				if (!IsEmptyStr(namePart))
-				{
-					FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
-					NotNull(newOption);
-					ClearPointer(newOption);
-					newOption->name = AllocStr8(stdHeap, namePart);
-					newOption->type = FileOptionType_CommentDefine;
-					newOption->isUncommented = false;
-					newOption->fileContentsStartIndex = commentStartIndex;
-					newOption->fileContentsEndIndex = defineStartIndex;
-					newOption->valueStr = AllocStr8(stdHeap, commentStartStr);
-					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
-					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
-					prevOption = newOption;
-					isOption = true;
-				}
+				foundConflict = true;
+				break;
 			}
 		}
-		else if (StrExactStartsWith(line, defineStr))
-		{
-			uxx lineStartIndex = lineParser.lineBeginByteIndex + (uxx)(line.chars - fullLine.chars);
-			uxx lineEndIndex = lineStartIndex + line.length;
-			const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
-			for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
-			{
-				Str8 boolValueStr = StrLit(possibleBoolValues[vIndex]);
-				if (line.length >= defineStr.length + 1 + boolValueStr.length &&
-					StrExactEndsWith(line, boolValueStr) &&
-					IsCharWhitespace(line.chars[line.length-boolValueStr.length-1], false))
-				{
-					FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
-					NotNull(newOption);
-					ClearPointer(newOption);
-					newOption->name = TrimWhitespace(StrSlice(line, defineStr.length, line.length - boolValueStr.length));
-					newOption->name = AllocStr8(stdHeap, newOption->name);
-					newOption->type = FileOptionType_Bool;
-					newOption->valueBool = ((vIndex%2) == 0);
-					newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
-					newOption->fileContentsEndIndex = lineEndIndex;
-					newOption->valueStr = AllocStr8(stdHeap, StrSlice(app->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
-					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
-					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
-					prevOption = newOption;
-					isOption = true;
-					break;
-				}
-			}
-			
-			if (!isOption)
-			{
-				// If we trim the part after the #define and we find
-				// that the leftover part is a valid C identifier then
-				// we can treat this #define as something that can be
-				// commented out because it has no value
-				Str8 namePart = TrimWhitespace(StrSliceFrom(line, defineStr.length));
-				if (IsValidIdentifier(namePart.length, namePart.chars, false, false, false))
-				{
-					FileOption* newOption = VarArrayAdd(FileOption, &app->fileOptions);
-					NotNull(newOption);
-					ClearPointer(newOption);
-					newOption->name = AllocStr8(stdHeap, namePart);
-					newOption->type = FileOptionType_CommentDefine;
-					newOption->isUncommented = true;
-					newOption->fileContentsStartIndex = lineStartIndex;
-					newOption->fileContentsEndIndex = lineStartIndex;
-					newOption->valueStr = Str8_Empty;
-					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
-					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
-					prevOption = newOption;
-					isOption = true;
-				}
-			}
-		}
-		
-		if (!isOption && IsEmptyStr(line) && IsEmptyStr(lineComment) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
-		{
-			IncrementU64(prevOption->numEmptyLinesAfter);
-		}
-		ArenaResetToMark(scratch, scratchMark);
+		if (!foundConflict) { return subPath; }
 	}
 	
-	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->filePath), PROJECT_READABLE_NAME_STR));
-	app->isFileOpen = true;
-	
-	app->fileWatchId = AddFileWatch(&app->fileWatches, app->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
-	app->filePathTooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, app->filePath, DEFAULT_TOOLTIP_DELAY, 1)->id;
-	
-	AppRememberRecentFile(filePath);
-	ScratchEnd(scratch);
-}
-
-bool AppCheckForFileChanges()
-{
-	bool didFileChange = false;
-	if (HasFileWatchChangedWithDelay(&app->fileWatches, app->fileWatchId, FILE_RELOAD_DELAY))
-	{
-		ClearFileWatchChanged(&app->fileWatches, app->fileWatchId);
-		WriteLine_N("File changed externally! Reloading...");
-		ScratchBegin(scratch);
-		//NOTE: We have to allocate the string in scratch because AppOpenFile is going to deallocate app->filePath before it allocates the new one
-		Str8 filePathAlloc = AllocStrAndCopy(scratch, app->filePath.length, app->filePath.chars, false);
-		AppOpenFile(filePathAlloc);
-		ScratchEnd(scratch);
-		didFileChange = true;
-	}
-	return didFileChange;
+	return filePath;
 }

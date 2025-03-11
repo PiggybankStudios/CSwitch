@@ -18,6 +18,9 @@ A simple project to turn on/off defines in a C/C++ header file quickly. This pro
 - **Ctrl+O** = Open File
 - **Ctrl+E** = Open Most Recent File
 - **Ctrl+T** = Toggle Topmost
+- **Ctrl+Tab** = Switch to Next Tab
+- **Ctrl+Shift+Tab** = Switch to Previous Tab
+- **Middle Click (On Tab)** = Close Tab
 
 # Command-Line Arguments
 - Any unnamed argument will be treated as a file path to open on startup, if no path is given, the most recently opened file is opened automatically (if it still exists)

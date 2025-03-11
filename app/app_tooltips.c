@@ -133,6 +133,7 @@ void UpdateTooltipState(VarArray* tooltipRegions, TooltipState* tooltip)
 		if (Length(Sub(mousePos, tooltip->focusPos)) >= TOOLTIP_MAX_MOVE_DIST) { shouldClose = true; }
 		TooltipRegion* region = FindTooltipRegionById(tooltipRegions, tooltip->regionId);
 		if (region == nullptr) { shouldClose = true; }
+		else if (!StrExactEquals(region->displayStr, tooltip->displayStr)) { shouldClose = true; } //if the display string changes, close the tooltip (it'll likely reappear immediately because we've still been hovering the same tooltipId for a while)
 		else if (!IsInsideRec(region->mainRec, mousePos)) { shouldClose = true; }
 		
 		if (shouldClose) { CloseTooltip(tooltip); }

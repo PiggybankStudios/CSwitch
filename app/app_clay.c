@@ -10,11 +10,30 @@ bool IsMouseOverClay(ClayId clayId)
 {
 	return appIn->mouse.isOverWindow && Clay_PointerOver(clayId);
 }
+bool IsMouseOverClayInContainer(ClayId containerId, ClayId clayId)
+{
+	return appIn->mouse.isOverWindow && Clay_PointerOver(containerId) && Clay_PointerOver(clayId);
+}
+
+v2 ClayUiTextSize(Font* font, r32 fontSize, u8 styleFlags, Str8 text)
+{
+	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, text);
+	return NewV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
+}
 
 //Call Clay__CloseElement once if false, three times if true (i.e. twice inside the if statement and once after)
-bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen)
+bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, bool keepOpen)
 {
 	ScratchBegin(scratch);
+	ScratchBegin1(persistScratch, scratch);
+	
+	Str8 normalDisplayStr = StrLit(btnText);
+	Assert(!IsEmptyStr(normalDisplayStr));
+	Str8 altDisplayStr = PrintInArenaStr(persistScratch, "(%c)%.*s", normalDisplayStr.chars[0], normalDisplayStr.length-1, &normalDisplayStr.chars[1]);
+	v2 normalDisplayStrSize = ClayUiTextSize(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, normalDisplayStr);
+	v2 altDisplayStrSize = ClayUiTextSize(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, altDisplayStr);
+	u16 leftPadding = (u16)(showAltText ? 0 : (altDisplayStrSize.Width - normalDisplayStrSize.Width)/2);
+	
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
 	ClayId btnId = ToClayId(btnIdStr);
@@ -28,21 +47,32 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen)
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .padding = { 12, 12, 4, 4 } },
+		.layout = { .padding = { 4, 4, 4, 4 } },
 		.backgroundColor = ToClayColor(backgroundColor),
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
 		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
 	});
-	CLAY_TEXT(
-		ToClayString(StrLit(btnText)),
-		CLAY_TEXT_CONFIG({
-			.fontId = app->clayUiFontId,
-			.fontSize = UI_FONT_SIZE,
-			.textColor = ToClayColor(TEXT_WHITE),
-		})
-	);
+	CLAY({
+		.layout = {
+			.sizing = { .width=CLAY_SIZING_FIXED(altDisplayStrSize.Width), .height=CLAY_SIZING_FIT(0) },
+			.padding = { .left = leftPadding },
+		},
+	})
+	{
+		CLAY_TEXT(
+			ToClayString(showAltText ? altDisplayStr : normalDisplayStr),
+			CLAY_TEXT_CONFIG({
+				.fontId = app->clayUiFontId,
+				.fontSize = UI_FONT_SIZE,
+				.textColor = ToClayColor(TEXT_WHITE),
+				.wrapMode = CLAY_TEXT_WRAP_NONE,
+				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
+			})
+		);
+	}
 	if (IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
-	if (*isOpenPntr == true && !isHovered && !keepOpen) { *isOpenPntr = false; }
+	if (*isOpenPntr == true && isHovered && *keepOpenUntilMouseoverPntr) { *keepOpenUntilMouseoverPntr = false; } //once we are closed or the mouse is over, clear this flag, mouse leaving now will constitute closing
+	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr && !keepOpen) { *isOpenPntr = false; }
 	if (*isOpenPntr)
 	{
 		Clay__OpenElement();
@@ -76,6 +106,7 @@ bool ClayTopBtn(const char* btnText, bool* isOpenPntr, bool keepOpen)
 			.cornerRadius = { 0, 0, 4, 4 },
 		});
 	}
+	//NOTE: We do NOT do ScratchEnd on persistScratch, the string needs to live to the end of the frame where the UI will get rendered
 	ScratchEnd(scratch);
 	return *isOpenPntr;
 }
@@ -179,7 +210,9 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 {
 	ScratchBegin(scratch);
 	Str8 fullIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(idStr));
+	Str8 hotkeyIdStr = PrintInArenaStr(scratch, "%.*s_Hotkey", StrPrint(idStr));
 	ClayId btnId = ToClayId(fullIdStr);
+	ClayId hotkeyId = ToClayId(hotkeyIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backgroundColor = !isEnabled ? BACKGROUND_BLACK : (isPressed ? SELECTED_BLUE : (isHovered ? HOVERED_BLUE : Transparent));
@@ -221,7 +254,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 		{
 			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) }, } }) {}
 			
-			CLAY({ .id=CLAY_ID("HotkeyDisplay"),
+			CLAY({ .id=hotkeyId,
 				.layout = {
 					.layoutDirection = CLAY_LEFT_TO_RIGHT,
 					.padding = CLAY_PADDING_ALL(2),
@@ -254,12 +287,12 @@ bool ClayBtn(const char* btnText, const char* hotkeyStr, bool isEnabled, Texture
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
+bool ClayOptionBtn(ClayId containerId, Str8 nameStr, Str8 valueStr, bool enabled)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(nameStr));
 	ClayId btnId = ToClayId(btnIdStr);
-	bool isHovered = IsMouseOverClay(btnId);
+	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;
 	Color32 hoverColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, enabled ? 0.75f : 0.0f);
@@ -311,7 +344,7 @@ bool ClayOptionBtn(Str8 nameStr, Str8 valueStr, bool enabled)
 }
 
 // Returns whether the scrollbar is currently displayed
-bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, ScrollbarInteractionState* state)
+bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidth, ScrollbarInteractionState* state)
 {
 	NotNull(state);
 	ScratchBegin(scratch);
@@ -338,7 +371,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, ScrollbarInter
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
 				.padding = { .left = 1, },
 				.sizing = {
-					.width = CLAY_SIZING_FIXED(SCROLLBAR_WIDTH),
+					.width = CLAY_SIZING_FIXED(gutterWidth),
 					.height = CLAY_SIZING_GROW(0)
 				},
 			},
@@ -347,7 +380,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, ScrollbarInter
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 			v2 scrollBarSize = NewV2(
-				SCROLLBAR_WIDTH - 2,
+				gutterWidth - 2,
 				scrollGutterDrawRec.Height * scrollbarSizePercent
 			);
 			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);

@@ -21,6 +21,7 @@ enum AppIcon
 	AppIcon_ClipRight,
 	AppIcon_SmoothScroll,
 	AppIcon_Tooltip,
+	AppIcon_Topbar,
 	AppIcon_Debug,
 	AppIcon_CloseWindow,
 	AppIcon_Count,
@@ -40,6 +41,7 @@ const char* GetAppIconStr(AppIcon enumValue)
 		case AppIcon_ClipRight:       return "ClipRight";
 		case AppIcon_SmoothScroll:    return "SmoothScroll";
 		case AppIcon_Tooltip:         return "Tooltip";
+		case AppIcon_Topbar:          return "Topbar";
 		case AppIcon_Debug:           return "Debug";
 		case AppIcon_CloseWindow:     return "CloseWindow";
 		default: return "Unknown";
@@ -59,6 +61,7 @@ const char* GetAppIconPath(AppIcon enumValue)
 		case AppIcon_ClipRight:       return "resources/image/clip_right.png";
 		case AppIcon_SmoothScroll:    return "resources/image/smooth_scroll.png";
 		case AppIcon_Tooltip:         return "resources/image/tooltip.png";
+		case AppIcon_Topbar:          return "resources/image/topbar.png";
 		case AppIcon_Debug:           return "resources/image/debug.png";
 		case AppIcon_CloseWindow:     return "resources/image/close_window.png";
 		default: return nullptr;

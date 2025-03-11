@@ -57,6 +57,7 @@ static Arena* stdHeap = nullptr;
 #include "app_file_watch.c"
 #include "app_tooltips.c"
 #include "app_helpers.c"
+#include "app_tab.c"
 #include "app_clay.c"
 
 // +==============================+
@@ -297,9 +298,10 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	#if DEBUG_BUILD
 	app->enableFrameUpdateIndicator = false;
 	#endif
+	app->minimalModeEnabled = false;
 	
 	InitFileWatches(&app->fileWatches);
-	InitVarArray(FileOption, &app->fileOptions, stdHeap);
+	InitVarArray(FileTab, &app->tabs, stdHeap);
 	
 	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
 	AppLoadRecentFilesList();
@@ -315,8 +317,8 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		wasCmdPathGiven = true;
 		if (OsDoesFileExist(pathArgument))
 		{
-			AppOpenFile(pathArgument);
-			if (app->isFileOpen) { break; }
+			FileTab* newTab = AppOpenFileTab(pathArgument);
+			if (newTab != nullptr) { break; }
 		}
 		else
 		{
@@ -330,8 +332,13 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	if (!wasCmdPathGiven && app->recentFiles.length > 0)
 	{
 		RecentFile* mostRecentFile = VarArrayGetLast(RecentFile, &app->recentFiles);
-		AppOpenFile(mostRecentFile->path);
+		AppOpenFileTab(mostRecentFile->path);
 	}
+	
+	TooltipRegion* filePathTooltip = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, app->currentTab != nullptr ? app->currentTab->filePath : Str8_Empty, DEFAULT_TOOLTIP_DELAY, 1);
+	NotNull(filePathTooltip);
+	filePathTooltip->enabled = (app->currentTab != nullptr);
+	app->filePathTooltipId = filePathTooltip->id;
 	
 	#if 0
 	INITCOMMONCONTROLSEX commonControls = ZEROED;
@@ -364,31 +371,38 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	UpdateFileWatches(&app->fileWatches);
 	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	
-	bool refreshScreen = app->sleepingDisabled;
-	if (app->isFileOpen && AppCheckForFileChanges()) { refreshScreen = true; }
-	if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
-	if (app->tooltip.isOpen) { refreshScreen = true; }
-	if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
+	// +====================================+
+	// | Determine if Screen Needs Refresh  |
+	// +====================================+
 	{
-		ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
-		AppLoadRecentFilesList();
-		refreshScreen = true;
-	}
-	if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
-	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
-	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
-	if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Middle) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Middle)) { refreshScreen = true; }
-	for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyboardKeyDown(&appIn->keyboard, (Key)keyIndex) || IsKeyboardKeyReleased(&appIn->keyboard, (Key)keyIndex)) { refreshScreen = true; break; } }
-	if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
-	if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
-	if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
-	else { app->numFramesConsecutivelyRendered++; }
-	if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
-	{
-		ScratchEnd(scratch);
-		ScratchEnd(scratch2);
-		ScratchEnd(scratch3);
-		return shouldContinueRunning;
+		bool refreshScreen = app->sleepingDisabled;
+		if (AppCheckForFileChanges()) { refreshScreen = true; }
+		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
+		if (app->tooltip.isOpen) { refreshScreen = true; }
+		if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
+		{
+			ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
+			AppLoadRecentFilesList();
+			refreshScreen = true;
+		}
+		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
+		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
+		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
+		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Middle) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Middle)) { refreshScreen = true; }
+		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyboardKeyDown(&appIn->keyboard, (Key)keyIndex) || IsKeyboardKeyReleased(&appIn->keyboard, (Key)keyIndex)) { refreshScreen = true; break; } }
+		if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
+		if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
+		
+		if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
+		else { app->numFramesConsecutivelyRendered++; }
+		
+		if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
+		{
+			ScratchEnd(scratch);
+			ScratchEnd(scratch2);
+			ScratchEnd(scratch3);
+			return shouldContinueRunning;
+		}
 	}
 	
 	v2i screenSizei = appIn->screenSize;
@@ -397,12 +411,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	// v2i mousePosi = RoundV2i(appIn->mouse.position);
 	v2 mousePos = appIn->mouse.position;
 	
-	if (appIn->droppedFilePaths.length > 0)
+	VarArrayLoop(&appIn->droppedFilePaths, pIndex)
 	{
-		if (appIn->droppedFilePaths.length > 1) { PrintLine_W("WARNING: Dropped %llu files at the same time. We only support opening 1 file at a time!", (u64)appIn->droppedFilePaths.length); }
-		Str8 droppedFilePath = *VarArrayGetFirst(Str8, &appIn->droppedFilePaths);
-		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(droppedFilePath));
-		AppOpenFile(droppedFilePath);
+		VarArrayLoopGet(Str8, droppedFilePath, &appIn->droppedFilePaths, pIndex);
+		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(*droppedFilePath));
+		AppOpenFileTab(*droppedFilePath);
 	}
 	
 	#if 0
@@ -465,8 +478,40 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 		else
 		{
-			//TODO: Close the current tab once we have support for tabs
-			AppCloseFile();
+			if (app->currentTab != nullptr)
+			{
+				AppCloseFileTab(app->currentTabIndex);
+			}
+		}
+	}
+	
+	// +==============================+
+	// |      Handle F11 Hotkey       |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11) || (app->minimalModeEnabled && IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape)))
+	{
+		app->minimalModeEnabled = !app->minimalModeEnabled;
+	}
+	
+	// +================================+
+	// | Handle Alt+F and Alt+V Hotkeys |
+	// +================================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
+	{
+		app->isFileMenuOpen = !app->isFileMenuOpen;
+		if (app->isFileMenuOpen)
+		{
+			app->isViewMenuOpen = false;
+			app->keepFileMenuOpenUntilMouseOver = true;
+		}
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
+	{
+		app->isViewMenuOpen = !app->isViewMenuOpen;
+		if (app->isViewMenuOpen)
+		{
+			app->isFileMenuOpen = false;
+			app->keepViewMenuOpenUntilMouseOver = true;
 		}
 	}
 	
@@ -479,15 +524,36 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		shouldOpenFile = true;
 	}
 	
+	// +========================================+
+	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
+	// +========================================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		if (app->tabs.length > 1)
+		{
+			if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+			{
+				AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1);
+			}
+			else
+			{
+				AppChangeTab((app->currentTabIndex+1) % app->tabs.length);
+			}
+		}
+	}
+	
 	// +==============================+
 	// |     Handle Ctrl+E Hotkey     |
 	// +==============================+
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
-		if (app->recentFiles.length > 0)
+		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 		{
-			RecentFile* mostRecentFile = VarArrayGetLast(RecentFile, &app->recentFiles);
-			AppOpenFile(mostRecentFile->path);
+			VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex-1);
+			if (recentFile->fileExists && AppFindTabForPath(recentFile->path) == nullptr)
+			{
+				if (AppOpenFileTab(recentFile->path) != nullptr) { break; }
+			}
 		}
 	}
 	
@@ -567,7 +633,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 			CLAY({ .id = CLAY_ID("FullscreenContainer"),
 				.layout = {
 					.layoutDirection = CLAY_TOP_TO_BOTTOM,
-					.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+					.sizing = { .width = CLAY_SIZING_GROW(0, screenSize.Width), .height = CLAY_SIZING_GROW(0, screenSize.Height) },
 					.padding = CLAY_PADDING_ALL(fullscreenBorderThickness)
 				},
 				.border = {
@@ -579,168 +645,257 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				// +==============================+
 				// |            Topbar            |
 				// +==============================+
-				CLAY({ .id = CLAY_ID("Topbar"),
-					.layout = {
-						.sizing = {
-							.height = CLAY_SIZING_FIXED(TOPBAR_HEIGHT),
-							.width = CLAY_SIZING_GROW(0),
-						},
-						.padding = { 0, 0, 0, 0 },
-						.childGap = 2,
-						.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
-					},
-					.backgroundColor = ToClayColor(BACKGROUND_GRAY),
-					.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
-				})
+				if (!app->minimalModeEnabled || app->isFileMenuOpen || app->isViewMenuOpen)
 				{
-					if (ClayTopBtn("File", &app->isFileMenuOpen, app->isOpenRecentSubmenuOpen))
+					r32 topbarHeight = app->minimalModeEnabled ? 0.1f : (r32)TOPBAR_HEIGHT;
+					CLAY({ .id = CLAY_ID("Topbar"),
+						.layout = {
+							.sizing = {
+								.height = CLAY_SIZING_FIXED(topbarHeight),
+								.width = CLAY_SIZING_GROW(0),
+							},
+							.padding = { 0, 0, 0, 0 },
+							.childGap = 2,
+							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
+						},
+						.backgroundColor = ToClayColor(BACKGROUND_GRAY),
+						.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
+					})
 					{
-						if (ClayBtn("Open...", "Ctrl+O", true, &app->icons[AppIcon_OpenFile]))
+						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
+						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
-							shouldOpenFile = true;
-							app->isFileMenuOpen = false;
-						} Clay__CloseElement();
-						
-						if (app->recentFiles.length > 0)
-						{
-							if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH, &app->icons[AppIcon_OpenRecent]))
+							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", true, &app->icons[AppIcon_OpenFile]))
 							{
-								for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
+								shouldOpenFile = true;
+								app->isFileMenuOpen = false;
+							} Clay__CloseElement();
+							
+							if (app->recentFiles.length > 0)
+							{
+								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH, &app->icons[AppIcon_OpenRecent]))
 								{
-									RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
-									Str8 fileName = GetUniqueDisplayPath(recentFile->path);
-									bool isOpenFile = (app->isFileOpen && StrAnyCaseEquals(app->filePath, recentFile->path));
-									if (ClayBtnStrEx(recentFile->path, ScratchPrintStr("%.*s", StrPrint(fileName)), StrLit(""), !isOpenFile && recentFile->fileExists, nullptr))
+									for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 									{
-										AppOpenFile(recentFile->path);
+										RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
+										Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
+										Str8 displayPathScratch = AllocStr8(scratch, displayPath); //TODO: We really should allocate this in like a "UI Stack" or something so it's guaranteed to exist until the UI gets rendered at the end of the frame
+										bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
+										if (ClayBtnStrEx(recentFile->path, displayPathScratch, StrLit(""), !isOpenFile && recentFile->fileExists, nullptr))
+										{
+											FileTab* newTab = AppOpenFileTab(recentFile->path);
+											if (newTab != nullptr)
+											{
+												app->isOpenRecentSubmenuOpen = false;
+												app->isFileMenuOpen = false;
+											}
+										} Clay__CloseElement();
+									}
+									
+									if (ClayBtn("Clear Recent Files", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
+									{
+										AppClearRecentFiles();
+										AppSaveRecentFilesList();
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
-								}
-								
-								if (ClayBtn("Clear Recent Files", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
-								{
-									AppClearRecentFiles();
-									AppSaveRecentFilesList();
-									app->isOpenRecentSubmenuOpen = false;
-									app->isFileMenuOpen = false;
+									
+									Clay__CloseElement();
+									Clay__CloseElement();
 								} Clay__CloseElement();
-								
-								Clay__CloseElement();
-								Clay__CloseElement();
+							}
+							else
+							{
+								if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
+							}
+							
+							if (ClayBtn("Close File", "Ctrl+W", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
+							{
+								AppCloseFileTab(app->currentTabIndex);
 							} Clay__CloseElement();
+							
+							Clay__CloseElement();
+							Clay__CloseElement();
+						} Clay__CloseElement();
+						
+						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
+						{
+							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
+							{
+								platform->SetWindowTopmost(!appIn->isWindowTopmost);
+							} Clay__CloseElement();
+							
+							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), Str8_Empty, true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+							{
+								app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
+							} Clay__CloseElement();
+							
+							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_SmoothScroll]))
+							{
+								app->smoothScrollingEnabled = !app->smoothScrollingEnabled;
+							} Clay__CloseElement();
+							
+							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_Tooltip]))
+							{
+								app->optionTooltipsEnabled = !app->optionTooltipsEnabled;
+							} Clay__CloseElement();
+							
+							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), true, &app->icons[AppIcon_Topbar]))
+							{
+								app->minimalModeEnabled = !app->minimalModeEnabled;
+							} Clay__CloseElement();
+							
+							#if DEBUG_BUILD
+							if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("~"), true, &app->icons[AppIcon_Debug]))
+							{
+								Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+							} Clay__CloseElement();
+							if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, true, nullptr))
+							{
+								app->sleepingDisabled = !app->sleepingDisabled;
+							} Clay__CloseElement();
+							if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, true, nullptr))
+							{
+								app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
+							} Clay__CloseElement();
+							#endif //DEBUG_BUILD
+							
+							// if (ClayBtn("Close Window", "Ctrl+Shift+W", true, &app->icons[AppIcon_CloseWindow]))
+							// {
+							// 	shouldContinueRunning = false;
+							// 	app->isFileMenuOpen = false;
+							// } Clay__CloseElement();
+							
+							Clay__CloseElement();
+							Clay__CloseElement();
+						} Clay__CloseElement();
+						
+						
+						CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
+						
+						if (app->currentTab != nullptr)
+						{
+							CLAY({ .id = CLAY_ID("FilePathDisplay") })
+							{
+								CLAY_TEXT(
+									ToClayString(app->currentTab->filePath),
+									CLAY_TEXT_CONFIG({
+										.fontId = app->clayUiFontId,
+										.fontSize = UI_FONT_SIZE,
+										.textColor = ToClayColor(TEXT_LIGHT_GRAY),
+										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+										.wrapMode = CLAY_TEXT_WRAP_NONE,
+										.userData = { .contraction = TextContraction_EllipseFilePath },
+									})
+								);
+							}
+							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
 						}
-						else
-						{
-							if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
-						}
-						
-						if (ClayBtn("Close File", "Ctrl+W", app->isFileOpen, &app->icons[AppIcon_CloseFile]))
-						{
-							AppCloseFile();
-							app->isFileMenuOpen = false;
-						} Clay__CloseElement();
-						
-						Clay__CloseElement();
-						Clay__CloseElement();
-					} Clay__CloseElement();
-					
-					if (ClayTopBtn("View", &app->isWindowMenuOpen, false))
-					{
-						if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
-						{
-							platform->SetWindowTopmost(!appIn->isWindowTopmost);
-						} Clay__CloseElement();
-						
-						if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), Str8_Empty, true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
-						{
-							app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
-						} Clay__CloseElement();
-						
-						if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_SmoothScroll]))
-						{
-							app->smoothScrollingEnabled = !app->smoothScrollingEnabled;
-							app->isWindowMenuOpen = false;
-						} Clay__CloseElement();
-						
-						if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_Tooltip]))
-						{
-							app->optionTooltipsEnabled = !app->optionTooltipsEnabled;
-							app->isWindowMenuOpen = false;
-						} Clay__CloseElement();
 						
 						#if DEBUG_BUILD
-						if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("Tilde"), true, &app->icons[AppIcon_Debug]))
+						if (app->enableFrameUpdateIndicator)
 						{
-							Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
-							app->isWindowMenuOpen = false;
-						} Clay__CloseElement();
-						if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, true, nullptr))
-						{
-							app->sleepingDisabled = !app->sleepingDisabled;
-							app->isWindowMenuOpen = false;
-						} Clay__CloseElement();
-						if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, true, nullptr))
-						{
-							app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
-							app->isWindowMenuOpen = false;
-						} Clay__CloseElement();
-						#endif //DEBUG_BUILD
-						
-						// if (ClayBtn("Close Window", "Ctrl+Shift+W", true, &app->icons[AppIcon_CloseWindow]))
-						// {
-						// 	shouldContinueRunning = false;
-						// 	app->isFileMenuOpen = false;
-						// } Clay__CloseElement();
-						
-						Clay__CloseElement();
-						Clay__CloseElement();
-					} Clay__CloseElement();
-					
-					
-					CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
-					
-					if (app->isFileOpen)
-					{
-						CLAY({ .id = CLAY_ID("FilePathDisplay") })
-						{
-							CLAY_TEXT(
-								ToClayString(app->filePath),
-								CLAY_TEXT_CONFIG({
-									.fontId = app->clayUiFontId,
-									.fontSize = UI_FONT_SIZE,
-									.textColor = ToClayColor(TEXT_LIGHT_GRAY),
-									.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
-									.wrapMode = CLAY_TEXT_WRAP_NONE,
-									.userData = { .contraction = TextContraction_EllipseFilePath },
-								})
-							);
-						}
-						CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
-					}
-					
-					#if DEBUG_BUILD
-					if (app->enableFrameUpdateIndicator)
-					{
-						//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
-						CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
-							.layout = {
-								.sizing={ .width=CLAY_SIZING_FIXED(4), .height=CLAY_SIZING_GROW(0) },
-								.layoutDirection = CLAY_TOP_TO_BOTTOM,
-							},
-							.backgroundColor = ToClayColor(Black),
-						})
-						{
-							for (uxx pIndex = 0; pIndex < 10; pIndex++)
+							//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
+							CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
+								.layout = {
+									.sizing={ .width=CLAY_SIZING_FIXED(4), .height=CLAY_SIZING_GROW(0) },
+									.layoutDirection = CLAY_TOP_TO_BOTTOM,
+								},
+								.backgroundColor = ToClayColor(Black),
+							})
 							{
-								CLAY({
-									.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), .height = CLAY_SIZING_PERCENT(0.1f) } },
-									.backgroundColor = ToClayColor(((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black),
-								}) {}
+								for (uxx pIndex = 0; pIndex < 10; pIndex++)
+								{
+									CLAY({
+										.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), .height = CLAY_SIZING_PERCENT(0.1f) } },
+										.backgroundColor = ToClayColor(((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black),
+									}) {}
+								}
 							}
 						}
+						#endif
 					}
-					#endif
+				}
+				
+				// +==============================+
+				// |             Tabs             |
+				// +==============================+
+				if (app->tabs.length > 1)
+				{
+					CLAY({ .id = CLAY_ID("TabGutter"),
+						.layout = {
+							.layoutDirection = CLAY_LEFT_TO_RIGHT,
+							.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
+							.padding = { .top = 4 },
+						},
+						.backgroundColor = ToClayColor(BACKGROUND_GRAY),
+					})
+					{
+						bool wasPrevHovered = false;
+						VarArrayLoop(&app->tabs, tIndex)
+						{
+							VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
+							bool isCurrentTab = (app->currentTabIndex == tIndex);
+							ClayId tabId = ToClayId(tab->filePath);
+							bool isHovered = IsMouseOverClay(tabId);
+							u16 borderThickness = (isHovered && !isCurrentTab) ? 2 : 0;
+							
+							// Dividers in-between not-selected and not-hovered tabs
+							if (tIndex > 0)
+							{
+								bool shouldShowDivider = (!isCurrentTab && app->currentTabIndex != tIndex-1 && !isHovered && !wasPrevHovered);
+								CLAY({
+									.layout = {
+										.sizing = { .width = CLAY_SIZING_FIXED(1), .height = CLAY_SIZING_GROW(0) },
+									},
+									.backgroundColor = ToClayColor(shouldShowDivider ? TEXT_GRAY : Transparent),
+								}) {}
+							}
+							
+							CLAY({ .id = tabId,
+								.layout = {
+									.layoutDirection = CLAY_LEFT_TO_RIGHT,
+									.sizing = { .width = CLAY_SIZING_PERCENT(1.0f / (r32)app->tabs.length) },
+									.padding = CLAY_PADDING_ALL(4),
+								},
+								.cornerRadius = { .topLeft=4, .topRight=4, .bottomLeft=0, .bottomRight=0 },
+								.backgroundColor = ToClayColor(isCurrentTab ? BACKGROUND_BLACK : (isHovered ? HOVERED_BLUE : BACKGROUND_GRAY)),
+								.border = {
+									.color = ToClayColor(SELECTED_BLUE),
+									.width = { .left=borderThickness, .top=borderThickness, .right=borderThickness, .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
+								},
+							})
+							{
+								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
+								Str8 displayPath = GetUniqueTabFilePath(tab->filePath);
+								Str8 displayPathScratch = AllocStr8(scratch, displayPath); //TODO: We really should allocate this in like a "UI Stack" or something so it's guaranteed to exist until the UI gets rendered at the end of the frame
+								CLAY_TEXT(
+									ToClayString(displayPathScratch),
+									CLAY_TEXT_CONFIG({
+										.fontId = app->clayUiFontId,
+										.fontSize = UI_FONT_SIZE,
+										.textColor = ToClayColor((isCurrentTab || isHovered) ? TEXT_WHITE : TEXT_LIGHT_GRAY),
+										.wrapMode = CLAY_TEXT_WRAP_NONE,
+										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+										.userData = { .contraction = TextContraction_EllipseRight },
+									})
+								);
+								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
+								
+								if (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+								{
+									AppChangeTab(tIndex);
+								}
+								if (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Middle))
+								{
+									AppCloseFileTab(tIndex);
+									tIndex--;
+								}
+							}
+							
+							wasPrevHovered = isHovered;
+						}
+					}
 				}
 				
 				CLAY({
@@ -753,7 +908,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					// +==============================+
 					// |         Options List         |
 					// +==============================+
-					CLAY({ .id = CLAY_ID("OptionsList"),
+					ClayId optionsContainerId = CLAY_ID("OptionsList");
+					CLAY({ .id = optionsContainerId,
 						.layout = {
 							.layoutDirection = CLAY_TOP_TO_BOTTOM,
 							.childGap = OPTION_UI_GAP,
@@ -766,56 +922,59 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						.scroll = { .vertical=true, .scrollLag = app->smoothScrollingEnabled ? (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR : 0.0f },
 					})
 					{
-						VarArrayLoop(&app->fileOptions, oIndex)
+						if (app->currentTab != nullptr)
 						{
-							VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
-							if (option->type == FileOptionType_Bool)
+							VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 							{
-								//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-								if (ClayOptionBtn(option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
+								VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+								if (option->type == FileOptionType_Bool)
 								{
-									option->valueBool = !option->valueBool;
-									if (StrExactEquals(option->valueStr, StrLit("false")))
+									//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
+									if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
 									{
-										SetOptionValue(option, StrLit("true"));
-									}
-									else if (StrExactEquals(option->valueStr, StrLit("true")))
-									{
-										SetOptionValue(option, StrLit("false"));
-									}
-									else if (StrExactEquals(option->valueStr, StrLit("0")))
-									{
-										SetOptionValue(option, StrLit("1"));
-									}
-									else
-									{
-										SetOptionValue(option, StrLit("0"));
-									}
-								} Clay__CloseElement();
-							}
-							else if (option->type == FileOptionType_CommentDefine)
-							{
-								if (ClayOptionBtn(ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+										option->valueBool = !option->valueBool;
+										if (StrExactEquals(option->valueStr, StrLit("false")))
+										{
+											SetOptionValue(app->currentTab, option, StrLit("true"));
+										}
+										else if (StrExactEquals(option->valueStr, StrLit("true")))
+										{
+											SetOptionValue(app->currentTab, option, StrLit("false"));
+										}
+										else if (StrExactEquals(option->valueStr, StrLit("0")))
+										{
+											SetOptionValue(app->currentTab, option, StrLit("1"));
+										}
+										else
+										{
+											SetOptionValue(app->currentTab, option, StrLit("0"));
+										}
+									} Clay__CloseElement();
+								}
+								else if (option->type == FileOptionType_CommentDefine)
 								{
-									option->isUncommented = !option->isUncommented;
-									SetOptionValue(option, StrLit(option->isUncommented ? "" : "// "));
-								} Clay__CloseElement();
-							}
-							else
-							{
-								if (ClayOptionBtn(option->name, StrLit("-"), false))
+									if (ClayOptionBtn(optionsContainerId, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+									{
+										option->isUncommented = !option->isUncommented;
+										SetOptionValue(app->currentTab, option, StrLit(option->isUncommented ? "" : "// "));
+									} Clay__CloseElement();
+								}
+								else
 								{
-									//TODO: Implement me!
-								} Clay__CloseElement();
-							}
-							if (option->numEmptyLinesAfter > 0)
-							{
-								CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
+									if (ClayOptionBtn(optionsContainerId, option->name, StrLit("-"), false))
+									{
+										//TODO: Implement me!
+									} Clay__CloseElement();
+								}
+								if (option->numEmptyLinesAfter > 0)
+								{
+									CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
+								}
 							}
 						}
 						
 						#if DEBUG_BUILD
-						if (!app->isFileOpen)
+						if (app->currentTab == nullptr)
 						{
 							CLAY({
 								.layout = { .padding = CLAY_PADDING_ALL(1), .layoutDirection = CLAY_LEFT_TO_RIGHT, },
@@ -843,7 +1002,10 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						#endif
 					}
 					
-					ClayScrollbar(CLAY_ID("OptionsList"), StrLit("OptionsListScrollbar"), &app->optionScrollbarState);
+					if (app->currentTab != nullptr)
+					{
+						ClayScrollbar(optionsContainerId, StrLit("OptionsListScrollbar"), app->minimalModeEnabled ? 0.0f : (r32)SCROLLBAR_WIDTH, &app->currentTab->scrollbarState);
+					}
 				}
 			}
 		}
@@ -853,36 +1015,46 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		// +==============================+
 		// |    Update TooltipRegions     |
 		// +==============================+
-		if (app->filePathTooltipId != 0)
 		{
+			Assert(app->filePathTooltipId != 0);
 			TooltipRegion* region = FindTooltipRegionById(&app->tooltipRegions, app->filePathTooltipId);
-			if (region != nullptr)
+			NotNull(region);
+			Str8 displayStr = (app->currentTab != nullptr) ? app->currentTab->filePath : Str8_Empty;
+			if (!StrExactEquals(region->displayStr, displayStr))
 			{
-				rec filePathDisplayRec = GetClayElementDrawRec(CLAY_ID("FilePathDisplay"));
-				region->mainRec = InflateRecY(filePathDisplayRec, 8);
+				FreeStr8(region->arena, &region->displayStr);
+				region->displayStr = AllocStr8(region->arena, displayStr);
 			}
+			region->enabled = (app->currentTab != nullptr);
+			rec filePathDisplayRec = GetClayElementDrawRec(CLAY_ID("FilePathDisplay"));
+			region->mainRec = InflateRecY(filePathDisplayRec, 8);
 		}
-		VarArrayLoop(&app->fileOptions, oIndex)
+		VarArrayLoop(&app->tabs, tIndex)
 		{
-			VarArrayLoopGet(FileOption, option, &app->fileOptions, oIndex);
-			if (option->tooltipId != 0)
+			VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
+			bool isCurrentTab = (tIndex == app->currentTabIndex);
+			VarArrayLoop(&tab->fileOptions, oIndex)
 			{
-				TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, option->tooltipId);
-				NotNull(tooltip);
-				tooltip->enabled = false;
-				if (app->optionTooltipsEnabled)
+				VarArrayLoopGet(FileOption, option, &tab->fileOptions, oIndex);
+				if (option->tooltipId != 0)
 				{
-					Str8 buttonUiId = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
-					rec buttonDrawRec = GetClayElementDrawRec(ToClayId(buttonUiId));
-					rec scrollDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-					if (scrollDrawRec.Width > 0 && scrollDrawRec.Height > 0 &&
-						buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+					TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, option->tooltipId);
+					NotNull(tooltip);
+					tooltip->enabled = false;
+					if (app->optionTooltipsEnabled && isCurrentTab)
 					{
-						buttonDrawRec = OverlapPartRec(buttonDrawRec, scrollDrawRec);
-						if (buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+						Str8 buttonUiId = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
+						rec buttonDrawRec = GetClayElementDrawRec(ToClayId(buttonUiId));
+						rec scrollDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+						if (scrollDrawRec.Width > 0 && scrollDrawRec.Height > 0 &&
+							buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
 						{
-							tooltip->enabled = true;
-							tooltip->mainRec = buttonDrawRec;
+							buttonDrawRec = OverlapPartRec(buttonDrawRec, scrollDrawRec);
+							if (buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
+							{
+								tooltip->enabled = true;
+								tooltip->mainRec = buttonDrawRec;
+							}
 						}
 					}
 				}
@@ -913,7 +1085,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		if (openResult == Result_Success)
 		{
 			PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
-			AppOpenFile(selectedPath);
+			AppOpenFileTab(selectedPath);
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
 		else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }

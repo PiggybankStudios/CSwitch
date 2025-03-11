@@ -103,6 +103,16 @@ struct ScrollbarInteractionState
 	v2 grabOffset;
 };
 
+typedef struct FileTab FileTab;
+struct FileTab
+{
+	Str8 filePath;
+	Str8 fileContents;
+	uxx fileWatchId;
+	VarArray fileOptions; //FileOption
+	ScrollbarInteractionState scrollbarState;
+};
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -122,26 +132,18 @@ struct AppData
 	u16 clayUiFontId;
 	u16 clayMainFontId;
 	bool isFileMenuOpen;
-	bool isWindowMenuOpen;
+	bool keepFileMenuOpenUntilMouseOver;
+	bool isViewMenuOpen;
+	bool keepViewMenuOpenUntilMouseOver;
 	bool isOpenRecentSubmenuOpen;
 	bool wasClayScrollingPrevFrame;
-	bool smoothScrollingEnabled;
-	bool optionTooltipsEnabled;
-	bool sleepingDisabled;
-	#if DEBUG_BUILD
-	bool enableFrameUpdateIndicator;
-	#endif
-	ScrollbarInteractionState optionScrollbarState;
-	
-	bool isFileOpen;
-	Str8 filePath;
-	Str8 fileContents;
-	uxx fileWatchId;
-	VarArray fileOptions; //FileOption
-	u64 filePathTooltipId;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
+	
+	VarArray tabs; //FileTab
+	uxx currentTabIndex;
+	FileTab* currentTab;
 	
 	#if 0
 	TOOLINFO tooltipInfo;
@@ -151,9 +153,17 @@ struct AppData
 	u64 nextTooltipId;
 	VarArray tooltipRegions;
 	TooltipState tooltip;
+	u64 filePathTooltipId;
 	
 	//User Options
 	bool clipNamesOnLeftSide;
+	bool smoothScrollingEnabled;
+	bool optionTooltipsEnabled;
+	bool sleepingDisabled;
+	#if DEBUG_BUILD
+	bool enableFrameUpdateIndicator;
+	#endif
+	bool minimalModeEnabled;
 };
 
 #endif //  _APP_MAIN_H
