@@ -1,6 +1,5 @@
 
 # TODO List:
-	(!) When scrolled down the list, clicking "File" or "View" toggles the button that is below! (also when clicking on tabs)
 	( ) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
@@ -30,7 +29,6 @@
 	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[ ] Add command line arguments that tell CSwitch where to position itself on screen. Either absolute coordinates, or maybe like relative coordinates from top-left, top-right, bottom-right, bottom-left, left-middle, top-middle, right-middle, or bottom-middle
-	[ ] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
 	[ ] Add a button+hotkey to open the file in a text editor (also maybe to open the folder where the file resides in Explorer)
 	[ ] Re-open all tabs that were open in the last session of CSwitch
 	[ ] Add support for dragging tabs to reorder them
@@ -42,6 +40,8 @@
 	[ ] 
 
 # Finished List:
+	[X] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
+	(X) When scrolled down the list, clicking "File" or "View" toggles the button that is below! (also when clicking on tabs)
 	[X] Get the window title showing the path of the current file again (was removed when adding tabs)
 	(X) We should only handle the WM_PAINT event when it's given to us on the main thread!
 	[X] Multiple tabs

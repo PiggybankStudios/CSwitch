@@ -84,7 +84,7 @@ void UpdateTooltipPlacement(TooltipState* tooltip, v2 screenSize)
 {
 	if (tooltip->isOpen)
 	{
-		tooltip->mainRec.Size = Add(tooltip->displayStrMeasure.logicalRec.Size, Mul(TOOLTIP_TEXT_MARGIN, 2.0f));
+		tooltip->mainRec.Size = Add(tooltip->displayStrMeasure.logicalRec.Size, NewV2(UI_R32(TOOLTIP_TEXT_MARGIN_X*2), UI_R32(TOOLTIP_TEXT_MARGIN_Y*2)));
 		if (tooltip->mainRec.Width >= (r32)screenSize.Width) { tooltip->mainRec.Width = (r32)screenSize.Width; }
 		tooltip->mainRec.X = tooltip->focusPos.X - tooltip->mainRec.Width/2;
 		if (tooltip->mainRec.X < 0) { tooltip->mainRec.X = 0; }
@@ -109,7 +109,7 @@ void ShowTooltip(TooltipState* tooltip, TooltipRegion* region)
 	if (tooltip->isOpen) { CloseTooltip(tooltip); }
 	tooltip->regionId = region->id;
 	tooltip->displayStr = AllocStr8(tooltip->arena, region->displayStr);
-	tooltip->displayStrMeasure = MeasureTextEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, tooltip->displayStr);
+	tooltip->displayStrMeasure = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, tooltip->displayStr);
 	tooltip->focusPos = appIn->mouse.position;
 	tooltip->isOpen = true;
 	UpdateTooltipPlacement(tooltip, ToV2Fromi(appIn->screenSize));
@@ -184,7 +184,7 @@ void RenderTooltip(TooltipState* tooltip)
 	{
 		UpdateTooltipPlacement(tooltip, ToV2Fromi(appIn->screenSize));
 		DrawRectangle(tooltip->mainRec, TEXT_WHITE);
-		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 		NotNull(fontAtlas);
 		v2 textPos = NewV2(
 			tooltip->mainRec.X + tooltip->mainRec.Width/2 - tooltip->displayStrMeasure.Width/2,
@@ -192,7 +192,7 @@ void RenderTooltip(TooltipState* tooltip)
 		);
 		AlignV2(&textPos);
 		reci oldClipRec = AddClipRec(ToReciFromf(tooltip->mainRec));
-		BindFontEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+		BindFontEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 		DrawText(tooltip->displayStr, textPos, BACKGROUND_DARK_GRAY);
 		SetClipRec(oldClipRec);
 		DrawRectangleOutline(tooltip->mainRec, 1, TEXT_LIGHT_GRAY);

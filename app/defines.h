@@ -15,22 +15,22 @@ Date:   02\25\2025
 #define RECENT_FILES_MAX_LENGTH    16 //files
 
 #define UI_FONT_NAME  "Consolas"
-#define UI_FONT_SIZE  14
 #define UI_FONT_STYLE FontStyleFlag_None
 
 #define MAIN_FONT_NAME  "Consolas"
-#define MAIN_FONT_SIZE  18
 #define MAIN_FONT_STYLE FontStyleFlag_Bold
+
+#define MIN_UI_FONT_SIZE       9
+#define DEFAULT_UI_FONT_SIZE   14
+#define MAIN_TO_UI_FONT_RATIO  1.3f //Default main font size will be 18
 
 #define DEFAULT_WINDOW_SIZE        NewV2(360, 500)
 #define MIN_WINDOW_SIZE            NewV2(50, 50)
-#define TOPBAR_HEIGHT              24 //px
-#define OPEN_RECENT_DROPDOWN_WIDTH 300 //px
-#define SCROLLBAR_WIDTH            10 //px
+#define SCROLLBAR_WIDTH            10 //px (at uiScale=1.0f)
 
-#define OPTION_UI_GAP                    2 //px
+#define OPTION_UI_GAP                    2 //px (at uiScale=1.0f)
 #define OPTIONS_SMOOTH_SCROLLING_DIVISOR 5 //divisor
-#define LINE_BREAK_EXTRA_UI_GAP          4 //px
+#define LINE_BREAK_EXTRA_UI_GAP          4 //px (at uiScale=1.0f)
 #define MAX_LINE_BREAKS_CONSIDERED       4 //lines
 
 #define CHECK_RECENT_FILES_WRITE_TIME_PERIOD 1000 //ms
@@ -52,10 +52,11 @@ Date:   02\25\2025
 
 #define WIN32_TOOLTIP_ID 100 //arbitrary ID
 
-#define DEFAULT_TOOLTIP_DELAY 750 //ms
-#define OPTION_NAME_TOOLTIP_DELAY 1000 //ms
-#define TOOLTIP_MAX_MOVE_DIST 5 //px
-#define TOOLTIP_TEXT_MARGIN   NewV2(8, 4) //px
+#define DEFAULT_TOOLTIP_DELAY      750 //ms
+#define OPTION_NAME_TOOLTIP_DELAY  1000 //ms
+#define TOOLTIP_MAX_MOVE_DIST      5 //px
+#define TOOLTIP_TEXT_MARGIN_X      8 //px (at uiScale=1.0f)
+#define TOOLTIP_TEXT_MARGIN_Y      4 //px (at uiScale=1.0f)
 #define TOOLTIP_MOUSE_UP_OFFSET    5 //px
 #define TOOLTIP_MOUSE_DOWN_OFFSET  20 //px TODO: Somehow we should ask the OS how tall the cursor is and offset but that much plus a little
 

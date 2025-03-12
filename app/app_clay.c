@@ -6,21 +6,6 @@ Description:
 	** Holds various functions that comprise common widgets for Clay
 */
 
-bool IsMouseOverClay(ClayId clayId)
-{
-	return appIn->mouse.isOverWindow && Clay_PointerOver(clayId);
-}
-bool IsMouseOverClayInContainer(ClayId containerId, ClayId clayId)
-{
-	return appIn->mouse.isOverWindow && Clay_PointerOver(containerId) && Clay_PointerOver(clayId);
-}
-
-v2 ClayUiTextSize(Font* font, r32 fontSize, u8 styleFlags, Str8 text)
-{
-	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, text);
-	return NewV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
-}
-
 //Call Clay__CloseElement once if false, three times if true (i.e. twice inside the if statement and once after)
 bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, bool keepOpen)
 {
@@ -30,8 +15,8 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	Str8 normalDisplayStr = StrLit(btnText);
 	Assert(!IsEmptyStr(normalDisplayStr));
 	Str8 altDisplayStr = PrintInArenaStr(persistScratch, "(%c)%.*s", normalDisplayStr.chars[0], normalDisplayStr.length-1, &normalDisplayStr.chars[1]);
-	v2 normalDisplayStrSize = ClayUiTextSize(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, normalDisplayStr);
-	v2 altDisplayStrSize = ClayUiTextSize(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, altDisplayStr);
+	v2 normalDisplayStrSize = ClayUiTextSize(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, normalDisplayStr);
+	v2 altDisplayStrSize = ClayUiTextSize(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, altDisplayStr);
 	u16 leftPadding = (u16)(showAltText ? 0 : (altDisplayStrSize.Width - normalDisplayStrSize.Width)/2);
 	
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
@@ -43,14 +28,14 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
 	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
 	Color32 borderColor = SELECTED_BLUE;
-	u16 borderWith = isHovered ? 1 : 0;
+	u16 borderWidth = isHovered ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .padding = { 4, 4, 2, 2 } },
+		.layout = { .padding = { UI_U16(4), UI_U16(4), UI_U16(2), UI_U16(2) } },
 		.backgroundColor = ToClayColor(backgroundColor),
-		.cornerRadius = CLAY_CORNER_RADIUS(4),
-		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
+		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=ToClayColor(borderColor) },
 	});
 	CLAY({
 		.layout = {
@@ -63,7 +48,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			ToClayString(showAltText ? altDisplayStr : normalDisplayStr),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
-				.fontSize = UI_FONT_SIZE,
+				.fontSize = (u16)app->uiFontSize,
 				.textColor = ToClayColor(TEXT_WHITE),
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
@@ -128,7 +113,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	.backgroundColor = ToClayColor(color),              \
 }) {}
 
-bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r32 dropDownWidth, Texture* icon)
+bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, Texture* icon)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopSubmenu", btnText);
@@ -142,26 +127,26 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r3
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
 	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
 	Color32 borderColor = SELECTED_BLUE;
-	u16 borderWith = isHovered ? 1 : 0;
+	u16 borderWidth = isHovered ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), }, .padding = { 4, 4, 16, 16 } },
+		.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), }, .padding = { UI_U16(4), UI_U16(4), UI_U16(16), UI_U16(16) } },
 		.backgroundColor = ToClayColor(backgroundColor),
-		.cornerRadius = CLAY_CORNER_RADIUS(4),
-		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
+		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=ToClayColor(borderColor) },
 	});
-	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = 8 }, } })
+	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = UI_U16(8) }, } })
 	{
 		if (icon != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE), TEXT_WHITE);
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), TEXT_WHITE);
 		}
 		CLAY_TEXT(
 			ToClayString(StrLit(btnText)),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
-				.fontSize = UI_FONT_SIZE,
+				.fontSize = (u16)app->uiFontSize,
 				.textColor = ToClayColor(TEXT_WHITE),
 			})
 		);
@@ -190,10 +175,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, r3
 			.id = menuListId,
 			.layout = {
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
-				.sizing = {
-					.width = CLAY_SIZING_FIXED(dropDownWidth),
-				},
-				.padding = CLAY_PADDING_ALL(2),
+				.padding = CLAY_PADDING_ALL(UI_U16(2)),
 				.childGap = 2,
 			},
 			.backgroundColor = ToClayColor(BACKGROUND_GRAY),
@@ -217,17 +199,17 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	Color32 backgroundColor = !isEnabled ? BACKGROUND_BLACK : (isPressed ? SELECTED_BLUE : (isHovered ? HOVERED_BLUE : Transparent));
 	Color32 borderColor = SELECTED_BLUE;
-	u16 borderWith = (isHovered && isEnabled) ? 1 : 0;
+	u16 borderWidth = (isHovered && isEnabled) ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = {
-			.padding = { .top = 8, .bottom = 8, .left = 4, .right = 4, },
+			.padding = { .top = UI_U16(8), .bottom = UI_U16(8), .left = UI_U16(4), .right = UI_U16(4), },
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
 		.backgroundColor = ToClayColor(backgroundColor),
-		.cornerRadius = CLAY_CORNER_RADIUS(4),
-		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },
+		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=ToClayColor(borderColor) },
 	});
 	CLAY({
 		.layout = {
@@ -240,13 +222,13 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 	{
 		if (icon != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE), TEXT_WHITE);
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), TEXT_WHITE);
 		}
 		CLAY_TEXT(
 			ToClayString(btnText),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
-				.fontSize = UI_FONT_SIZE,
+				.fontSize = (u16)app->uiFontSize,
 				.textColor = ToClayColor(TEXT_WHITE),
 			})
 		);
@@ -257,17 +239,17 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 			CLAY({ .id=hotkeyId,
 				.layout = {
 					.layoutDirection = CLAY_LEFT_TO_RIGHT,
-					.padding = CLAY_PADDING_ALL(2),
+					.padding = CLAY_PADDING_ALL(UI_U16(2)),
 				},
-				.border = { .width=CLAY_BORDER_OUTSIDE(1), .color = ToClayColor(TEXT_GRAY) },
-				.cornerRadius = CLAY_CORNER_RADIUS(5),
+				.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color = ToClayColor(TEXT_GRAY) },
+				.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(5)),
 			})
 			{
 				CLAY_TEXT(
 					ToClayString(hotkeyStr),
 					CLAY_TEXT_CONFIG({
 						.fontId = app->clayUiFontId,
-						.fontSize = UI_FONT_SIZE,
+						.fontSize = (u16)app->uiFontSize,
 						.textColor = ToClayColor(TEXT_GRAY),
 					})
 				);
@@ -305,21 +287,21 @@ bool ClayOptionBtn(ClayId containerId, Str8 nameStr, Str8 valueStr, bool enabled
 		.id = btnId,
 		.layout = {
 			.layoutDirection = CLAY_LEFT_TO_RIGHT,
-			.padding = CLAY_PADDING_ALL(4),
+			.padding = CLAY_PADDING_ALL(UI_U16(4)),
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
 		.backgroundColor = ToClayColor(isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
-		.cornerRadius = CLAY_CORNER_RADIUS(4),
+		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 		.border = {
 			.color = ToClayColor(outlineColor),
-			.width = CLAY_BORDER_OUTSIDE(2),
+			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
 		},
 	});
 	CLAY_TEXT(
 		ToClayString(nameStr),
 		CLAY_TEXT_CONFIG({
 			.fontId = app->clayMainFontId,
-			.fontSize = MAIN_FONT_SIZE,
+			.fontSize = (u16)app->mainFontSize,
 			.textColor = ToClayColor(textColor),
 			.wrapMode = CLAY_TEXT_WRAP_NONE,
 			.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
@@ -329,12 +311,12 @@ bool ClayOptionBtn(ClayId containerId, Str8 nameStr, Str8 valueStr, bool enabled
 	CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
 	if (!IsEmptyStr(valueStr))
 	{
-		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(4) } } }) {} //ensure 4px padding between name and value
+		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(UI_U16(4)) } } }) {} //ensure 4px padding between name and value
 		CLAY_TEXT(
 			ToClayString(valueStr),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayMainFontId,
-				.fontSize = MAIN_FONT_SIZE,
+				.fontSize = (u16)app->mainFontSize,
 				.textColor = ToClayColor(valueColor),
 			})
 		);
@@ -369,7 +351,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 		CLAY({ .id = gutterId,
 			.layout = {
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
-				.padding = { .left = 1, },
+				.padding = { .left = UI_U16(1), },
 				.sizing = {
 					.width = CLAY_SIZING_FIXED(gutterWidth),
 					.height = CLAY_SIZING_GROW(0)
@@ -380,14 +362,14 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 			v2 scrollBarSize = NewV2(
-				gutterWidth - 2,
+				gutterWidth - (UI_U16(1) * 2.0f),
 				scrollGutterDrawRec.Height * scrollbarSizePercent
 			);
 			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
 			CLAY({ .id = scrollbarId,
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
-					.offset = { .x = 1, .y = scrollBarOffsetY },
+					.offset = { .x = UI_U16(1), .y = scrollBarOffsetY },
 				},
 				.layout = {
 					.sizing = {

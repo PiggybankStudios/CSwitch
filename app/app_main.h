@@ -123,6 +123,9 @@ struct AppData
 	
 	Shader mainShader;
 	Font uiFont;
+	r32 uiFontSize;
+	r32 uiScale;
+	r32 mainFontSize;
 	Font mainFont;
 	Texture icons[AppIcon_Count];
 	

@@ -55,6 +55,7 @@ static Arena* stdHeap = nullptr;
 #include "main2d_shader.glsl.h"
 #include "app_resources.c"
 #include "app_file_watch.c"
+#include "app_clay_helpers.c"
 #include "app_tooltips.c"
 #include "app_helpers.c"
 #include "app_tab.c"
@@ -237,53 +238,11 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
 	
-	FontCharRange fontCharRanges[] = {
-		FontCharRange_ASCII,
-		FontCharRange_LatinExt,
-		NewFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
-		NewFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
-	};
-	
-	// ImageData keysSheet = LoadImageData(scratch, "resources/image/keys16.png");
-	// ImageData keysWideSheet = LoadImageData(scratch, "resources/image/keys16_wide.png");
-	{
-		#if 0
-		uxx numKeyCodepoints = 0;
-		CustomFontGlyph customGlyphs[KEY_CODEPOINT_COUNT];
-		for (uxx keyIndex = 0; keyIndex < KEY_CODEPOINT_COUNT; keyIndex++)
-		{
-			u32 codepoint = (u32)(KEY_FIRST_CODEPOINT + keyIndex);
-			i32 keyGlyphWidth = 0;
-			bool useWideSheet = false;
-			v2i tilePos = GetSheetFrameForKey(GetKeyForCodepoint(codepoint), false, &keyGlyphWidth, &useWideSheet);
-			v2i sheetTileSize = useWideSheet ? NewV2i(32, 16) : FillV2i(16);
-			i32 glyphOffset = (i32)(sheetTileSize.Width - keyGlyphWidth) / 2;
-			customGlyphs[numKeyCodepoints].codepoint = codepoint;
-			customGlyphs[numKeyCodepoints].imageData = useWideSheet ? keysWideSheet : keysSheet;
-			customGlyphs[numKeyCodepoints].sourceRec = NewReci(tilePos.X * sheetTileSize.Width + glyphOffset, tilePos.Y * sheetTileSize.Height, keyGlyphWidth, sheetTileSize.Height);
-			numKeyCodepoints++;
-		}
-		CustomFontCharRange customGlyphsRange = NewCustomFontCharRange(numKeyCodepoints, &customGlyphs[0]);
-		#endif
-		app->uiFont = InitFont(stdHeap, StrLit("uiFont"));
-		Result attachResult = AttachOsTtfFileToFont(&app->uiFont, StrLit(UI_FONT_NAME), UI_FONT_SIZE, UI_FONT_STYLE);
-		Assert(attachResult == Result_Success);
-		Result bakeResult = BakeFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
-		Assert(bakeResult == Result_Success);
-		FillFontKerningTable(&app->uiFont);
-		RemoveAttachedTtfFile(&app->uiFont);
-	}
-	
-	{
-		app->mainFont = InitFont(stdHeap, StrLit("mainFont"));
-		Result attachResult = AttachOsTtfFileToFont(&app->mainFont, StrLit(MAIN_FONT_NAME), MAIN_FONT_SIZE, MAIN_FONT_STYLE);
-		Assert(attachResult == Result_Success);
-		
-		Result bakeResult = BakeFontAtlas(&app->mainFont, MAIN_FONT_SIZE, MAIN_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
-		Assert(bakeResult == Result_Success);
-		FillFontKerningTable(&app->mainFont);
-		RemoveAttachedTtfFile(&app->mainFont);
-	}
+	app->uiFontSize = DEFAULT_UI_FONT_SIZE;
+	app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+	app->uiScale = 1.0f;
+	bool fontBakeSuccess = AppCreateFonts();
+	Assert(fontBakeSuccess);
 	
 	InitClayUIRenderer(stdHeap, V2_Zero, &app->clay);
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
@@ -512,6 +471,34 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	
+	// +==================================================+
+	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
+	// +==================================================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		AppChangeFontSize(true);
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		AppChangeFontSize(false);
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	{
+		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
+		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+		app->uiScale = 1.0f;
+		bool fontBakeSuccess = AppCreateFonts();
+		Assert(fontBakeSuccess);
+	}
+	
+	// +==============================+
+	// |   Handle Ctrl+ScrollWheel    |
+	// +==============================+
+	if (IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->mouse.scrollDelta.Y != 0)
+	{
+		AppChangeFontSize(appIn->mouse.scrollDelta.Y > 0);
+	}
+	
 	// +================================+
 	// | Handle Alt+F and Alt+V Hotkeys |
 	// +================================+
@@ -645,7 +632,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
 		
-		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, appIn->mouse.scrollDelta, false);
+		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
+		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
@@ -657,7 +645,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				},
 				.border = {
 					.color=ToClayColor(SELECTED_BLUE),
-					.width=CLAY_BORDER_OUTSIDE(fullscreenBorderThickness),
+					.width=CLAY_BORDER_OUTSIDE(UI_BORDER(fullscreenBorderThickness)),
 				},
 			})
 			{
@@ -673,12 +661,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								.height = topbarHeight,
 								.width = CLAY_SIZING_GROW(0),
 							},
-							.padding = { 0, 0, 0, 1 },
+							.padding = { 0, 0, 0, UI_BORDER(1) },
 							.childGap = 2,
 							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 						},
 						.backgroundColor = ToClayColor(BACKGROUND_GRAY),
-						.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
+						.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
 						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
@@ -692,7 +680,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							
 							if (app->recentFiles.length > 0)
 							{
-								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, OPEN_RECENT_DROPDOWN_WIDTH, &app->icons[AppIcon_OpenRecent]))
+								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->icons[AppIcon_OpenRecent]))
 								{
 									for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 									{
@@ -800,7 +788,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									ToClayString(app->currentTab->filePath),
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
-										.fontSize = UI_FONT_SIZE,
+										.fontSize = (u16)app->uiFontSize,
 										.textColor = ToClayColor(TEXT_LIGHT_GRAY),
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
@@ -808,7 +796,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									})
 								);
 							}
-							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(4) } } }) {}
+							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)) } } }) {}
 						}
 						
 						#if DEBUG_BUILD
@@ -817,7 +805,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
 							CLAY({ .id=CLAY_ID("FrameUpdateIndicatorContainer"),
 								.layout = {
-									.sizing={ .width=CLAY_SIZING_FIXED(4), .height=CLAY_SIZING_GROW(0) },
+									.sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)), .height=CLAY_SIZING_GROW(0) },
 									.layoutDirection = CLAY_TOP_TO_BOTTOM,
 								},
 								.backgroundColor = ToClayColor(Black),
@@ -845,7 +833,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						.layout = {
 							.layoutDirection = CLAY_LEFT_TO_RIGHT,
 							.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
-							.padding = { .top = 4 },
+							.padding = { .top = UI_U16(4) },
 						},
 						.backgroundColor = ToClayColor(BACKGROUND_GRAY),
 					})
@@ -865,7 +853,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								bool shouldShowDivider = (!isCurrentTab && app->currentTabIndex != tIndex-1 && !isHovered && !wasPrevHovered);
 								CLAY({
 									.layout = {
-										.sizing = { .width = CLAY_SIZING_FIXED(1), .height = CLAY_SIZING_GROW(0) },
+										.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(1)), .height = CLAY_SIZING_GROW(0) },
 									},
 									.backgroundColor = ToClayColor(shouldShowDivider ? TEXT_GRAY : Transparent),
 								}) {}
@@ -875,13 +863,13 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								.layout = {
 									.layoutDirection = CLAY_LEFT_TO_RIGHT,
 									.sizing = { .width = CLAY_SIZING_PERCENT(1.0f / (r32)app->tabs.length) },
-									.padding = CLAY_PADDING_ALL(4),
+									.padding = CLAY_PADDING_ALL(UI_U16(4)),
 								},
-								.cornerRadius = { .topLeft=4, .topRight=4, .bottomLeft=0, .bottomRight=0 },
+								.cornerRadius = { .topLeft=UI_U16(4), .topRight=UI_U16(4), .bottomLeft=0, .bottomRight=0 },
 								.backgroundColor = ToClayColor(isCurrentTab ? BACKGROUND_BLACK : (isHovered ? HOVERED_BLUE : BACKGROUND_GRAY)),
 								.border = {
 									.color = ToClayColor(SELECTED_BLUE),
-									.width = { .left=borderThickness, .top=borderThickness, .right=borderThickness, .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
+									.width = { .left=UI_BORDER(borderThickness), .top=UI_BORDER(borderThickness), .right=UI_BORDER(borderThickness), .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
 								},
 							})
 							{
@@ -892,7 +880,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									ToClayString(displayPathScratch),
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
-										.fontSize = UI_FONT_SIZE,
+										.fontSize = (u16)app->uiFontSize,
 										.textColor = ToClayColor((isCurrentTab || isHovered) ? TEXT_WHITE : TEXT_LIGHT_GRAY),
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
@@ -931,8 +919,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					CLAY({ .id = optionsContainerId,
 						.layout = {
 							.layoutDirection = CLAY_TOP_TO_BOTTOM,
-							.childGap = OPTION_UI_GAP,
-							.padding = CLAY_PADDING_ALL(4),
+							.childGap = UI_U16(OPTION_UI_GAP),
+							.padding = CLAY_PADDING_ALL(UI_U16(4)),
 							.sizing = {
 								.height = CLAY_SIZING_GROW(0),
 								.width = CLAY_SIZING_GROW(0)
@@ -987,7 +975,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								}
 								if (option->numEmptyLinesAfter > 0)
 								{
-									CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) } } }) {}
+									CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED(UI_R32((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP)) } } }) {}
 								}
 							}
 						}
@@ -996,23 +984,23 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						if (app->currentTab == nullptr)
 						{
 							CLAY({
-								.layout = { .padding = CLAY_PADDING_ALL(1), .layoutDirection = CLAY_LEFT_TO_RIGHT, },
-								.border = { .color = ToClayColor(TEXT_LIGHT_GRAY), .width=CLAY_BORDER_ALL(1) },
+								.layout = { .padding = CLAY_PADDING_ALL(UI_BORDER(1)), .layoutDirection = CLAY_LEFT_TO_RIGHT, },
+								.border = { .color = ToClayColor(TEXT_LIGHT_GRAY), .width=CLAY_BORDER_ALL(UI_BORDER(1)) },
 							})
 							{
-								FontAtlas* uiAtlas = GetFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+								FontAtlas* uiAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 								NotNull(uiAtlas);
-								FontAtlas* mainAtlas = GetFontAtlas(&app->mainFont, MAIN_FONT_SIZE, MAIN_FONT_STYLE);
+								FontAtlas* mainAtlas = GetFontAtlas(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE);
 								NotNull(mainAtlas);
 								CLAY({ .id = CLAY_ID("UiFontAtlas"),
 									.layout = {
-										.sizing = { .width = (r32)uiAtlas->texture.Width*4, .height = (r32)uiAtlas->texture.Height*4 },
+										.sizing = { .width = UI_R32(uiAtlas->texture.Width), .height = UI_R32(uiAtlas->texture.Height) },
 									},
 									.image = ToClayImage(&uiAtlas->texture),
 								}) {}
 								CLAY({ .id = CLAY_ID("MainFontAtlas"),
 									.layout = {
-										.sizing = { .width = (r32)mainAtlas->texture.Width*4, .height = (r32)mainAtlas->texture.Height*4 },
+										.sizing = { .width = UI_R32(mainAtlas->texture.Width), .height = UI_R32(mainAtlas->texture.Height) },
 									},
 									.image = ToClayImage(&mainAtlas->texture),
 								}) {}
@@ -1023,7 +1011,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					
 					if (app->currentTab != nullptr)
 					{
-						ClayScrollbar(optionsContainerId, StrLit("OptionsListScrollbar"), app->minimalModeEnabled ? 0.0f : (r32)SCROLLBAR_WIDTH, &app->currentTab->scrollbarState);
+						ClayScrollbar(optionsContainerId, StrLit("OptionsListScrollbar"), app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH), &app->currentTab->scrollbarState);
 					}
 				}
 			}
@@ -1083,12 +1071,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		RenderTooltip(&app->tooltip);
 		
 		#if 0
-		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
-		BindFontEx(&app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE);
+		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
+		BindFontEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 		rec textRec = NewRec(50, screenSize.Height/2, mousePos.X - 50, fontAtlas->lineHeight);
 		if (textRec.Width < 5) { textRec.Width = 5; }
 		DrawRectangleOutline(textRec, 2, MonokaiRed);
-		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, UI_FONT_SIZE, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
+		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
 		DrawText(shortenedPath, NewV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
 		#endif
 	}

@@ -35,6 +35,111 @@ void LoadWindowIcon()
 	ScratchEnd(scratch);
 }
 
+bool AppCreateFonts()
+{
+	FontCharRange fontCharRanges[] = {
+		FontCharRange_ASCII,
+		FontCharRange_LatinExt,
+		NewFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
+		NewFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
+	};
+	
+	// ImageData keysSheet = LoadImageData(scratch, "resources/image/keys16.png");
+	// ImageData keysWideSheet = LoadImageData(scratch, "resources/image/keys16_wide.png");
+	Font newUiFont = ZEROED;
+	{
+		#if 0
+		uxx numKeyCodepoints = 0;
+		CustomFontGlyph customGlyphs[KEY_CODEPOINT_COUNT];
+		for (uxx keyIndex = 0; keyIndex < KEY_CODEPOINT_COUNT; keyIndex++)
+		{
+			u32 codepoint = (u32)(KEY_FIRST_CODEPOINT + keyIndex);
+			i32 keyGlyphWidth = 0;
+			bool useWideSheet = false;
+			v2i tilePos = GetSheetFrameForKey(GetKeyForCodepoint(codepoint), false, &keyGlyphWidth, &useWideSheet);
+			v2i sheetTileSize = useWideSheet ? NewV2i(32, 16) : FillV2i(16);
+			i32 glyphOffset = (i32)(sheetTileSize.Width - keyGlyphWidth) / 2;
+			customGlyphs[numKeyCodepoints].codepoint = codepoint;
+			customGlyphs[numKeyCodepoints].imageData = useWideSheet ? keysWideSheet : keysSheet;
+			customGlyphs[numKeyCodepoints].sourceRec = NewReci(tilePos.X * sheetTileSize.Width + glyphOffset, tilePos.Y * sheetTileSize.Height, keyGlyphWidth, sheetTileSize.Height);
+			numKeyCodepoints++;
+		}
+		CustomFontCharRange customGlyphsRange = NewCustomFontCharRange(numKeyCodepoints, &customGlyphs[0]);
+		#endif
+		newUiFont = InitFont(stdHeap, StrLit("uiFont"));
+		Result attachResult = AttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE);
+		Assert(attachResult == Result_Success);
+		Result bakeResult = BakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		if (bakeResult != Result_Success)
+		{
+			bakeResult = BakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, NewV2i(512, 512), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+			if (bakeResult != Result_Success)
+			{
+				RemoveAttachedTtfFile(&newUiFont);
+				FreeFont(&newUiFont);
+				return false;
+			}
+		}
+		Assert(bakeResult == Result_Success);
+		FillFontKerningTable(&newUiFont);
+		RemoveAttachedTtfFile(&newUiFont);
+	}
+	
+	Font newMainFont = ZEROED;
+	{
+		newMainFont = InitFont(stdHeap, StrLit("mainFont"));
+		Result attachResult = AttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE);
+		Assert(attachResult == Result_Success);
+		
+		Result bakeResult = BakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		if (bakeResult != Result_Success)
+		{
+			bakeResult = BakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, NewV2i(512, 512), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+			if (bakeResult != Result_Success)
+			{
+				RemoveAttachedTtfFile(&newMainFont);
+				FreeFont(&newMainFont);
+				FreeFont(&newUiFont);
+				return false;
+			}
+		}
+		FillFontKerningTable(&newMainFont);
+		RemoveAttachedTtfFile(&newMainFont);
+	}
+	
+	if (app->uiFont.arena != nullptr) { FreeFont(&app->uiFont); }
+	if (app->mainFont.arena != nullptr) { FreeFont(&app->mainFont); }
+	app->uiFont = newUiFont;
+	app->mainFont = newMainFont;
+	return true;
+}
+
+bool AppChangeFontSize(bool increase)
+{
+	if (increase)
+	{
+		app->uiFontSize += 1;
+		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+		app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+		if (!AppCreateFonts())
+		{
+			app->uiFontSize -= 1;
+			app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+		}
+		return true;
+	}
+	else if (AreSimilarOrGreaterR32(app->uiFontSize - 1.0f, MIN_UI_FONT_SIZE, DEFAULT_R32_TOLERANCE))
+	{
+		app->uiFontSize -= 1;
+		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+		app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+		AppCreateFonts();
+		return true;
+	}
+	else { return false; }
+}
+
 void AppClearRecentFiles()
 {
 	VarArrayLoop(&app->recentFiles, rIndex)
