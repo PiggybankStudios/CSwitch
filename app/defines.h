@@ -15,18 +15,18 @@ Date:   02\25\2025
 #define RECENT_FILES_MAX_LENGTH    16 //files
 
 #define UI_FONT_NAME  "Consolas"
-#define UI_FONT_SIZE  12
+#define UI_FONT_SIZE  14
 #define UI_FONT_STYLE FontStyleFlag_None
 
 #define MAIN_FONT_NAME  "Consolas"
 #define MAIN_FONT_SIZE  18
 #define MAIN_FONT_STYLE FontStyleFlag_Bold
 
-#define DEFAULT_WINDOW_SIZE NewV2(360, 500)
-#define MIN_WINDOW_SIZE     NewV2(50, 50)
-#define TOPBAR_HEIGHT   24 //px
+#define DEFAULT_WINDOW_SIZE        NewV2(360, 500)
+#define MIN_WINDOW_SIZE            NewV2(50, 50)
+#define TOPBAR_HEIGHT              24 //px
 #define OPEN_RECENT_DROPDOWN_WIDTH 300 //px
-#define SCROLLBAR_WIDTH   10 //px
+#define SCROLLBAR_WIDTH            10 //px
 
 #define OPTION_UI_GAP                    2 //px
 #define OPTIONS_SMOOTH_SCROLLING_DIVISOR 5 //divisor

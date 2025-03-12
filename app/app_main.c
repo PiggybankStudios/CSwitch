@@ -666,14 +666,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				// +==============================+
 				if (!app->minimalModeEnabled || app->isFileMenuOpen || app->isViewMenuOpen)
 				{
-					r32 topbarHeight = app->minimalModeEnabled ? 0.1f : (r32)TOPBAR_HEIGHT;
+					Clay_SizingAxis topbarHeight = app->minimalModeEnabled ? CLAY_SIZING_FIXED(0.1f) : CLAY_SIZING_FIT(0);
 					CLAY({ .id = CLAY_ID("Topbar"),
 						.layout = {
 							.sizing = {
-								.height = CLAY_SIZING_FIXED(topbarHeight),
+								.height = topbarHeight,
 								.width = CLAY_SIZING_GROW(0),
 							},
-							.padding = { 0, 0, 0, 0 },
+							.padding = { 0, 0, 0, 1 },
 							.childGap = 2,
 							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 						},

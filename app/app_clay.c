@@ -47,7 +47,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .padding = { 4, 4, 4, 4 } },
+		.layout = { .padding = { 4, 4, 2, 2 } },
 		.backgroundColor = ToClayColor(backgroundColor),
 		.cornerRadius = CLAY_CORNER_RADIUS(4),
 		.border = { .width=CLAY_BORDER_OUTSIDE(borderWith), .color=ToClayColor(borderColor) },

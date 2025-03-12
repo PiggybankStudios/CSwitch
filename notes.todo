@@ -1,6 +1,5 @@
 
 # TODO List:
-	[!] Get the window title showing the path of the current file again (was removed when adding tabs)
 	(!) When scrolled down the list, clicking "File" or "View" toggles the button that is below! (also when clicking on tabs)
 	( ) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!
 	( ) Figure out how to render while resizing when using D3D11!
@@ -43,6 +42,7 @@
 	[ ] 
 
 # Finished List:
+	[X] Get the window title showing the path of the current file again (was removed when adding tabs)
 	(X) We should only handle the WM_PAINT event when it's given to us on the main thread!
 	[X] Multiple tabs
 	[X] Add support for dragging scroll bar with left-click
