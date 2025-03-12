@@ -35,13 +35,13 @@ void AppCloseFileTab(uxx tabIndex)
 	FileTab* closedTab = VarArrayGetHard(FileTab, &app->tabs, tabIndex);
 	
 	RemoveFileWatch(&app->fileWatches, closedTab->fileWatchId);
-	// platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR)); //TODO: Move me somewhere
 	FreeFileTab(closedTab);
 	VarArrayRemoveAt(FileTab, &app->tabs, tabIndex);
 	
 	if (app->tabs.length == 0)
 	{
 		app->currentTabIndex = 0;
+		app->currentTab = nullptr;
 	}
 	else if (app->currentTabIndex == tabIndex)
 	{
@@ -54,7 +54,16 @@ void AppCloseFileTab(uxx tabIndex)
 	{
 		app->currentTabIndex--;
 	}
+	
 	app->currentTab = VarArrayGetSoft(FileTab, &app->tabs, app->currentTabIndex);
+	if (app->currentTab != nullptr)
+	{
+		platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->currentTab->filePath), PROJECT_READABLE_NAME_STR));
+	}
+	else
+	{
+		platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
+	}
 }
 
 FileTab* AppFindTabForPath(FilePath filePath)
@@ -81,7 +90,7 @@ void AppChangeTab(uxx newTabIndex)
 	Assert(newTabIndex < app->tabs.length);
 	app->currentTabIndex = newTabIndex;
 	app->currentTab = VarArrayGetHard(FileTab, &app->tabs, app->currentTabIndex);
-	//TODO: Update the file path tooltip
+	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->currentTab->filePath), PROJECT_READABLE_NAME_STR));
 }
 
 void UpdateFileTabOptions(FileTab* tab)
@@ -236,8 +245,6 @@ FileTab* AppOpenFileTab(FilePath filePath)
 	UpdateFileTabOptions(newTab);
 	
 	newTab->fileWatchId = AddFileWatch(&app->fileWatches, newTab->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
-	
-	// platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->filePath), PROJECT_READABLE_NAME_STR)); //TODO: Move this somewhere!
 	
 	AppChangeTab(app->tabs.length-1);
 	

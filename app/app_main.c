@@ -488,9 +488,28 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F11 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11) || (app->minimalModeEnabled && IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape)))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11))
 	{
 		app->minimalModeEnabled = !app->minimalModeEnabled;
+	}
+	
+	// +==============================+
+	// |      Handle Escape Key       |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape))
+	{
+		if (app->isFileMenuOpen)
+		{
+			app->isFileMenuOpen = false;
+		}
+		else if (app->isViewMenuOpen)
+		{
+			app->isViewMenuOpen = false;
+		}
+		else if (app->minimalModeEnabled)
+		{
+			app->minimalModeEnabled = false;
+		}
 	}
 	
 	// +================================+
