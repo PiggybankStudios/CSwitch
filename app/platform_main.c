@@ -261,7 +261,6 @@ void PlatSappInit(void)
 		// .allocator = ?; //sg_allocator TODO: Fill this out!
 		.environment = CreateSokolAppEnvironment(),
 		.logger.func = SokolLogCallback,
-		
 	});
 	InitGfxSystem(stdHeap, &gfx);
 	#if DEBUG_BUILD
@@ -397,7 +396,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 	ParseProgramArgs(stdHeap, (uxx)argc-1, &argv[1], &programArgs);
 	#else
 	//TODO: Is the above true for other platforms??
-	ParseProgramArgs(stdHeap, (uxx)argc, &argv[0], &programArgs);
+	//TODO: We are getting a warning in clang unless we make an explicit cast: warning: passing 'char **' to parameter of type 'const char **' discards qualifiers in nested pointer types
+	ParseProgramArgs(stdHeap, (uxx)argc, (const char**)&argv[0], &programArgs);
 	#endif
 	
 	v2 windowSize = DEFAULT_WINDOW_SIZE;

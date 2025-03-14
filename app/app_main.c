@@ -994,13 +994,13 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								NotNull(mainAtlas);
 								CLAY({ .id = CLAY_ID("UiFontAtlas"),
 									.layout = {
-										.sizing = { .width = UI_R32(uiAtlas->texture.Width), .height = UI_R32(uiAtlas->texture.Height) },
+										.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(uiAtlas->texture.Width)), .height = CLAY_SIZING_FIXED(UI_R32(uiAtlas->texture.Height)) },
 									},
 									.image = ToClayImage(&uiAtlas->texture),
 								}) {}
 								CLAY({ .id = CLAY_ID("MainFontAtlas"),
 									.layout = {
-										.sizing = { .width = UI_R32(mainAtlas->texture.Width), .height = UI_R32(mainAtlas->texture.Height) },
+										.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(mainAtlas->texture.Width)), .height = CLAY_SIZING_FIXED(UI_R32(mainAtlas->texture.Height)) },
 									},
 									.image = ToClayImage(&mainAtlas->texture),
 								}) {}
