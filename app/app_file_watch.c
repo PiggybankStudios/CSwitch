@@ -46,8 +46,7 @@ void UpdateFileWatches(VarArray* watches)
 					OsFileWriteTime newWriteTime = ZEROED;
 					Result getWriteTimeResult = OsGetFileWriteTime(watch->fullPath, &newWriteTime);
 					Assert(getWriteTimeResult == Result_Success);
-					//TODO: We should make a proper OsWriteTimeEquals function!
-					if (!watch->gotWriteTime || !MyMemEquals(&watch->writeTime, &newWriteTime, sizeof(OsFileWriteTime)))
+					if (!watch->gotWriteTime || !OsAreFileWriteTimesEqual(watch->writeTime, newWriteTime))
 					{
 						watch->lastChangeTime = programTime;
 						watch->changed = true;
