@@ -9,11 +9,14 @@ A simple project to turn on/off defines in a C/C++ header file quickly. This pro
 5. Clicking a button will toggle the value between 1 and 0, or true and false (and immediately write to the file)
 
 # Screenshot
-![Screenshot4](/_media/screenshot4.png)
-![Screenshot5](/_media/screenshot5.png)
+![Screenshot 1](/_media/screenshot8.png)
+
+![Screenshot 2](/_media/screenshot7.png)
+
+![Screenshot 3](/_media/screenshot6.png)
 
 # Hotkeys
-- **Ctrl+W** = Close file
+- **Ctrl+W** = Close Current Tab
 - **Ctrl+Shift+W** = Close Window
 - **Ctrl+O** = Open File
 - **Ctrl+E** = Open Most Recent File
@@ -21,6 +24,13 @@ A simple project to turn on/off defines in a C/C++ header file quickly. This pro
 - **Ctrl+Tab** = Switch to Next Tab
 - **Ctrl+Shift+Tab** = Switch to Previous Tab
 - **Middle Click (On Tab)** = Close Tab
+- **Ctrl+Plus/Minus or Ctrl+Scroll** - Increase/Decrease the Font Size / UI scale
+- **F10** - Toggle Small Button Mode
+- **F11** = Toggle Topbar (also can use Escape to bring the topbar back when it's hidden)
+- **Alt+F** = Open File Menu (useful when Topbar is hidden)
+- **Alt+V** = Open View Menu (useful when Topbar is hidden)
+- **Home/End** - Scroll to Beginning/End
+- **PageUp/PageDown** - Scroll Up/Down One Screen Height at a Time
 
 # Command-Line Arguments
 - Any unnamed argument will be treated as a file path to open on startup, if no path is given, the most recently opened file is opened automatically (if it still exists)

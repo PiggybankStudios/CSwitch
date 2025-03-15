@@ -53,6 +53,7 @@ static Arena* stdHeap = nullptr;
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
 #include "main2d_shader.glsl.h"
+#include "app_notifications_api.h"
 #include "app_resources.c"
 #include "app_file_watch.c"
 #include "app_clay_helpers.c"
