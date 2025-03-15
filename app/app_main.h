@@ -77,7 +77,10 @@ struct TooltipRegion
 	u64 layer; //higher numbers have higher priority when disambiguating overlapping regions
 	Str8 displayStr;
 	Arena* arena;
-	rec mainRec;
+	
+	rec fixedRec;
+	ClayId clayId;
+	ClayId clayContainerId;
 };
 
 typedef struct TooltipState TooltipState;
@@ -113,6 +116,58 @@ struct FileTab
 	ScrollbarInteractionState scrollbarState;
 };
 
+typedef enum PopupDialogResult PopupDialogResult;
+enum PopupDialogResult
+{
+	PopupDialogResult_None = 0,
+	PopupDialogResult_Yes,
+	PopupDialogResult_No,
+	PopupDialogResult_Closed,
+	PopupDialogResult_Count,
+};
+const char* GetPopupDialogResultStr(PopupDialogResult enumValue)
+{
+	switch (enumValue)
+	{
+		case PopupDialogResult_None:   return "None";
+		case PopupDialogResult_Yes:    return "Yes";
+		case PopupDialogResult_No:     return "No";
+		case PopupDialogResult_Closed: return "Closed";
+		case PopupDialogResult_Count:  return "Count";
+		default: return "Unknown";
+	}
+}
+
+typedef struct PopupDialogButton PopupDialogButton;
+struct PopupDialogButton
+{
+	Arena* arena;
+	u64 id;
+	PopupDialogResult result;
+	Str8 displayStr;
+	Color32 color;
+};
+
+typedef struct PopupDialog PopupDialog;
+struct PopupDialog
+{
+	Arena* arena;
+	bool isOpen;
+	bool isVisible; //stays true for some amount of time after closing the dialog, resources are freed once this is false
+	
+	u64 openTime;
+	u64 closeTime;
+	PopupDialogResult result;
+	Str8 messageStr;
+	VarArray buttons; //PopupDialogButton
+	
+	void* callback; //PopupDialogCallback_f
+	void* callbackContext;
+};
+
+#define POPUP_DIALOG_CALLBACK_DEF(functionName) void functionName(PopupDialogResult result, struct PopupDialog* dialog, struct PopupDialogButton* selectedButton, void* contextPntr)
+typedef POPUP_DIALOG_CALLBACK_DEF(PopupDialogCallback_f);
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -140,6 +195,8 @@ struct AppData
 	bool keepViewMenuOpenUntilMouseOver;
 	bool isOpenRecentSubmenuOpen;
 	bool wasClayScrollingPrevFrame;
+	
+	PopupDialog popup;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;

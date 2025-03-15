@@ -1,13 +1,13 @@
 
 # TODO List:
-	( ) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!
+	[!] Add a confirmation dialog when doing non-reversable actions (like clearing recent files)
+	[!] File->Reset option that resets the file back to what it was when it was opened
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Topbar dropdowns render underneath the scrollbar
 	( ) Topbar dropdowns run off the right-hand side of the screen (esp. recent files submenu)
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
-	[ ] File->Reset option that resets the file back to what it was when it was opened
 	@ Multiple Window Support
 		[ ] Add support for tooltips that can extend outside the main window (i.e. they have their own host window)
 		[ ] Add a "Settings" window that can be opened from the "File" menu
@@ -18,7 +18,6 @@
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
 	[ ] Add a notification like system where we can tell the user about notable warnings/errors
 	[ ] Save the window size (and position?) and restore to the same size/position on startup (careful of monitor changes meaning our old location is invalid!)
-	[ ] Add a confirmation dialog when doing non-reversable actions (like clearing recent files)
 	[ ] If something writes to the file externally multiple times in a row, or maybe slowly, can we ever end up in a spot where we fail to read the file because it is locked? Should we have a sort of delay after we see the write time change? Or maybe a retry pattern if we fail to read it once or twice? Do we ever tell the user we can't open the file anymore? Should we close the file if we see the file got deleted? (again worry about if the file is getting deleted for a short time and then recreated, maybe we wait a bit before really considering the file deleted)
 	[ ] Support for searching a folder (maybe recursively?) for all files that have defines and displaying them all in one list, with little separators to indicate which file the option resides in
 	[ ] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
@@ -40,6 +39,7 @@
 	[ ] 
 
 # Finished List:
+	(X) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!
 	[X] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
 	(X) When scrolled down the list, clicking "File" or "View" toggles the button that is below! (also when clicking on tabs)
 	[X] Get the window title showing the path of the current file again (was removed when adding tabs)

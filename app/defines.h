@@ -60,4 +60,10 @@ Date:   02\25\2025
 #define TOOLTIP_MOUSE_UP_OFFSET    5 //px
 #define TOOLTIP_MOUSE_DOWN_OFFSET  20 //px TODO: Somehow we should ask the OS how tall the cursor is and offset but that much plus a little
 
+#define POPUP_OPEN_ANIM_TIME  75 //ms
+#define POPUP_CLOSE_ANIM_TIME 50 //ms
+#define POPUP_DARKEN_AMOUNT   0.25f //percent (opacity)
+#define POPUP_MIN_WIDTH       300 //px
+#define POPUP_MIN_HEIGHT      100 //px
+
 #endif //  _DEFINES_H

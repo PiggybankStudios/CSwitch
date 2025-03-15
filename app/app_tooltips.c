@@ -47,7 +47,7 @@ TooltipRegion* FindTooltipRegionById(VarArray* tooltipRegions, u64 id)
 	return nullptr;
 }
 
-TooltipRegion* AddTooltipRegion(VarArray* tooltipRegions, rec mainRec, Str8 displayStr, u64 delay, u64 layer)
+TooltipRegion* AddTooltipRegion(VarArray* tooltipRegions, rec fixedRec, Str8 displayStr, u64 delay, u64 layer)
 {
 	NotNull(tooltipRegions);
 	NotNullStr(displayStr);
@@ -59,10 +59,17 @@ TooltipRegion* AddTooltipRegion(VarArray* tooltipRegions, rec mainRec, Str8 disp
 	newRegion->arena = stdHeap;
 	newRegion->displayStr = AllocStr8(newRegion->arena, displayStr);
 	newRegion->delay = delay;
-	newRegion->mainRec = mainRec;
+	newRegion->fixedRec = fixedRec;
 	newRegion->layer = layer;
 	newRegion->enabled = true;
 	return newRegion;
+}
+TooltipRegion* AddTooltipClay(VarArray* tooltipRegions, ClayId clayId, Str8 displayStr, u64 delay, u64 layer)
+{
+	TooltipRegion* result = AddTooltipRegion(tooltipRegions, Rec_Zero, displayStr, delay, layer);
+	NotNull(result);
+	result->clayId = clayId;
+	return result;
 }
 
 void RemoveTooltipRegionById(VarArray* tooltipRegions, u64 id)
@@ -135,7 +142,9 @@ void UpdateTooltipState(VarArray* tooltipRegions, TooltipState* tooltip)
 		if (region == nullptr) { shouldClose = true; }
 		else if (!region->enabled) { shouldClose = true; }
 		else if (!StrExactEquals(region->displayStr, tooltip->displayStr)) { shouldClose = true; } //if the display string changes, close the tooltip (it'll likely reappear immediately because we've still been hovering the same tooltipId for a while)
-		else if (!IsInsideRec(region->mainRec, mousePos)) { shouldClose = true; }
+		else if (region->clayId.id != 0 && region->clayContainerId.id != 0 && !IsMouseOverClayInContainer(region->clayId, region->clayContainerId)) { shouldClose = true; }
+		else if (region->clayId.id != 0 && region->clayContainerId.id == 0 && !IsMouseOverClay(region->clayId)) { shouldClose = true; }
+		else if (region->clayId.id == 0 && !IsInsideRec(region->fixedRec, mousePos)) { shouldClose = true; }
 		
 		if (shouldClose) { CloseTooltip(tooltip); }
 	}
@@ -147,11 +156,16 @@ void UpdateTooltipState(VarArray* tooltipRegions, TooltipState* tooltip)
 			VarArrayLoop(tooltipRegions, rIndex)
 			{
 				VarArrayLoopGet(TooltipRegion, region, tooltipRegions, rIndex);
-				if (region->enabled && IsInsideRec(region->mainRec, mousePos))
+				if (region->enabled)
 				{
-					if (hoveredRegion == nullptr || hoveredRegion->layer < region->layer)
+					if ((region->clayId.id != 0 && region->clayContainerId.id != 0 && IsMouseOverClayInContainer(region->clayId, region->clayContainerId)) ||
+						(region->clayId.id != 0 && region->clayContainerId.id == 0 && IsMouseOverClay(region->clayId)) || 
+						(region->clayId.id == 0 && IsInsideRec(region->fixedRec, mousePos)))
 					{
-						hoveredRegion = region;
+						if (hoveredRegion == nullptr || hoveredRegion->layer < region->layer)
+						{
+							hoveredRegion = region;
+						}
 					}
 				}
 			}

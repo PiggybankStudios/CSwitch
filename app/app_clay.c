@@ -176,11 +176,11 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, Te
 			.layout = {
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
 				.padding = CLAY_PADDING_ALL(UI_U16(2)),
-				.childGap = 2,
+				.childGap = 2, //TOOD: Convert this to use UI_ macros!
 			},
 			.backgroundColor = ToClayColor(BACKGROUND_GRAY),
-			.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } },
-			.cornerRadius = { 0, 0, 4, 4 },
+			.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=1 } }, //TOOD: Convert this to use UI_ macros!
+			.cornerRadius = { 0, 0, 4, 4 }, //TOOD: Convert this to use UI_ macros!
 		});
 	}
 	ScratchEnd(scratch);

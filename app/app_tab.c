@@ -93,6 +93,18 @@ void AppChangeTab(uxx newTabIndex)
 	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->currentTab->filePath), PROJECT_READABLE_NAME_STR));
 }
 
+void AddTooltipForFileOption(FileOption* option, uxx lineIndex)
+{
+	ScratchBegin(scratch);
+	Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineIndex, StrPrint(option->name));
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
+	ClayId btnId = ToClayId(btnIdStr);
+	TooltipRegion* tooltip = AddTooltipClay(&app->tooltipRegions, btnId, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0);
+	tooltip->clayContainerId = CLAY_ID("OptionsList");
+	option->tooltipId = tooltip->id;
+	ScratchEnd(scratch);
+}
+
 void UpdateFileTabOptions(FileTab* tab)
 {
 	ScratchBegin(scratch);
@@ -142,8 +154,7 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = commentStartIndex;
 					newOption->fileContentsEndIndex = defineStartIndex;
 					newOption->valueStr = AllocStr8(stdHeap, commentStartStr);
-					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
-					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
+					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 				}
@@ -171,8 +182,7 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
 					newOption->fileContentsEndIndex = lineEndIndex;
 					newOption->valueStr = AllocStr8(stdHeap, StrSlice(tab->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
-					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
-					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
+					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 					break;
@@ -197,8 +207,7 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = lineStartIndex;
 					newOption->fileContentsEndIndex = lineStartIndex;
 					newOption->valueStr = Str8_Empty;
-					Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineParser.lineIndex, StrPrint(newOption->name));
-					newOption->tooltipId = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0)->id;
+					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 				}

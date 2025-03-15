@@ -57,6 +57,7 @@ static Arena* stdHeap = nullptr;
 #include "app_file_watch.c"
 #include "app_clay_helpers.c"
 #include "app_tooltips.c"
+#include "app_popup_dialog.c"
 #include "app_helpers.c"
 #include "app_tab.c"
 #include "app_clay.c"
@@ -294,7 +295,7 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		AppOpenFileTab(mostRecentFile->path);
 	}
 	
-	TooltipRegion* filePathTooltip = AddTooltipRegion(&app->tooltipRegions, Rec_Zero, app->currentTab != nullptr ? app->currentTab->filePath : Str8_Empty, DEFAULT_TOOLTIP_DELAY, 1);
+	TooltipRegion* filePathTooltip = AddTooltipClay(&app->tooltipRegions, CLAY_ID("FilePathDisplay"), app->currentTab != nullptr ? app->currentTab->filePath : Str8_Empty, DEFAULT_TOOLTIP_DELAY, 1);
 	NotNull(filePathTooltip);
 	filePathTooltip->enabled = (app->currentTab != nullptr);
 	app->filePathTooltipId = filePathTooltip->id;
@@ -344,6 +345,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 			AppLoadRecentFilesList();
 			refreshScreen = true;
 		}
+		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
+		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
 		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
@@ -452,12 +455,23 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		app->minimalModeEnabled = !app->minimalModeEnabled;
 	}
 	
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_P))
+	{
+		OpenPopupDialog(stdHeap, &app->popup, StrLit("Are you sure?"), nullptr, nullptr);
+		AddPopupButton(&app->popup, 1, StrLit("No"), PopupDialogResult_No, TEXT_GRAY);
+		AddPopupButton(&app->popup, 2, StrLit("Yes"), PopupDialogResult_Yes, SELECTED_BLUE);
+	}
+	
 	// +==============================+
 	// |      Handle Escape Key       |
 	// +==============================+
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape))
 	{
-		if (app->isFileMenuOpen)
+		if (app->popup.isOpen)
+		{
+			ClosePopupDialog(&app->popup, nullptr);
+		}
+		else if (app->isFileMenuOpen)
 		{
 			app->isFileMenuOpen = false;
 		}
@@ -616,6 +630,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 			optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y - optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
 		}
 	}
+	
+	UpdatePopupDialog(&app->popup);
 	
 	// +==============================+
 	// |          Rendering           |
@@ -1014,6 +1030,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						ClayScrollbar(optionsContainerId, StrLit("OptionsListScrollbar"), app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH), &app->currentTab->scrollbarState);
 					}
 				}
+				
+				RenderPopupDialog(&app->popup);
 			}
 		}
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
@@ -1033,8 +1051,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				region->displayStr = AllocStr8(region->arena, displayStr);
 			}
 			region->enabled = (app->currentTab != nullptr);
-			rec filePathDisplayRec = GetClayElementDrawRec(CLAY_ID("FilePathDisplay"));
-			region->mainRec = InflateRecY(filePathDisplayRec, 8);
 		}
 		VarArrayLoop(&app->tabs, tIndex)
 		{
@@ -1047,23 +1063,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				{
 					TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, option->tooltipId);
 					NotNull(tooltip);
-					tooltip->enabled = false;
-					if (app->optionTooltipsEnabled && isCurrentTab)
-					{
-						Str8 buttonUiId = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
-						rec buttonDrawRec = GetClayElementDrawRec(ToClayId(buttonUiId));
-						rec scrollDrawRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-						if (scrollDrawRec.Width > 0 && scrollDrawRec.Height > 0 &&
-							buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
-						{
-							buttonDrawRec = OverlapPartRec(buttonDrawRec, scrollDrawRec);
-							if (buttonDrawRec.Width > 0 && buttonDrawRec.Height > 0)
-							{
-								tooltip->enabled = true;
-								tooltip->mainRec = buttonDrawRec;
-							}
-						}
-					}
+					tooltip->enabled = (app->optionTooltipsEnabled && isCurrentTab);
 				}
 			}
 		}
