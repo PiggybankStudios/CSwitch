@@ -177,11 +177,11 @@ struct AppData
 	VarArray fileWatches; //FileWatch
 	
 	Shader mainShader;
-	Font uiFont;
+	PigFont uiFont;
 	r32 uiFontSize;
 	r32 uiScale;
 	r32 mainFontSize;
-	Font mainFont;
+	PigFont mainFont;
 	Texture icons[AppIcon_Count];
 	
 	u64 numFramesConsecutivelyRendered;

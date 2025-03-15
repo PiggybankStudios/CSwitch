@@ -46,7 +46,7 @@ bool AppCreateFonts()
 	
 	// ImageData keysSheet = LoadImageData(scratch, "resources/image/keys16.png");
 	// ImageData keysWideSheet = LoadImageData(scratch, "resources/image/keys16_wide.png");
-	Font newUiFont = ZEROED;
+	PigFont newUiFont = ZEROED;
 	{
 		#if 0
 		uxx numKeyCodepoints = 0;
@@ -85,7 +85,7 @@ bool AppCreateFonts()
 		RemoveAttachedTtfFile(&newUiFont);
 	}
 	
-	Font newMainFont = ZEROED;
+	PigFont newMainFont = ZEROED;
 	{
 		newMainFont = InitFont(stdHeap, StrLit("mainFont"));
 		Result attachResult = AttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE);

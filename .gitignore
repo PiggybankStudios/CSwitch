@@ -4,4 +4,7 @@ _build/
 _data/*.exe
 _data/*.dll
 _data/*.ini
+_data/cswitch
+_data/cswitch_app.so
+_data/libpig_core.so
 DEBUG_*.png
