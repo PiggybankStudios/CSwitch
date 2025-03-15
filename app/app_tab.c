@@ -10,6 +10,7 @@ void FreeFileOption(FileOption* option)
 {
 	NotNull(option);
 	FreeStr8(stdHeap, &option->name);
+	FreeStr8(stdHeap, &option->abbreviation);
 	FreeStr8(stdHeap, &option->valueStr);
 	RemoveTooltipRegionById(&app->tooltipRegions, option->tooltipId);
 	ClearPointer(option);
@@ -106,6 +107,63 @@ void AddTooltipForFileOption(FileOption* option, uxx lineIndex)
 	ScratchEnd(scratch);
 }
 
+Str8 GetOptionNameAbbreviation(Arena* arena, Str8 fullName)
+{
+	Str8 result = Str8_Empty;
+	for (uxx pass = 0; pass < 2; pass++)
+	{
+		uxx numChars = 0;
+		bool prevCharWasCap = false;
+		bool prevCharWasAlpha = false;
+		for (uxx bIndex = 0; bIndex < fullName.length; bIndex++)
+		{
+			char nextChar = fullName.chars[bIndex];
+			bool isAlpha = IsCharAlphaNumeric(CharToU32(nextChar));
+			bool isCapitalized = IsCharUppercaseAlphabet(CharToU32(nextChar)) || IsCharNumeric(CharToU32(nextChar));
+			if (numChars == 0)
+			{
+				if (result.chars != nullptr) { result.chars[numChars] = nextChar; }
+				numChars++;
+			}
+			else if (!prevCharWasAlpha && isAlpha)
+			{
+				if (result.chars != nullptr) { result.chars[numChars] = nextChar; }
+				numChars++;
+			}
+			else if (prevCharWasAlpha && isAlpha && !prevCharWasCap && isCapitalized)
+			{
+				if (result.chars != nullptr) { result.chars[numChars] = nextChar; }
+				numChars++;
+			}
+			prevCharWasAlpha = isAlpha;
+			prevCharWasCap = isCapitalized;
+		}
+		
+		if (pass == 0)
+		{
+			if (numChars == 0) { return Str8_Empty; }
+			result.length = numChars;
+			result.chars = (char*)AllocMem(arena, result.length);
+			NotNull(result.chars);
+		}
+		else { Assert(numChars == result.length); }
+	}
+	return result;
+}
+
+void CalculateLongestAbbreviationWidth(FileTab* tab)
+{
+	NotNull(tab);
+	tab->longestAbbreviationWidth = 0;
+	VarArrayLoop(&tab->fileOptions, oIndex)
+	{
+		VarArrayLoopGet(FileOption, option, &tab->fileOptions, oIndex);
+		v2 abbreviationSize = ClayUiTextSize(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE, option->abbreviation);
+		if (tab->longestAbbreviationWidth < abbreviationSize.Width) { tab->longestAbbreviationWidth = abbreviationSize.Width; }
+	}
+	tab->longestAbbreviationWidthFontSize = app->mainFontSize;
+}
+
 void UpdateFileTabOptions(FileTab* tab)
 {
 	ScratchBegin(scratch);
@@ -150,6 +208,7 @@ void UpdateFileTabOptions(FileTab* tab)
 					NotNull(newOption);
 					ClearPointer(newOption);
 					newOption->name = AllocStr8(stdHeap, namePart);
+					newOption->abbreviation = GetOptionNameAbbreviation(stdHeap, newOption->name);
 					newOption->type = FileOptionType_CommentDefine;
 					newOption->isUncommented = false;
 					newOption->fileContentsStartIndex = commentStartIndex;
@@ -178,6 +237,7 @@ void UpdateFileTabOptions(FileTab* tab)
 					ClearPointer(newOption);
 					newOption->name = TrimWhitespace(StrSlice(line, defineStr.length, line.length - boolValueStr.length));
 					newOption->name = AllocStr8(stdHeap, newOption->name);
+					newOption->abbreviation = GetOptionNameAbbreviation(stdHeap, newOption->name);
 					newOption->type = FileOptionType_Bool;
 					newOption->valueBool = ((vIndex%2) == 0);
 					newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
@@ -203,6 +263,7 @@ void UpdateFileTabOptions(FileTab* tab)
 					NotNull(newOption);
 					ClearPointer(newOption);
 					newOption->name = AllocStr8(stdHeap, namePart);
+					newOption->abbreviation = GetOptionNameAbbreviation(stdHeap, newOption->name);
 					newOption->type = FileOptionType_CommentDefine;
 					newOption->isUncommented = true;
 					newOption->fileContentsStartIndex = lineStartIndex;
@@ -221,6 +282,8 @@ void UpdateFileTabOptions(FileTab* tab)
 		}
 		ArenaResetToMark(scratch, scratchMark);
 	}
+	
+	CalculateLongestAbbreviationWidth(tab);
 	
 	ScratchEnd(scratch);
 }

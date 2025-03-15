@@ -50,6 +50,10 @@ Date:   02\25\2025
 #define SELECTED_BLUE        NewColor(0, 121, 166, 255)   //FF0079A6
 #define ERROR_RED            NewColor(255, 102, 102, 255) //FFFF6666
 
+#define SMALL_BTN_PADDING_X  8 //px
+#define SMALL_BTN_PADDING_Y  8 //px
+#define SMALL_BTN_MARGIN     2 //px
+
 #define WIN32_TOOLTIP_ID 100 //arbitrary ID
 
 #define DEFAULT_TOOLTIP_DELAY      750 //ms

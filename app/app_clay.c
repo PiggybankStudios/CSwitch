@@ -273,10 +273,10 @@ bool ClayBtn(const char* btnText, const char* hotkeyStr, bool isEnabled, Texture
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayOptionBtn(ClayId containerId, Str8 nameStr, Str8 valueStr, bool enabled)
+bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, bool enabled)
 {
 	ScratchBegin(scratch);
-	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(nameStr));
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
@@ -286,9 +286,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 nameStr, Str8 valueStr, bool enabled
 	Color32 textColor = TEXT_WHITE;
 	Color32 valueColor = enabled ? TEXT_WHITE : TEXT_GRAY;
 	Color32 outlineColor = enabled ? SELECTED_BLUE : (isHovered ? ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f) : OUTLINE_GRAY);
-	Clay__OpenElement();
-	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
-		.id = btnId,
+	CLAY({ .id = btnId,
 		.layout = {
 			.layoutDirection = CLAY_LEFT_TO_RIGHT,
 			.padding = CLAY_PADDING_ALL(UI_U16(4)),
@@ -300,28 +298,74 @@ bool ClayOptionBtn(ClayId containerId, Str8 nameStr, Str8 valueStr, bool enabled
 			.color = ToClayColor(outlineColor),
 			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
 		},
-	});
-	CLAY_TEXT(
-		ToClayString(nameStr),
-		CLAY_TEXT_CONFIG({
-			.fontId = app->clayMainFontId,
-			.fontSize = (u16)app->mainFontSize,
-			.textColor = ToClayColor(textColor),
-			.wrapMode = CLAY_TEXT_WRAP_NONE,
-			.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
-			.userData = { .contraction = app->clipNamesOnLeftSide ? TextContraction_EllipseLeft : TextContraction_EllipseRight },
-		})
-	);
-	CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
-	if (!IsEmptyStr(valueStr))
+	})
 	{
-		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(UI_U16(4)) } } }) {} //ensure 4px padding between name and value
 		CLAY_TEXT(
-			ToClayString(valueStr),
+			ToClayString(nameStr),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayMainFontId,
 				.fontSize = (u16)app->mainFontSize,
-				.textColor = ToClayColor(valueColor),
+				.textColor = ToClayColor(textColor),
+				.wrapMode = CLAY_TEXT_WRAP_NONE,
+				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+				.userData = { .contraction = app->clipNamesOnLeftSide ? TextContraction_EllipseLeft : TextContraction_EllipseRight },
+			})
+		);
+		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
+		if (!IsEmptyStr(valueStr))
+		{
+			CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_FIXED(UI_U16(4)) } } }) {} //ensure 4px padding between name and value
+			CLAY_TEXT(
+				ToClayString(valueStr),
+				CLAY_TEXT_CONFIG({
+					.fontId = app->clayMainFontId,
+					.fontSize = (u16)app->mainFontSize,
+					.textColor = ToClayColor(valueColor),
+				})
+			);
+		}
+	}
+	ScratchEnd(scratch);
+	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
+}
+
+bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 abbreviation, bool enabled)
+{
+	ScratchBegin(scratch);
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
+	ClayId btnId = ToClayId(btnIdStr);
+	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
+	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;
+	Color32 hoverColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, enabled ? 0.75f : 0.0f);
+	Color32 pressColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f);
+	Color32 textColor = TEXT_WHITE;
+	Color32 outlineColor = enabled ? SELECTED_BLUE : (isHovered ? ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f) : OUTLINE_GRAY);
+	u16 buttonPaddingX = UI_U16(SMALL_BTN_PADDING_X);
+	u16 buttonPaddingY = UI_U16(SMALL_BTN_PADDING_Y);
+	CLAY({ .id = btnId,
+		.layout = {
+			.layoutDirection = CLAY_LEFT_TO_RIGHT,
+			.padding = { buttonPaddingX, buttonPaddingX, buttonPaddingY, buttonPaddingY },
+			.sizing = { .width = CLAY_SIZING_FIXED(buttonWidth) },
+			.childAlignment = { .x = CLAY_ALIGN_X_CENTER },
+		},
+		.backgroundColor = ToClayColor(isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
+		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
+		.border = {
+			.color = ToClayColor(outlineColor),
+			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
+		},
+	})
+	{
+		CLAY_TEXT(
+			ToClayString(abbreviation),
+			CLAY_TEXT_CONFIG({
+				.fontId = app->clayMainFontId,
+				.fontSize = (u16)app->mainFontSize,
+				.textColor = ToClayColor(textColor),
+				.wrapMode = CLAY_TEXT_WRAP_NONE,
+				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
 			})
 		);
 	}

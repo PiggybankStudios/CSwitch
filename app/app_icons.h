@@ -16,6 +16,7 @@ enum AppIcon
 	AppIcon_Trash,
 	AppIcon_ResetFile,
 	AppIcon_CloseFile,
+	AppIcon_SmallBtn,
 	AppIcon_TopmostEnabled,
 	AppIcon_TopmostDisabled,
 	AppIcon_ClipLeft,
@@ -40,6 +41,7 @@ const char* GetAppIconStr(AppIcon enumValue)
 		case AppIcon_Trash:               return "Trash";
 		case AppIcon_ResetFile:           return "ResetFile";
 		case AppIcon_CloseFile:           return "CloseFile";
+		case AppIcon_SmallBtn:            return "SmallBtn";
 		case AppIcon_TopmostEnabled:      return "TopmostEnabled";
 		case AppIcon_TopmostDisabled:     return "TopmostDisabled";
 		case AppIcon_ClipLeft:            return "ClipLeft";
@@ -64,6 +66,7 @@ const char* GetAppIconPath(AppIcon enumValue)
 		case AppIcon_Trash:               return "resources/image/trash.png";
 		case AppIcon_ResetFile:           return "resources/image/reset_file.png";
 		case AppIcon_CloseFile:           return "resources/image/close_file.png";
+		case AppIcon_SmallBtn:            return "resources/image/small_btn.png";
 		case AppIcon_TopmostEnabled:      return "resources/image/topmost_on.png";
 		case AppIcon_TopmostDisabled:     return "resources/image/topmost_off.png";
 		case AppIcon_ClipLeft:            return "resources/image/clip_left.png";

@@ -30,6 +30,7 @@ typedef struct FileOption FileOption;
 struct FileOption
 {
 	Str8 name;
+	Str8 abbreviation;
 	FileOptionType type;
 	u64 numEmptyLinesAfter;
 	Str8 valueStr;
@@ -116,6 +117,8 @@ struct FileTab
 	bool isFileChangedFromOriginal;
 	uxx fileWatchId;
 	VarArray fileOptions; //FileOption
+	r32 longestAbbreviationWidth;
+	r32 longestAbbreviationWidthFontSize;
 	ScrollbarInteractionState scrollbarState;
 };
 
@@ -242,6 +245,7 @@ struct AppData
 	u64 filePathTooltipId;
 	
 	//User Options
+	bool smallBtnModeEnabled;
 	bool clipNamesOnLeftSide;
 	bool smoothScrollingEnabled;
 	bool optionTooltipsEnabled;

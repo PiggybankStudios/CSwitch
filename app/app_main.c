@@ -398,6 +398,16 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	
+	VarArrayLoop(&app->tabs, tIndex)
+	{
+		VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
+		if (tab->longestAbbreviationWidthFontSize != app->mainFontSize)
+		{
+			CalculateLongestAbbreviationWidth(tab);
+			DebugAssert(tab->longestAbbreviationWidthFontSize == app->mainFontSize);
+		}
+	}
+	
 	#if 0
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T))
 	{
@@ -469,6 +479,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				AppCloseFileTab(app->currentTabIndex);
 			}
 		}
+	}
+	
+	// +==============================+
+	// |      Handle F10 Hotkey       |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10))
+	{
+		app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
 	}
 	
 	// +==============================+
@@ -773,6 +791,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
+							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), true, &app->icons[AppIcon_SmallBtn]))
+							{
+								app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
+							} Clay__CloseElement();
+							
 							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 							{
 								platform->SetWindowTopmost(!appIn->isWindowTopmost);
@@ -978,51 +1001,102 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					{
 						if (app->currentTab != nullptr)
 						{
-							VarArrayLoop(&app->currentTab->fileOptions, oIndex)
+							if (app->smallBtnModeEnabled)
 							{
-								VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
-								if (option->type == FileOptionType_Bool)
+								// rec optionsDrawRec = GetClayElementDrawRec(optionsContainerId);
+								r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
+								u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
+								r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
+								i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
+								if (numColumns <= 0) { numColumns = 1; }
+								
+								bool containerStarted = false;
+								VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 								{
-									//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-									if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
+									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+									
+									if ((oIndex % numColumns) == 0)
 									{
-										option->valueBool = !option->valueBool;
-										if (StrExactEquals(option->valueStr, StrLit("false")))
-										{
-											SetOptionValue(app->currentTab, option, StrLit("true"));
-										}
-										else if (StrExactEquals(option->valueStr, StrLit("true")))
-										{
-											SetOptionValue(app->currentTab, option, StrLit("false"));
-										}
-										else if (StrExactEquals(option->valueStr, StrLit("0")))
-										{
-											SetOptionValue(app->currentTab, option, StrLit("1"));
-										}
-										else
-										{
-											SetOptionValue(app->currentTab, option, StrLit("0"));
-										}
-									} Clay__CloseElement();
-								}
-								else if (option->type == FileOptionType_CommentDefine)
-								{
-									if (ClayOptionBtn(optionsContainerId, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+										if (containerStarted) { Clay__CloseElement(); }
+										Clay__OpenElement();
+										Clay__ConfigureOpenElement((Clay_ElementDeclaration){
+											.layout = {
+												.layoutDirection = CLAY_LEFT_TO_RIGHT,
+												.childGap = buttonMargin,
+												.sizing = { .width = CLAY_SIZING_PERCENT(1.0f) },
+												.childAlignment = { .x = CLAY_ALIGN_X_CENTER },
+											},
+										});
+										containerStarted = true;
+									}
+									
+									if (option->type == FileOptionType_Bool)
 									{
-										option->isUncommented = !option->isUncommented;
-										SetOptionValue(app->currentTab, option, StrLit(option->isUncommented ? "" : "// "));
-									} Clay__CloseElement();
-								}
-								else
-								{
-									if (ClayOptionBtn(optionsContainerId, option->name, StrLit("-"), false))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->valueBool))
+										{
+											option->valueBool = !option->valueBool;
+											if (StrExactEquals(option->valueStr, StrLit("false"))) { SetOptionValue(app->currentTab, option, StrLit("true")); }
+											else if (StrExactEquals(option->valueStr, StrLit("true"))) { SetOptionValue(app->currentTab, option, StrLit("false")); }
+											else if (StrExactEquals(option->valueStr, StrLit("0"))) { SetOptionValue(app->currentTab, option, StrLit("1")); }
+											else { SetOptionValue(app->currentTab, option, StrLit("0")); }
+										}
+									}
+									else if (option->type == FileOptionType_CommentDefine)
 									{
-										//TODO: Implement me!
-									} Clay__CloseElement();
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->isUncommented))
+										{
+											option->isUncommented = !option->isUncommented;
+											SetOptionValue(app->currentTab, option, StrLit(option->isUncommented ? "" : "// "));
+										}
+									}
+									else
+									{
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, false))
+										{
+											Notify_W("This #define type is not supported yet!");
+											//TODO: Implement me!
+										}
+									}
 								}
-								if (option->numEmptyLinesAfter > 0)
+								if (containerStarted) { Clay__CloseElement(); }
+							}
+							else
+							{
+								VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 								{
-									CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED(UI_R32((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP)) } } }) {}
+									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+									if (option->type == FileOptionType_Bool)
+									{
+										//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
+										if (ClayOptionBtn(optionsContainerId, option->name, option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
+										{
+											option->valueBool = !option->valueBool;
+											if (StrExactEquals(option->valueStr, StrLit("false"))) { SetOptionValue(app->currentTab, option, StrLit("true")); }
+											else if (StrExactEquals(option->valueStr, StrLit("true"))) { SetOptionValue(app->currentTab, option, StrLit("false")); }
+											else if (StrExactEquals(option->valueStr, StrLit("0"))) { SetOptionValue(app->currentTab, option, StrLit("1")); }
+											else { SetOptionValue(app->currentTab, option, StrLit("0")); }
+										}
+									}
+									else if (option->type == FileOptionType_CommentDefine)
+									{
+										if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+										{
+											option->isUncommented = !option->isUncommented;
+											SetOptionValue(app->currentTab, option, StrLit(option->isUncommented ? "" : "// "));
+										}
+									}
+									else
+									{
+										if (ClayOptionBtn(optionsContainerId, option->name, option->name, StrLit("-"), false))
+										{
+											Notify_W("This #define type is not supported yet!");
+											//TODO: Implement me!
+										}
+									}
+									if (option->numEmptyLinesAfter > 0)
+									{
+										CLAY({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED(UI_R32((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP)) } } }) {}
+									}
 								}
 							}
 						}

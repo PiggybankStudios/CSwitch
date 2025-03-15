@@ -21,7 +21,6 @@
 	[ ] Find running instances of CSwitch on startup and use IPC to reroute command line arguments to that instance rather than opening a second instance
 	[ ] Add a search bar that can be used to filter the buttons
 	[ ] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
-	[ ] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[ ] Add command line arguments that tell CSwitch where to position itself on screen. Either absolute coordinates, or maybe like relative coordinates from top-left, top-right, bottom-right, bottom-left, left-middle, top-middle, right-middle, or bottom-middle
 	[ ] Add a button+hotkey to open the file in a text editor (also maybe to open the folder where the file resides in Explorer)
 	[ ] Re-open all tabs that were open in the last session of CSwitch
@@ -34,10 +33,13 @@
 	[ ] Floating UI should have some top-level constraint that keeps it inside the main window, with some choice of whether to prefer moving or shrinking to accomplish that
 	[ ] When hiding the topbar we should display a little floating message in the top-middle of the screen that describes how to bring the topbar back. The message fades after a bit of time but comes back if the mouse is near the top of the screen.
 	[ ] Add support for dragging a tab from one instance of CSwitch to the other
+	[ ] Add an button to auto-size the window to perfect fit the contents of the current tab
+	[ ] Add abbreviation customization options
+	[ ] Add icons to the small buttons (and customization to choose which icons shows for which define)
 	[ ] 
-	
 
 # Finished List:
+	[X] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[X] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
 	[X] Add tooltips that show full path when hovering over the recent file buttons
 	(X) Topbar dropdowns run off the right-hand side of the screen (esp. recent files submenu)
