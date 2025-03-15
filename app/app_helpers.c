@@ -220,7 +220,7 @@ void AppSaveRecentFilesList()
 			ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
 		}
 	}
-	else { PrintLine_E("Failed to save recent files list to \"%.*s\"", StrPrint(savePath)); }
+	else { NotifyPrint_E("Failed to save recent files list to \"%.*s\"", StrPrint(savePath)); }
 	
 	ScratchEnd(scratch);
 }

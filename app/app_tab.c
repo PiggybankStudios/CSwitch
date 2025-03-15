@@ -240,7 +240,7 @@ FileTab* AppOpenFileTab(FilePath filePath)
 	
 	Str8 fileContents = Str8_Empty;
 	bool openResult = OsReadTextFile(filePath, stdHeap, &fileContents);
-	if (!openResult) { PrintLine_E("Failed to open file at \"%.*s\"", StrPrint(filePath)); return nullptr; }
+	if (!openResult) { NotifyPrint_W("Failed to open file at \"%.*s\"", StrPrint(filePath)); return nullptr; }
 	ScratchBegin(scratch);
 	
 	FileTab* newTab = VarArrayAdd(FileTab, &app->tabs);
@@ -274,7 +274,7 @@ void AppReloadFileTab(uxx tabIndex)
 	bool openResult = OsReadTextFile(tab->filePath, stdHeap, &fileContents);
 	if (!openResult)
 	{
-		PrintLine_E("Failed to reload file at \"%.*s\"", StrPrint(tab->filePath));
+		NotifyPrint_W("Failed to reload file at \"%.*s\"", StrPrint(tab->filePath));
 		AppCloseFileTab(tabIndex);
 		return;
 	}
@@ -350,7 +350,7 @@ void UpdateOptionValueInFile(FileTab* tab, FileOption* option)
 		}
 		else
 		{
-			PrintLine_E("Failed to write %llu byte%s to file \"%.*s\"!", (u64)newFileContents.length, Plural(newFileContents.length, "s"), StrPrint(tab->filePath));
+			NotifyPrint_E("Failed to write %llu byte%s to file \"%.*s\"!", (u64)newFileContents.length, Plural(newFileContents.length, "s"), StrPrint(tab->filePath));
 			FreeStr8(stdHeap, &option->valueStr);
 			option->valueStr = AllocStr8(stdHeap, StrSlice(tab->fileContents, option->fileContentsStartIndex, option->fileContentsEndIndex));
 		}
@@ -380,7 +380,7 @@ POPUP_DIALOG_CALLBACK_DEF(AppResetCurrentFilePopupCallback)
 	if (result == PopupDialogResult_Yes && app->currentTab != nullptr)
 	{
 		bool writeSuccess = OsWriteTextFile(app->currentTab->filePath, app->currentTab->originalFileContents);
-		if (!writeSuccess) { PrintLine_E("Failed to write to file at \"%.*s\"!", StrPrint(app->currentTab->filePath)); }
+		if (!writeSuccess) { NotifyPrint_E("Failed to write to file at \"%.*s\"!", StrPrint(app->currentTab->filePath)); }
 		else
 		{
 			AppReloadFileTab(app->currentTabIndex);

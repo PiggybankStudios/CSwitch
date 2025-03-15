@@ -167,6 +167,27 @@ struct PopupDialog
 	void* callbackContext;
 };
 
+typedef struct Notification Notification;
+struct Notification
+{
+	Arena* arena;
+	u64 id;
+	u64 spawnTime;
+	u64 duration;
+	Str8 messageStr;
+	r32 currentOffsetY;
+	r32 gotoOffsetY;
+	DbgLevel level;
+};
+
+typedef struct NotificationQueue NotificationQueue;
+struct NotificationQueue
+{
+	Arena* arena;
+	u64 nextId;
+	VarArray notifications; //Notification
+};
+
 #define POPUP_DIALOG_CALLBACK_DEF(functionName) void functionName(PopupDialogResult result, struct PopupDialog* dialog, struct PopupDialogButton* selectedButton, void* contextPntr)
 typedef POPUP_DIALOG_CALLBACK_DEF(PopupDialogCallback_f);
 
@@ -196,9 +217,11 @@ struct AppData
 	bool isViewMenuOpen;
 	bool keepViewMenuOpenUntilMouseOver;
 	bool isOpenRecentSubmenuOpen;
+	bool keepOpenRecentSubmenuOpenUntilMouseOver;
 	bool wasClayScrollingPrevFrame;
 	
 	PopupDialog popup;
+	NotificationQueue notifications;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;

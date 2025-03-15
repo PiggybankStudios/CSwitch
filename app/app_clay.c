@@ -65,6 +65,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			.id = menuId,
 			.floating = {
 				.attachTo = CLAY_ATTACH_TO_PARENT,
+				.zIndex = 5,
 				.attachPoints = {
 					.parent = CLAY_ATTACH_POINT_LEFT_BOTTOM,
 				},
@@ -96,24 +97,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	return *isOpenPntr;
 }
 
-#define CLAY_ICON(texturePntr, size, color) CLAY({      \
-	.layout = {                                         \
-		.sizing = {                                     \
-			.width = CLAY_SIZING_FIXED((size).Width),   \
-			.height = CLAY_SIZING_FIXED((size).Height), \
-		},                                              \
-	},                                                  \
-	.image = {                                          \
-		.imageData = (texturePntr),                     \
-		.sourceDimensions = {                           \
-			.width = (r32)((texturePntr)->Width),       \
-			.height = (r32)((texturePntr)->Height),     \
-		},                                              \
-	},                                                  \
-	.backgroundColor = ToClayColor(color),              \
-}) {}
-
-bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, Texture* icon)
+bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, Texture* icon)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopSubmenu", btnText);
@@ -123,7 +107,8 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, Te
 	ClayId menuId = ToClayId(menuIdStr);
 	ClayId menuListId = ToClayId(menuListIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
-	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
+	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
+	bool isHovered = (isBtnHovered || isMenuHovered);
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
 	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
 	Color32 borderColor = SELECTED_BLUE;
@@ -151,9 +136,14 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, Te
 			})
 		);
 	}
-	if (!isParentOpen) { *isOpenPntr = false; }
-	if (isParentOpen && IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
-	if (*isOpenPntr == true && !isHovered) { *isOpenPntr = false; }
+	if (!isParentOpen) { *isOpenPntr = false; *keepOpenUntilMouseoverPntr = false; }
+	if (isParentOpen && IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+	{
+		*isOpenPntr = !*isOpenPntr;
+		*keepOpenUntilMouseoverPntr = *isOpenPntr;
+	}
+	if (*isOpenPntr == true && isMenuHovered && *keepOpenUntilMouseoverPntr) { *keepOpenUntilMouseoverPntr = false; } //once we are closed or the mouse is over, clear this flag, mouse leaving now will constitute closing
+	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr) { *isOpenPntr = false; *keepOpenUntilMouseoverPntr = false; }
 	if (*isOpenPntr)
 	{
 		Clay__OpenElement();
@@ -369,6 +359,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 			CLAY({ .id = scrollbarId,
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
+					.zIndex = 1,
 					.offset = { .x = UI_U16(1), .y = scrollBarOffsetY },
 				},
 				.layout = {

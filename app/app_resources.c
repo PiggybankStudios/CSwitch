@@ -20,7 +20,7 @@ void InitAppResources(AppResources* resources)
 	#if USE_BUNDLED_RESOURCES
 	Slice zipFileContents = NewStr8(ArrayCount(resources_zip_bytes), &resources_zip_bytes[0]);
 	Result openResult = OpenZipArchive(stdHeap, zipFileContents, &resources->zipFile);
-	if (openResult != Result_Success) { PrintLine_E("Failed to parse builtin zip file %llu bytes as zip archive: %s", zipFileContents.length, GetResultStr(openResult)); }
+	if (openResult != Result_Success) { NotifyPrint_E("Failed to parse builtin zip file %llu bytes as zip archive: %s", zipFileContents.length, GetResultStr(openResult)); }
 	Assert(openResult == Result_Success);
 	#endif
 }

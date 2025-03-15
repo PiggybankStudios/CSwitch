@@ -27,3 +27,20 @@ v2 ClayUiTextSize(PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, text);
 	return NewV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
 }
+
+#define CLAY_ICON(texturePntr, size, color) CLAY({      \
+	.layout = {                                         \
+		.sizing = {                                     \
+			.width = CLAY_SIZING_FIXED((size).Width),   \
+			.height = CLAY_SIZING_FIXED((size).Height), \
+		},                                              \
+	},                                                  \
+	.image = {                                          \
+		.imageData = (texturePntr),                     \
+		.sourceDimensions = {                           \
+			.width = (r32)((texturePntr)->Width),       \
+			.height = (r32)((texturePntr)->Height),     \
+		},                                              \
+	},                                                  \
+	.backgroundColor = ToClayColor(color),              \
+}) {}

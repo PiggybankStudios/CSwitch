@@ -57,6 +57,7 @@ static Arena* stdHeap = nullptr;
 #include "app_file_watch.c"
 #include "app_clay_helpers.c"
 #include "app_tooltips.c"
+#include "app_notifications.c"
 #include "app_popup_dialog.c"
 #include "app_helpers.c"
 #include "app_tab.c"
@@ -252,6 +253,7 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	InitTooltipState(stdHeap, &app->tooltip);
 	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
 	app->nextTooltipId = 1;
+	InitNotificationQueue(stdHeap, &app->notifications);
 	
 	app->smoothScrollingEnabled = true;
 	app->optionTooltipsEnabled = true;
@@ -282,7 +284,7 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 		}
 		else
 		{
-			PrintLine_E("Command line path does not point to a file: \"%.*s\"", StrPrint(pathArgument));
+			NotifyPrint_E("Command line path does not point to a file: \"%.*s\"", StrPrint(pathArgument));
 		}
 		
 		argIndex++;
@@ -330,6 +332,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	
 	UpdateFileWatches(&app->fileWatches);
 	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
+	UpdatePopupDialog(&app->popup);
+	UpdateNotificationQueue(&app->notifications);
 	
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
@@ -347,6 +351,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
+		if (app->notifications.notifications.length > 0) { refreshScreen = true; }
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
 		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
@@ -428,6 +433,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	#endif
+	
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N))
+	{
+		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
+		AddNotificationToQueue(&app->notifications, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
+	}
 	
 	// +========================================+
 	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
@@ -624,8 +635,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	
-	UpdatePopupDialog(&app->popup);
-	
 	// +==============================+
 	// |          Rendering           |
 	// +==============================+
@@ -689,7 +698,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							
 							if (app->recentFiles.length > 0)
 							{
-								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->icons[AppIcon_OpenRecent]))
+								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, &app->icons[AppIcon_OpenRecent]))
 								{
 									for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 									{
@@ -805,10 +814,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						
 						if (app->currentTab != nullptr)
 						{
+							Str8 filePathScratch = AllocStr8(scratch, app->currentTab->filePath);
 							CLAY({ .id = CLAY_ID("FilePathDisplay") })
 							{
 								CLAY_TEXT(
-									ToClayString(app->currentTab->filePath),
+									ToClayString(filePathScratch),
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
@@ -1039,6 +1049,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				}
 				
 				RenderPopupDialog(&app->popup);
+				RenderNotificationQueue(&app->notifications);
 			}
 		}
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
@@ -1102,7 +1113,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 			AppOpenFileTab(selectedPath);
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
-		else { PrintLine_E("OpenDialog error: %s", GetResultStr(openResult)); }
+		else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
 	}
 	
 	ScratchEnd(scratch);

@@ -66,4 +66,15 @@ Date:   02\25\2025
 #define POPUP_MIN_WIDTH       300 //px
 #define POPUP_MIN_HEIGHT      100 //px
 
+#define MAX_NOTIFICATIONS                  16
+#define DEFAULT_NOTIFICATION_TIME          5*1000 //ms
+#define NOTIFICATION_BETWEEN_MARGIN        3 //px
+#define NOTIFICATION_PADDING               8 //px
+#define NOTIFICATION_MOVE_LAG              3 //divisor
+#define NOTIFICATION_APPEAR_ANIM_TIME      200 //ms
+#define NOTIFICATION_DISAPPEAR_ANIM_TIME   300 //ms
+#define NOTIFICATION_SCREEN_MARGIN_RIGHT   4 //px
+#define NOTIFICATION_SCREEN_MARGIN_BOTTOM  4 //px
+#define NOTIFICATION_ICON_SIZE             32 //px
+
 #endif //  _DEFINES_H
