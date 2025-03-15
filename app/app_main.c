@@ -385,6 +385,19 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		AppOpenFileTab(*droppedFilePath);
 	}
 	
+	VarArrayLoop(&app->recentFiles, rIndex)
+	{
+		VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
+		if (recentFile->tooltipId != 0)
+		{
+			TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, recentFile->tooltipId);
+			if (tooltip != nullptr)
+			{
+				tooltip->enabled = app->isOpenRecentSubmenuOpen;
+			}
+		}
+	}
+	
 	#if 0
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T))
 	{

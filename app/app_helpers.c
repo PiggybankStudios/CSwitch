@@ -140,12 +140,23 @@ bool AppChangeFontSize(bool increase)
 	else { return false; }
 }
 
+void FreeRecentFile(RecentFile* recentFile)
+{
+	NotNull(recentFile);
+	FreeStr8(stdHeap, &recentFile->path);
+	if (recentFile->tooltipId != 0)
+	{
+		RemoveTooltipRegionById(&app->tooltipRegions, recentFile->tooltipId);
+	}
+	ClearPointer(recentFile);
+}
+
 void AppClearRecentFiles()
 {
 	VarArrayLoop(&app->recentFiles, rIndex)
 	{
 		VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
-		FreeStr8(stdHeap, &recentFile->path);
+		FreeRecentFile(recentFile);
 	}
 	VarArrayClear(&app->recentFiles);
 }
@@ -176,6 +187,8 @@ void AppLoadRecentFilesList()
 					NotNull(newFile);
 					newFile->path = AllocStr8(stdHeap, fileLine);
 					newFile->fileExists = OsDoesFileExist(newFile->path);
+					ClayId buttonClayId = ToClayIdPrint("%.*s_Btn", StrPrint(newFile->path));
+					newFile->tooltipId = AddTooltipClay(&app->tooltipRegions, buttonClayId, newFile->path, DEFAULT_TOOLTIP_DELAY, 2)->id;
 				}
 			}
 			
@@ -257,11 +270,13 @@ void AppRememberRecentFile(FilePath filePath)
 		newRecentFile->path = AllocStr8(stdHeap, fullPath);
 		newRecentFile->fileExists = true;
 		NotNull(newRecentFile->path.chars);
+		ClayId buttonClayId = ToClayIdPrint("%.*s_Btn", StrPrint(newRecentFile->path));
+		newRecentFile->tooltipId = AddTooltipClay(&app->tooltipRegions, buttonClayId, newRecentFile->path, DEFAULT_TOOLTIP_DELAY, 2)->id;
 		
 		while (app->recentFiles.length > RECENT_FILES_MAX_LENGTH)
 		{
 			RecentFile* firstFile = VarArrayGetFirst(RecentFile, &app->recentFiles);
-			FreeStr8(stdHeap, &firstFile->path);
+			FreeRecentFile(firstFile);
 			VarArrayRemoveFirst(RecentFile, &app->recentFiles);
 		}
 	}

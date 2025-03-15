@@ -3,6 +3,7 @@
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
+	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
 	@ Multiple Window Support
@@ -16,8 +17,6 @@
 	[ ] Save the window size (and position?) and restore to the same size/position on startup (careful of monitor changes meaning our old location is invalid!)
 	[ ] If something writes to the file externally multiple times in a row, or maybe slowly, can we ever end up in a spot where we fail to read the file because it is locked? Should we have a sort of delay after we see the write time change? Or maybe a retry pattern if we fail to read it once or twice? Do we ever tell the user we can't open the file anymore? Should we close the file if we see the file got deleted? (again worry about if the file is getting deleted for a short time and then recreated, maybe we wait a bit before really considering the file deleted)
 	[ ] Support for searching a folder (maybe recursively?) for all files that have defines and displaying them all in one list, with little separators to indicate which file the option resides in
-	[ ] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
-	[ ] Add tooltips that show full path when hovering over the recent file buttons
 	[ ] Add support for custom theme(s)
 	[ ] Find running instances of CSwitch on startup and use IPC to reroute command line arguments to that instance rather than opening a second instance
 	[ ] Add a search bar that can be used to filter the buttons
@@ -34,10 +33,13 @@
 	[ ] Remember the scroll offset for a tab and restore it when we return to that tab
 	[ ] Floating UI should have some top-level constraint that keeps it inside the main window, with some choice of whether to prefer moving or shrinking to accomplish that
 	[ ] When hiding the topbar we should display a little floating message in the top-middle of the screen that describes how to bring the topbar back. The message fades after a bit of time but comes back if the mouse is near the top of the screen.
+	[ ] Add support for dragging a tab from one instance of CSwitch to the other
 	[ ] 
 	
 
 # Finished List:
+	[X] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
+	[X] Add tooltips that show full path when hovering over the recent file buttons
 	(X) Topbar dropdowns run off the right-hand side of the screen (esp. recent files submenu)
 	(X) Topbar dropdowns render underneath the scrollbar
 	[X] Add a notification like system where we can tell the user about notable warnings/errors

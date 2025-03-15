@@ -50,6 +50,7 @@ struct RecentFile
 {
 	Str8 path;
 	bool fileExists;
+	u64 tooltipId;
 };
 
 typedef struct FileWatch FileWatch;

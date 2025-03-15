@@ -571,6 +571,7 @@
 			"void FreePopupDialog(PopupDialog* dialog)",
 			"void FreePopupDialogButton(PopupDialogButton* button)",
 			"void FreeProgramArgs(ProgramArgs* args)",
+			"void FreeRecentFile(RecentFile* recentFile)",
 			"void FreeTooltipRegion(TooltipRegion* region)",
 			"void FreeVarArray(VarArray* array)",
 			"void InitAppResources(AppResources* resources)",
