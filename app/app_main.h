@@ -111,6 +111,8 @@ struct FileTab
 {
 	Str8 filePath;
 	Str8 fileContents;
+	Str8 originalFileContents;
+	bool isFileChangedFromOriginal;
 	uxx fileWatchId;
 	VarArray fileOptions; //FileOption
 	ScrollbarInteractionState scrollbarState;

@@ -20,6 +20,7 @@ void FreeFileTab(FileTab* tab)
 	NotNull(tab);
 	FreeStr8(stdHeap, &tab->filePath);
 	FreeStr8(stdHeap, &tab->fileContents);
+	FreeStr8(stdHeap, &tab->originalFileContents);
 	VarArrayLoop(&tab->fileOptions, oIndex)
 	{
 		VarArrayLoopGet(FileOption, option, &tab->fileOptions, oIndex);
@@ -248,6 +249,8 @@ FileTab* AppOpenFileTab(FilePath filePath)
 	//TODO: Should we maybe check if the file is already open in an existing tab?
 	// if (app->isFileOpen) { AppCloseFile(); }
 	newTab->fileContents = fileContents;
+	newTab->originalFileContents = AllocStr8(stdHeap, newTab->fileContents);
+	newTab->isFileChangedFromOriginal = false;
 	newTab->filePath = AllocStr8(stdHeap, filePath);
 	InitVarArray(FileOption, &newTab->fileOptions, stdHeap);
 	
@@ -278,7 +281,10 @@ void AppReloadFileTab(uxx tabIndex)
 	ScratchBegin(scratch);
 	
 	FreeStr8(stdHeap, &tab->fileContents);
+	FreeStr8(stdHeap, &tab->originalFileContents);
 	tab->fileContents = fileContents;
+	tab->originalFileContents = AllocStr8(stdHeap, tab->fileContents);
+	tab->isFileChangedFromOriginal = false;
 	
 	UpdateFileTabOptions(tab);
 	
@@ -337,6 +343,7 @@ void UpdateOptionValueInFile(FileTab* tab, FileOption* option)
 			
 			FreeStr8(stdHeap, &tab->fileContents);
 			tab->fileContents = AllocStr8(stdHeap, newFileContents);
+			tab->isFileChangedFromOriginal = !StrExactEquals(tab->fileContents, tab->originalFileContents);
 			
 			//Since we just wrote to the file, make sure we immediately updated out file write time so we don't think it was an external change
 			ClearFileWatchChanged(&app->fileWatches, tab->fileWatchId);
@@ -360,5 +367,23 @@ void SetOptionValue(FileTab* tab, FileOption* option, Str8 newValueStr)
 		FreeStr8(stdHeap, &option->valueStr);
 		option->valueStr = AllocStr8(stdHeap, newValueStr);
 		UpdateOptionValueInFile(tab, option);
+	}
+}
+
+// +==================================+
+// | AppResetCurrentFilePopupCallback |
+// +==================================+
+// void AppResetCurrentFilePopupCallback(PopupDialogResult result, PopupDialog* dialog, PopupDialogButton* selectedButton, void* contextPntr)
+POPUP_DIALOG_CALLBACK_DEF(AppResetCurrentFilePopupCallback)
+{
+	UNUSED(dialog); UNUSED(selectedButton); UNUSED(contextPntr);
+	if (result == PopupDialogResult_Yes && app->currentTab != nullptr)
+	{
+		bool writeSuccess = OsWriteTextFile(app->currentTab->filePath, app->currentTab->originalFileContents);
+		if (!writeSuccess) { PrintLine_E("Failed to write to file at \"%.*s\"!", StrPrint(app->currentTab->filePath)); }
+		else
+		{
+			AppReloadFileTab(app->currentTabIndex);
+		}
 	}
 }

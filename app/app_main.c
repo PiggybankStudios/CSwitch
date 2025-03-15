@@ -729,6 +729,16 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
 							}
 							
+							if (ClayBtn("Reset File", "", (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), &app->icons[AppIcon_ResetFile]))
+							{
+								OpenPopupDialog(stdHeap, &app->popup,
+									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
+									AppResetCurrentFilePopupCallback, nullptr
+								);
+								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, TEXT_GRAY);
+								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, ERROR_RED);
+							} Clay__CloseElement();
+							
 							if (ClayBtn("Close File", "Ctrl+W", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
 							{
 								AppCloseFileTab(app->currentTabIndex);

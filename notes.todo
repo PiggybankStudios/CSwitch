@@ -1,7 +1,5 @@
 
 # TODO List:
-	[!] Add a confirmation dialog when doing non-reversable actions (like clearing recent files)
-	[!] File->Reset option that resets the file back to what it was when it was opened
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Topbar dropdowns render underneath the scrollbar
@@ -39,6 +37,8 @@
 	[ ] 
 
 # Finished List:
+	[X] File->Reset option that resets the file back to what it was when it was opened
+	[X] Add a confirmation dialog when doing non-reversable actions (like clearing recent files)
 	(X) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!
 	[X] Add Ctrl+Plus/Minus and Ctrl+Scroll hotkeys for changing font size / UI scale
 	(X) When scrolled down the list, clicking "File" or "View" toggles the button that is below! (also when clicking on tabs)

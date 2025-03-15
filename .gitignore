@@ -7,4 +7,5 @@ _data/*.ini
 _data/cswitch
 _data/cswitch_app.so
 _data/libpig_core.so
+_data/old_resources/
 DEBUG_*.png
