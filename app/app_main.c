@@ -328,7 +328,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	bool shouldContinueRunning = true;
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
 	
 	UpdateFileWatches(&app->fileWatches);
@@ -369,7 +368,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 			ScratchEnd(scratch);
 			ScratchEnd(scratch2);
 			ScratchEnd(scratch3);
-			return shouldContinueRunning;
+			return false;
 		}
 	}
 	
@@ -471,7 +470,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	{
 		if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
 		{
-			shouldContinueRunning = false;
+			platform->RequestQuit();
 		}
 		else
 		{
@@ -839,7 +838,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							
 							// if (ClayBtn("Close Window", "Ctrl+Shift+W", true, &app->icons[AppIcon_CloseWindow]))
 							// {
-							// 	shouldContinueRunning = false;
+							// 	platform->RequestQuit();
 							// 	app->isFileMenuOpen = false;
 							// } Clay__CloseElement();
 							
@@ -1208,7 +1207,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
-	return shouldContinueRunning;
+	
+	return true;
 }
 
 // +==============================+

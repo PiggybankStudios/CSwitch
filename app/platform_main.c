@@ -127,8 +127,9 @@ void RaylibLogCallback(int logLevel, const char* text, va_list args)
 }
 #endif //BUILD_WITH_RAYLIB
 
-void PlatDoUpdate(void)
+bool PlatDoUpdate(void)
 {
+	bool renderedFrame = true;
 	//TODO: Check for dll changes, reload it!
 	
 	//Swap which appInput is being written to and pass the static version to the application
@@ -172,15 +173,9 @@ void PlatDoUpdate(void)
 	platformData->oldAppInput = oldAppInput;
 	platformData->currentAppInput = newAppInput;
 	
-	bool shouldContinueRunning = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
+	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
 	
-	#if BUILD_WITH_RAYLIB
-	if (!shouldContinueRunning) { CloseWindow(); }
-	#elif BUILD_WITH_SOKOL_APP
-	if (!shouldContinueRunning) { sapp_quit(); }
-	#else
-	UNUSED(shouldContinueRunning);
-	#endif
+	return renderedFrame;
 }
 
 // +--------------------------------------------------------------+
@@ -208,6 +203,7 @@ void PlatSappInit(void)
 	NotNull(platform);
 	ClearPointer(platform);
 	platform->GetNativeWindowHandle = Plat_GetNativeWindowHandle;
+	platform->RequestQuit = Plat_RequestQuit;
 	platform->GetSokolSwapchain = Plat_GetSokolSwapchain;
 	platform->SetMouseLocked = Plat_SetMouseLocked;
 	platform->SetMouseCursorType = Plat_SetMouseCursorType;
@@ -422,6 +418,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.event_cb = PlatSappEvent,
 		.width = RoundR32i(windowSize.Width),
 		.height = RoundR32i(windowSize.Height),
+		.swap_interval = 1, //16ms aka 60fps
 		.window_title = "Loading...",
 		.icon.sokol_default = false,
 		.logger.func = SokolLogCallback,

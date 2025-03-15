@@ -46,6 +46,9 @@ struct AppInput
 #define GET_NATIVE_WINDOW_HANDLE_DEF(functionName) const void* functionName()
 typedef GET_NATIVE_WINDOW_HANDLE_DEF(GetNativeWindowHandle_f);
 
+#define REQUEST_QUIT_DEF(functionName) void functionName()
+typedef REQUEST_QUIT_DEF(RequestQuit_f);
+
 #define GET_SOKOL_SWAPCHAIN_DEF(functionName) sg_swapchain functionName()
 typedef GET_SOKOL_SWAPCHAIN_DEF(GetSokolSwapchain_f);
 
@@ -68,6 +71,7 @@ typedef struct PlatformApi PlatformApi;
 struct PlatformApi
 {
 	GetNativeWindowHandle_f* GetNativeWindowHandle;
+	RequestQuit_f* RequestQuit;
 	GetSokolSwapchain_f* GetSokolSwapchain;
 	SetMouseLocked_f* SetMouseLocked;
 	SetMouseCursorType_f* SetMouseCursorType;

@@ -8,7 +8,7 @@ A simple project to turn on/off defines in a C/C++ header file quickly. This pro
 4. After opening, a button for each `#define` in the file will be shown.
 5. Clicking a button will toggle the value between 1 and 0, or true and false (and immediately write to the file)
 
-# Screenshot
+# Screenshots
 ![Screenshot 1](/_media/screenshot8.png)
 
 ![Screenshot 2](/_media/screenshot7.png)

@@ -27,6 +27,22 @@ GET_NATIVE_WINDOW_HANDLE_DEF(Plat_GetNativeWindowHandle)
 	return result;
 }
 
+// +==============================+
+// |         RequestQuit          |
+// +==============================+
+// void Plat_RequestQuit()
+REQUEST_QUIT_DEF(Plat_RequestQuit)
+{
+	#if BUILD_WITH_RAYLIB
+	CloseWindow();
+	#elif BUILD_WITH_SOKOL_APP
+	sapp_quit();
+	#else
+	AssertMsg(false, "Plat_RequestQuit does not have an implementation for the current application type!");
+	UNUSED(shouldContinueRunning);
+	#endif
+}
+
 #if BUILD_WITH_SOKOL_APP
 
 // +==============================+
