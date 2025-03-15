@@ -455,13 +455,6 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		app->minimalModeEnabled = !app->minimalModeEnabled;
 	}
 	
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_P))
-	{
-		OpenPopupDialog(stdHeap, &app->popup, StrLit("Are you sure?"), nullptr, nullptr);
-		AddPopupButton(&app->popup, 1, StrLit("No"), PopupDialogResult_No, TEXT_GRAY);
-		AddPopupButton(&app->popup, 2, StrLit("Yes"), PopupDialogResult_Yes, SELECTED_BLUE);
-	}
-	
 	// +==============================+
 	// |      Handle Escape Key       |
 	// +==============================+
@@ -717,8 +710,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									
 									if (ClayBtn("Clear Recent Files", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
 									{
-										AppClearRecentFiles();
-										AppSaveRecentFilesList();
+										OpenPopupDialog(stdHeap, &app->popup,
+											ScratchPrintStr("Are you sure you want to clear all %llu recent file entr%s", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
+											AppClearRecentFilesPopupCallback, nullptr
+										);
+										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, TEXT_GRAY);
+										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, ERROR_RED);
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
