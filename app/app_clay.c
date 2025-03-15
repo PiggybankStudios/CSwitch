@@ -7,7 +7,7 @@ Description:
 */
 
 //Call Clay__CloseElement once if false, three times if true (i.e. twice inside the if statement and once after)
-bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, bool keepOpen)
+bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, bool isSubmenuOpen)
 {
 	ScratchBegin(scratch);
 	ScratchBegin1(persistScratch, scratch);
@@ -57,9 +57,10 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	}
 	if (IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
 	if (*isOpenPntr == true && isHovered && *keepOpenUntilMouseoverPntr) { *keepOpenUntilMouseoverPntr = false; } //once we are closed or the mouse is over, clear this flag, mouse leaving now will constitute closing
-	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr && !keepOpen) { *isOpenPntr = false; }
+	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr && !isSubmenuOpen) { *isOpenPntr = false; }
 	if (*isOpenPntr)
 	{
+		r32 maxDropdownWidth = isSubmenuOpen ? appIn->screenSize.Width/2.0f : appIn->screenSize.Width;
 		Clay__OpenElement();
 		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 			.id = menuId,
@@ -72,6 +73,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			},
 			.layout = {
 				.padding = { 2, 2, 0, 0 },
+				.sizing = { .width = CLAY_SIZING_FIT(0, maxDropdownWidth) },
 			}
 		});
 		
@@ -133,6 +135,9 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
 				.textColor = ToClayColor(TEXT_WHITE),
+				.wrapMode = CLAY_TEXT_WRAP_NONE,
+				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+				.userData = { .contraction = TextContraction_ClipRight },
 			})
 		);
 	}
@@ -146,10 +151,12 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr) { *isOpenPntr = false; *keepOpenUntilMouseoverPntr = false; }
 	if (*isOpenPntr)
 	{
+		r32 maxDropdownWidth = appIn->screenSize.Width/2.0f;
 		Clay__OpenElement();
 		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 			.id = menuId,
 			.floating = {
+				.zIndex = 6,
 				.attachTo = CLAY_ATTACH_TO_PARENT,
 				.attachPoints = {
 					.parent = CLAY_ATTACH_POINT_RIGHT_TOP,
@@ -157,6 +164,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 			},
 			.layout = {
 				.padding = { 0, 0, 0, 0 },
+				.sizing = { .width = CLAY_SIZING_FIT(0, maxDropdownWidth) },
 			}
 		});
 		
@@ -220,6 +228,9 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
 				.textColor = ToClayColor(TEXT_WHITE),
+				.wrapMode = CLAY_TEXT_WRAP_NONE,
+				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+				.userData = { .contraction = TextContraction_ClipRight },
 			})
 		);
 		if (!IsEmptyStr(hotkeyStr))
@@ -241,6 +252,9 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 						.fontId = app->clayUiFontId,
 						.fontSize = (u16)app->uiFontSize,
 						.textColor = ToClayColor(TEXT_GRAY),
+						.wrapMode = CLAY_TEXT_WRAP_NONE,
+						.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
+						.userData = { .contraction = TextContraction_ClipRight },
 					})
 				);
 			}

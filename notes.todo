@@ -2,8 +2,7 @@
 # TODO List:
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
-	( ) Topbar dropdowns render underneath the scrollbar
-	( ) Topbar dropdowns run off the right-hand side of the screen (esp. recent files submenu)
+	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
 	@ Multiple Window Support
@@ -14,7 +13,6 @@
 	[ ] Reduce memory usage
 	[ ] Measure and reduce CPU load while idle
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
-	[ ] Add a notification like system where we can tell the user about notable warnings/errors
 	[ ] Save the window size (and position?) and restore to the same size/position on startup (careful of monitor changes meaning our old location is invalid!)
 	[ ] If something writes to the file externally multiple times in a row, or maybe slowly, can we ever end up in a spot where we fail to read the file because it is locked? Should we have a sort of delay after we see the write time change? Or maybe a retry pattern if we fail to read it once or twice? Do we ever tell the user we can't open the file anymore? Should we close the file if we see the file got deleted? (again worry about if the file is getting deleted for a short time and then recreated, maybe we wait a bit before really considering the file deleted)
 	[ ] Support for searching a folder (maybe recursively?) for all files that have defines and displaying them all in one list, with little separators to indicate which file the option resides in
@@ -34,9 +32,15 @@
 	[?] When opening a new tab should it be placed next to the currently selected tab? Currently it always gets places at the end
 	[ ] Add support for many tabs by making the tab gutter scrollable and having a minimum size for tabs
 	[ ] Remember the scroll offset for a tab and restore it when we return to that tab
+	[ ] Floating UI should have some top-level constraint that keeps it inside the main window, with some choice of whether to prefer moving or shrinking to accomplish that
+	[ ] When hiding the topbar we should display a little floating message in the top-middle of the screen that describes how to bring the topbar back. The message fades after a bit of time but comes back if the mouse is near the top of the screen.
 	[ ] 
+	
 
 # Finished List:
+	(X) Topbar dropdowns run off the right-hand side of the screen (esp. recent files submenu)
+	(X) Topbar dropdowns render underneath the scrollbar
+	[X] Add a notification like system where we can tell the user about notable warnings/errors
 	[X] File->Reset option that resets the file back to what it was when it was opened
 	[X] Add a confirmation dialog when doing non-reversable actions (like clearing recent files)
 	(X) Tooltips do not respect UI elements that are occluding the element with the tooltip. Somehow they need to know about all UI elements that would be in front of the tooltip region!

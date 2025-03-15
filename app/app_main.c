@@ -478,6 +478,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		else if (app->isFileMenuOpen)
 		{
 			app->isFileMenuOpen = false;
+			app->isOpenRecentSubmenuOpen = false;
 		}
 		else if (app->isViewMenuOpen)
 		{

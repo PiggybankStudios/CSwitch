@@ -85,6 +85,16 @@ void UpdateNotificationQueue(NotificationQueue* queue)
 	{
 		VarArrayLoopGet(Notification, notification, &queue->notifications, nIndex);
 		
+		// If we're halfway up the screen, auto-dismiss the notification by shortening the duration
+		if (notification->gotoOffsetY >= appIn->screenSize.Height * (r32)NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT)
+		{
+			u64 currentTime = TimeSinceBy(appIn->programTime, notification->spawnTime);
+			if (currentTime < notification->duration - NOTIFICATION_DISAPPEAR_ANIM_TIME)
+			{
+				notification->duration = currentTime + NOTIFICATION_DISAPPEAR_ANIM_TIME;
+			}
+		}
+		
 		if (TimeSinceBy(appIn->programTime, notification->spawnTime) >= notification->duration)
 		{
 			FreeNotification(notification);
@@ -146,7 +156,7 @@ void RenderNotificationQueue(NotificationQueue* queue)
 		);
 		if (appearAnimAmount < 1.0f && isSizeKnown)
 		{
-			offset.X += notificationDrawRec.Width * (1.0f - appearAnimAmount);
+			offset.X += notificationDrawRec.Width * EaseExponentialIn(1.0f - appearAnimAmount);
 		}
 		
 		CLAY({ .id = notificationId,

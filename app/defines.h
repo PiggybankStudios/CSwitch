@@ -76,5 +76,6 @@ Date:   02\25\2025
 #define NOTIFICATION_SCREEN_MARGIN_RIGHT   4 //px
 #define NOTIFICATION_SCREEN_MARGIN_BOTTOM  4 //px
 #define NOTIFICATION_ICON_SIZE             32 //px
+#define NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT 0.5f //percent of screen height
 
 #endif //  _DEFINES_H
