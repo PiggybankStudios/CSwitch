@@ -195,6 +195,43 @@ struct NotificationQueue
 #define POPUP_DIALOG_CALLBACK_DEF(functionName) void functionName(PopupDialogResult result, struct PopupDialog* dialog, struct PopupDialogButton* selectedButton, void* contextPntr)
 typedef POPUP_DIALOG_CALLBACK_DEF(PopupDialogCallback_f);
 
+typedef struct EditableText EditableText;
+struct EditableText
+{
+	Arena* arena;
+	uxx maxLength;
+	
+	bool isFocused;
+	bool isMouseHovering;
+	uxx mouseHoverIndex;
+	bool cursorActive;
+	uxx cursorEnd; //this is visually where the cursor is at, not necassarily a larger index than cursorStart
+	uxx cursorStart;
+	u64 cursorMoveTime; //used to offset the phase of the cursor blinking
+	
+	Str8 str; //points at strBuffer.items
+	VarArray strBuffer; //char
+	
+	bool textChanged;
+};
+
+typedef struct ClayTextbox ClayTextbox;
+struct ClayTextbox
+{
+	Str8 idStr;
+	Str8 hintStr;
+	u16 clayFontId;
+	r32 fontSize;
+	
+	EditableText edit;
+	TextMeasure measure;
+	VarArray flowGlyphs; //FontFlowGlyph
+	
+	bool mainRecChanged;
+	rec mainRec;
+	v2 textPos;
+};
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -233,6 +270,8 @@ struct AppData
 	VarArray tabs; //FileTab
 	uxx currentTabIndex;
 	FileTab* currentTab;
+	
+	ClayTextbox testTextbox;
 	
 	#if 0
 	TOOLINFO tooltipInfo;

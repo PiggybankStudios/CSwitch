@@ -57,6 +57,7 @@ static Arena* stdHeap = nullptr;
 #include "app_resources.c"
 #include "app_file_watch.c"
 #include "app_clay_helpers.c"
+#include "app_textbox.c"
 #include "app_tooltips.c"
 #include "app_notifications.c"
 #include "app_popup_dialog.c"
@@ -255,6 +256,8 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
 	app->nextTooltipId = 1;
 	InitNotificationQueue(stdHeap, &app->notifications);
+	
+	InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
 	
 	app->smoothScrollingEnabled = true;
 	app->optionTooltipsEnabled = true;
@@ -665,6 +668,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
 			optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y - optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
 		}
+	}
+	
+	if (app->currentTab == nullptr)
+	{
+		UpdateClayTextbox(&app->testTextbox);
 	}
 	
 	// +==============================+
@@ -1101,7 +1109,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							}
 						}
 						
-						#if DEBUG_BUILD
+						if (app->currentTab == nullptr)
+						{
+							DrawClayTextbox(&app->testTextbox, CLAY_SIZING_GROW(0));
+						}
+						
+						#if 0
 						if (app->currentTab == nullptr)
 						{
 							CLAY({
@@ -1142,6 +1155,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		}
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
 		RenderClayCommandArray(&app->clay, &gfx, &clayRenderCommands);
+		
+		if (app->currentTab == nullptr)
+		{
+			DrawClayTextboxText(&app->testTextbox);
+		}
 		
 		// +==============================+
 		// |    Update TooltipRegions     |
