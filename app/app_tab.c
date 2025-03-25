@@ -304,7 +304,6 @@ FileTab* AppOpenFileTab(FilePath filePath)
 	Str8 fileContents = Str8_Empty;
 	bool openResult = OsReadTextFile(filePath, stdHeap, &fileContents);
 	if (!openResult) { NotifyPrint_W("Failed to open file at \"%.*s\"", StrPrint(filePath)); return nullptr; }
-	ScratchBegin(scratch);
 	
 	FileTab* newTab = VarArrayAdd(FileTab, &app->tabs);
 	NotNull(newTab);
@@ -325,7 +324,6 @@ FileTab* AppOpenFileTab(FilePath filePath)
 	
 	AppRememberRecentFile(filePath);
 	
-	ScratchEnd(scratch);
 	return newTab;
 }
 
@@ -341,7 +339,6 @@ void AppReloadFileTab(uxx tabIndex)
 		AppCloseFileTab(tabIndex);
 		return;
 	}
-	ScratchBegin(scratch);
 	
 	FreeStr8(stdHeap, &tab->fileContents);
 	FreeStr8(stdHeap, &tab->originalFileContents);
@@ -350,8 +347,6 @@ void AppReloadFileTab(uxx tabIndex)
 	tab->isFileChangedFromOriginal = false;
 	
 	UpdateFileTabOptions(tab);
-	
-	ScratchEnd(scratch);
 }
 
 bool AppCheckForFileChanges()

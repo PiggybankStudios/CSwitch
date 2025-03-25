@@ -42,6 +42,7 @@ Description:
 // +--------------------------------------------------------------+
 static AppData* app = nullptr;
 static AppInput* appIn = nullptr;
+static Arena* uiArena = nullptr;
 
 #if !BUILD_INTO_SINGLE_UNIT //NOTE: The platform layer already has these globals
 static PlatformInfo* platformInfo = nullptr;
@@ -690,6 +691,10 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
 		
+		uiArena = scratch3;
+		FlagSet(uiArena->flags, ArenaFlag_DontPop);
+		uxx uiArenaMark = ArenaGetMark(uiArena);
+		
 		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
@@ -744,9 +749,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									{
 										RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
 										Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
-										Str8 displayPathScratch = AllocStr8(scratch, displayPath); //TODO: We really should allocate this in like a "UI Stack" or something so it's guaranteed to exist until the UI gets rendered at the end of the frame
 										bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
-										if (ClayBtnStrEx(recentFile->path, displayPathScratch, StrLit(""), !isOpenFile && recentFile->fileExists, nullptr))
+										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), !isOpenFile && recentFile->fileExists, nullptr))
 										{
 											FileTab* newTab = AppOpenFileTab(recentFile->path);
 											if (newTab != nullptr)
@@ -859,7 +863,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						
 						if (app->currentTab != nullptr)
 						{
-							Str8 filePathScratch = AllocStr8(scratch, app->currentTab->filePath);
+							Str8 filePathScratch = AllocStr8(uiArena, app->currentTab->filePath);
 							CLAY({ .id = CLAY_ID("FilePathDisplay") })
 							{
 								CLAY_TEXT(
@@ -953,9 +957,9 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							{
 								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
 								Str8 displayPath = GetUniqueTabFilePath(tab->filePath);
-								Str8 displayPathScratch = AllocStr8(scratch, displayPath); //TODO: We really should allocate this in like a "UI Stack" or something so it's guaranteed to exist until the UI gets rendered at the end of the frame
+								Str8 displayPathAlloced = AllocStr8(uiArena, displayPath);
 								CLAY_TEXT(
-									ToClayString(displayPathScratch),
+									ToClayString(displayPathAlloced),
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
@@ -1075,8 +1079,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
 									if (option->type == FileOptionType_Bool)
 									{
-										//NOTE: We have to put a copy of valueStr in scratch because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-										if (ClayOptionBtn(optionsContainerId, option->name, option->name, ScratchPrintStr("%.*s", StrPrint(option->valueStr)), option->valueBool))
+										//NOTE: We have to put a copy of valueStr in uiArena because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
+										if (ClayOptionBtn(optionsContainerId, option->name, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool))
 										{
 											option->valueBool = !option->valueBool;
 											if (StrExactEquals(option->valueStr, StrLit("false"))) { SetOptionValue(app->currentTab, option, StrLit("true")); }
@@ -1153,8 +1157,12 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 				RenderNotificationQueue(&app->notifications);
 			}
 		}
+		
 		Clay_RenderCommandArray clayRenderCommands = EndClayUIRender(&app->clay.clay);
 		RenderClayCommandArray(&app->clay, &gfx, &clayRenderCommands);
+		FlagUnset(uiArena->flags, ArenaFlag_DontPop);
+		ArenaResetToMark(uiArena, uiArenaMark);
+		uiArena = nullptr;
 		
 		if (app->currentTab == nullptr)
 		{

@@ -41,7 +41,7 @@
 		},
 		{
 			"name": "Stb",
-			"path": "core/third_party/stb",
+			"path": "core\\third_party\\stb",
 			"file_include_patterns": [
 				"stb_image.h",
 				"stb_image_write.h",
@@ -53,7 +53,7 @@
 		},
 		{
 			"name": "raylib",
-			"path": "core/third_party/raylib",
+			"path": "core\\third_party\\raylib",
 			"file_exclude_patterns": [
 				"LICENSE",
 				"README.md",
@@ -61,14 +61,14 @@
 		},
 		{
 			"name": "Box2D",
-			"path": "core/third_party/box2d",
+			"path": "core\\third_party\\box2d",
 			"file_exclude_patterns": [
 				"LICENSE",
 			],
 		},
 		{
 			"name": "Sokol",
-			"path": "core/third_party/sokol",
+			"path": "core\\third_party\\sokol",
 			"folder_exclude_patterns": [
 				".github",
 				"tests",
@@ -82,7 +82,7 @@
 		},
 		{
 			"name": "HandmadeMath",
-			"path": "core/third_party/handmade_math",
+			"path": "core\\third_party\\handmade_math",
 			"file_exclude_patterns": [
 				"LICENSE",
 				"README.md",
@@ -90,7 +90,7 @@
 		},
 		{
 			"name": "meow_hash",
-			"path": "core/third_party/meow_hash",
+			"path": "core\\third_party\\meow_hash",
 			"file_exclude_patterns": [
 				"LICENSE",
 				"README.md",
@@ -98,7 +98,7 @@
 		},
 		{
 			"name": "cgltf",
-			"path": "core/third_party/cgltf",
+			"path": "core\\third_party\\cgltf",
 			"folder_exclude_patterns": [
 				".github",
 				"fuzz",
@@ -111,7 +111,7 @@
 		},
 		{
 			"name": "Clay",
-			"path": "core/third_party/clay",
+			"path": "core\\third_party\\clay",
 			"folder_exclude_patterns": [
 				".github",
 				"bindings",
@@ -127,11 +127,11 @@
 		},
 		{
 			"name": "cimgui",
-			"path": "core/third_party/cimgui",
+			"path": "core\\third_party\\cimgui",
 		},
 		{
 			"name": "Dear ImGui",
-			"path": "core/third_party/imgui",
+			"path": "core\\third_party\\imgui",
 		},
 	],
 	"settings":
@@ -161,6 +161,7 @@
 			"AppIcon_TopmostDisabled",
 			"AppIcon_TopmostEnabled",
 			"AppIcon_Trash",
+			"ArenaFlag_DontPop",
 			"BACKGROUND_BLACK",
 			"BACKGROUND_DARK_GRAY",
 			"BACKGROUND_GRAY",
@@ -464,6 +465,7 @@
 			"FontCharRange NewFontCharRangeSingle(u32 codepoint)",
 			"Key GetKeyForCodepoint(u32 codepoint)",
 			"Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message)",
+			"PIG_CORE_INLINE uxx ArenaGetMark(Arena* arena)",
 			"PopupDialogButton* AddPopupButton(PopupDialog* dialog, u64 buttonId, Str8 displayStr, PopupDialogResult buttonResult, Color32 buttonColor)",
 			"Result BakeFontAtlas(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges)",
 			"Result BakeFontAtlasEx(PigFont* font, r32 fontSize, u8 extraStyleFlags, v2i atlasSize, uxx numCharRanges, const FontCharRange* charRanges, uxx numCustomGlyphRanges, const CustomFontCharRange* customGlyphRanges)",
@@ -521,6 +523,13 @@
 			"TooltipRegion* FindTooltipRegionById(VarArray* tooltipRegions, u64 id)",
 			"bool AppChangeFontSize(bool increase)",
 			"bool AppCheckForFileChanges()",
+			"bool CanArenaAllocAligned(const Arena* arena)",
+			"bool CanArenaCheckPntrFromArena(const Arena* arena)",
+			"bool CanArenaFree(const Arena* arena)",
+			"bool CanArenaGetSize(const Arena* arena)",
+			"bool CanArenaResetToMark(const Arena* arena)",
+			"bool CanArenaSoftGrow(const Arena* arena)",
+			"bool CanArenaVerifyIntegrity(const Arena* arena)",
 			"bool ClayBtn(const char* btnText, bool isEnabled, Texture* icon)",
 			"bool ClayBtnStr(Str8 btnText, bool isEnabled, Texture* icon)",
 			"bool ClayBtnStrEx(Str8 idStr, Str8 btnText, bool isEnabled, Texture* icon)",
@@ -538,6 +547,9 @@
 			"bool IsInsideRecInclusive(rec rectangle, v2 position)",
 			"bool IsMouseOverClay(Clay_ElementId clayId)",
 			"bool IsMouseOverClayInContainer(ClayId containerId, ClayId clayId)",
+			"bool IsPntrFromArena(const Arena* arena, const void* allocPntr)",
+			"bool MemArenaVerifyIntegrity(Arena* arena, bool assertOnFailure)",
+			"bool MemArenaVerifyPaddingAround(const Arena* arena, const void* allocPntr, uxx allocSize, bool assertOnFailure)",
 			"bool OsAreFileWriteTimesEqual(OsFileWriteTime left, OsFileWriteTime right)",
 			"bool OsDoesFileExist(FilePath path)",
 			"bool OsDoesFolderExist(FilePath path)",
@@ -601,6 +613,9 @@
 			"u8 GetCodepointUtf8Size(u32 codepoint)",
 			"u8 GetUcs2WordsForCode(u32 codepoint, u16* wordBufferOut, bool doAssertions)",
 			"u8 GetUtf8BytesForCode(u32 codepoint, u8* byteBufferOut, bool doAssertions)",
+			"uxx ArenaSoftGrowBegin(const Arena* arena, const void* allocPntr, uxx allocSize)",
+			"uxx ArenaSoftGrowBeginNoSize(const Arena* arena, const void* allocPntr)",
+			"uxx GetAllocSize(const Arena* arena, const void* allocPntr)",
 			"uxx OsGetFullPathLength(FilePath relativePath)",
 			"uxx ShortenTextToFitWidthEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, r32 maxWidth, Str8 ellipsesStr, uxx ellipsesIndex, Str8* beforeEllipseStrOut, Str8* afterEllipseStrOut)",
 			"v2 ClayUiTextSize(Font* font, r32 fontSize, u8 styleFlags, Str8 text)",
@@ -610,6 +625,9 @@
 			"void AppCloseFileTab(uxx tabIndex)",
 			"void AppReloadFileTab(uxx tabIndex)",
 			"void ApplyRichStyleChange(RichStrStyle* style, RichStrStyleChange change, r32 defaultFontSize, u8 defaultFontStyle, Color32 defaultColor)",
+			"void ArenaResetToMark(Arena* arena, uxx mark)",
+			"void ArenaSoftGrowEnd(Arena* arena, void* allocPntr, uxx allocSize, uxx newSpaceUsed)",
+			"void ArenaSoftGrowEndNoSize(Arena* arena, void* allocPntr, uxx newSpaceUsed)",
 			"void BeginClayUIRender(ClayUI* clay, v2 windowSize, bool isMouseOverOther, v2 mousePos, bool isMouseDown)",
 			"void CalculateLongestAbbreviationWidth(FileTab* tab)",
 			"void ClosePopupDialog(PopupDialog* dialog, PopupDialogButton* chosenButton)",
@@ -622,6 +640,9 @@
 			"void FreeClayTextbox(ClayTextbox* textbox)",
 			"void FreeFileOption(FileOption* option)",
 			"void FreeFileTab(FileTab* tab)",
+			"void FreeMem(Arena* arena, void* allocPntr, uxx allocSize)",
+			"void FreeMemAligned(Arena* arena, void* allocPntr, uxx allocSize, uxx alignmentOverride)",
+			"void FreeMemNoSize(Arena* arena, void* allocPntr)",
 			"void FreeNotification(Notification* notification)",
 			"void FreePopupDialog(PopupDialog* dialog)",
 			"void FreePopupDialogButton(PopupDialogButton* button)",
@@ -632,6 +653,13 @@
 			"void FreeVarArray(VarArray* array)",
 			"void GfxSystem_SetTextBackgroundColor(GfxSystem* system, Color32 color)",
 			"void InitAppResources(AppResources* resources)",
+			"void InitArenaAlias(Arena* arenaOut, Arena* sourceArena)",
+			"void InitArenaBuffer(Arena* arenaOut, void* bufferPntr, uxx bufferSize)",
+			"void InitArenaFuncs(Arena* arenaOut, AllocFunc_f* allocFunc, FreeFunc_f* freeFunc, ReallocFunc_f* reallocFunc)",
+			"void InitArenaStack(Arena* arenaOut, uxx stackSize, Arena* sourceArena)",
+			"void InitArenaStackVirtual(Arena* arenaOut, uxx virtualSize)",
+			"void InitArenaStackWasm(Arena* arenaOut)",
+			"void InitArenaStdHeap(Arena* arenaOut)",
 			"void InitClayTextbox(Arena* arena, Str8 idStr, Str8 initialText, u16 clayFontId, r32 fontSize, ClayTextbox* textboxOut)",
 			"void InitNotificationQueue(Arena* arena, NotificationQueue* queueOut)",
 			"void InitTooltipState(Arena* arena, TooltipState* tooltip)",
@@ -655,6 +683,10 @@
 			"void UpdateTooltipPlacement(TooltipState* tooltip, v2 screenSize)",
 			"void UpdateTooltipState(VarArray* tooltipRegions, TooltipState* tooltip)",
 			"void VarArrayClearEx(VarArray* array, bool deallocate)",
+			"void* AllocMem(Arena* arena, uxx numBytes)",
+			"void* AllocMemAligned(Arena* arena, uxx numBytes, uxx alignmentOverride)",
+			"void* ReallocMem(Arena* arena, void* allocPntr, uxx oldSize, uxx newSize)",
+			"void* ReallocMemNoOldSize(Arena* arena, void* allocPntr, uxx newSize)",
 		],
 		"custom_globals":
 		[
