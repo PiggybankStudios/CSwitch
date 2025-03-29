@@ -367,16 +367,16 @@ void DrawClayTextbox(ClayTextbox* textbox, Clay_SizingAxis boxSizingWidth)
 			.padding = CLAY_PADDING_ALL(UI_U16(4)),
 			.sizing = { .width=boxSizingWidth, .height=CLAY_SIZING_FIXED(textboxHeight) },
 		},
-		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=ToClayColor(TEXT_WHITE) },
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=TEXT_WHITE },
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 	})
 	{
 		CLAY_TEXT(
-			ToClayString(hintStr),
+			hintStr,
 			CLAY_TEXT_CONFIG({
 				.fontId = textbox->clayFontId,
 				.fontSize = (u16)textbox->fontSize,
-				.textColor = ToClayColor(hintColor),
+				.textColor = hintColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
 			})

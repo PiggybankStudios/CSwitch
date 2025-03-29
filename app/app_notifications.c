@@ -167,7 +167,7 @@ void RenderNotificationQueue(NotificationQueue* queue)
 			},
 			.floating = {
 				.zIndex = 102,
-				.offset = ToClayVector2(offset),
+				.offset = offset,
 				.attachTo = CLAY_ATTACH_TO_PARENT,
 				.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE,
 				.attachPoints = {
@@ -175,9 +175,9 @@ void RenderNotificationQueue(NotificationQueue* queue)
 					.element = (isSizeKnown ? CLAY_ATTACH_POINT_RIGHT_BOTTOM : CLAY_ATTACH_POINT_LEFT_BOTTOM),
 				},
 			},
-			.backgroundColor = ToClayColor(backgroundColor),
+			.backgroundColor = backgroundColor,
 			.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(8)),
-			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = ToClayColor(borderColor) },
+			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = borderColor },
 		})
 		{
 			CLAY({ .layout={ .layoutDirection=CLAY_LEFT_TO_RIGHT, .childGap=UI_U16(5), .childAlignment={ .y=CLAY_ALIGN_Y_CENTER } } })
@@ -188,11 +188,11 @@ void RenderNotificationQueue(NotificationQueue* queue)
 				}
 				
 				CLAY_TEXT(
-					ToClayString(notification->messageStr),
+					notification->messageStr,
 					CLAY_TEXT_CONFIG({
 						.fontId = app->clayUiFontId,
 						.fontSize = (u16)app->uiFontSize,
-						.textColor = ToClayColor(textColor),
+						.textColor = textColor,
 					})
 				);
 			}

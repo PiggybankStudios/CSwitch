@@ -38,9 +38,9 @@ v2 ClayUiTextSize(PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 	.image = {                                          \
 		.imageData = (texturePntr),                     \
 		.sourceDimensions = {                           \
-			.width = (r32)((texturePntr)->Width),       \
-			.height = (r32)((texturePntr)->Height),     \
+			.Width = (r32)((texturePntr)->Width),       \
+			.Height = (r32)((texturePntr)->Height),     \
 		},                                              \
 	},                                                  \
-	.backgroundColor = ToClayColor(color),              \
+	.backgroundColor = color,                           \
 }) {}

@@ -641,15 +641,15 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home))
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
-		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->y = 0; }
+		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
 	}
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End))
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
 		if (optionsListScrollData.found)
 		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
-			optionsListScrollData.scrollTarget->y = -maxScroll;
+			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
+			optionsListScrollData.scrollTarget->Y = -maxScroll;
 		}
 	}
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp))
@@ -657,8 +657,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
 		if (optionsListScrollData.found)
 		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
-			optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y + optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
+			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
+			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 		}
 	}
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown))
@@ -666,8 +666,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
 		if (optionsListScrollData.found)
 		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
-			optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y - optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
+			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
+			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 		}
 	}
 	
@@ -707,7 +707,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 					.padding = CLAY_PADDING_ALL(fullscreenBorderThickness)
 				},
 				.border = {
-					.color=ToClayColor(SELECTED_BLUE),
+					.color=SELECTED_BLUE,
 					.width=CLAY_BORDER_OUTSIDE(UI_BORDER(fullscreenBorderThickness)),
 				},
 			})
@@ -728,8 +728,8 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							.childGap = 2,
 							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 						},
-						.backgroundColor = ToClayColor(BACKGROUND_GRAY),
-						.border = { .color=ToClayColor(OUTLINE_GRAY), .width={ .bottom=UI_BORDER(1) } },
+						.backgroundColor = BACKGROUND_GRAY,
+						.border = { .color=OUTLINE_GRAY, .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
 						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
@@ -867,11 +867,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							CLAY({ .id = CLAY_ID("FilePathDisplay") })
 							{
 								CLAY_TEXT(
-									ToClayString(filePathScratch),
+									filePathScratch,
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
-										.textColor = ToClayColor(TEXT_LIGHT_GRAY),
+										.textColor = TEXT_LIGHT_GRAY,
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.userData = { .contraction = TextContraction_EllipseFilePath },
@@ -890,14 +890,14 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									.sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)), .height=CLAY_SIZING_GROW(0) },
 									.layoutDirection = CLAY_TOP_TO_BOTTOM,
 								},
-								.backgroundColor = ToClayColor(Black),
+								.backgroundColor = Black,
 							})
 							{
 								for (uxx pIndex = 0; pIndex < 10; pIndex++)
 								{
 									CLAY({
 										.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), .height = CLAY_SIZING_PERCENT(0.1f) } },
-										.backgroundColor = ToClayColor(((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black),
+										.backgroundColor = ((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black,
 									}) {}
 								}
 							}
@@ -917,7 +917,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 							.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
 							.padding = { .top = UI_U16(4) },
 						},
-						.backgroundColor = ToClayColor(BACKGROUND_GRAY),
+						.backgroundColor = BACKGROUND_GRAY,
 					})
 					{
 						bool wasPrevHovered = false;
@@ -937,7 +937,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									.layout = {
 										.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(1)), .height = CLAY_SIZING_GROW(0) },
 									},
-									.backgroundColor = ToClayColor(shouldShowDivider ? TEXT_GRAY : Transparent),
+									.backgroundColor = (shouldShowDivider ? TEXT_GRAY : Transparent),
 								}) {}
 							}
 							
@@ -948,9 +948,9 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 									.padding = CLAY_PADDING_ALL(UI_U16(4)),
 								},
 								.cornerRadius = { .topLeft=UI_U16(4), .topRight=UI_U16(4), .bottomLeft=0, .bottomRight=0 },
-								.backgroundColor = ToClayColor(isCurrentTab ? BACKGROUND_BLACK : (isHovered ? HOVERED_BLUE : BACKGROUND_GRAY)),
+								.backgroundColor = isCurrentTab ? BACKGROUND_BLACK : (isHovered ? HOVERED_BLUE : BACKGROUND_GRAY),
 								.border = {
-									.color = ToClayColor(SELECTED_BLUE),
+									.color = SELECTED_BLUE,
 									.width = { .left=UI_BORDER(borderThickness), .top=UI_BORDER(borderThickness), .right=UI_BORDER(borderThickness), .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
 								},
 							})
@@ -959,11 +959,11 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 								Str8 displayPath = GetUniqueTabFilePath(tab->filePath);
 								Str8 displayPathAlloced = AllocStr8(uiArena, displayPath);
 								CLAY_TEXT(
-									ToClayString(displayPathAlloced),
+									displayPathAlloced,
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
-										.textColor = ToClayColor((isCurrentTab || isHovered) ? TEXT_WHITE : TEXT_LIGHT_GRAY),
+										.textColor = (isCurrentTab || isHovered) ? TEXT_WHITE : TEXT_LIGHT_GRAY,
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.userData = { .contraction = TextContraction_EllipseRight },
@@ -1123,7 +1123,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 						{
 							CLAY({
 								.layout = { .padding = CLAY_PADDING_ALL(UI_BORDER(1)), .layoutDirection = CLAY_LEFT_TO_RIGHT, },
-								.border = { .color = ToClayColor(TEXT_LIGHT_GRAY), .width=CLAY_BORDER_ALL(UI_BORDER(1)) },
+								.border = { .color = TEXT_LIGHT_GRAY, .width=CLAY_BORDER_ALL(UI_BORDER(1)) },
 							})
 							{
 								FontAtlas* uiAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);

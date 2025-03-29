@@ -150,7 +150,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 				.element = CLAY_ATTACH_POINT_LEFT_TOP,
 			},
 		},
-		.backgroundColor = ToClayColor(ColorWithAlpha(Black, POPUP_DARKEN_AMOUNT * dialogAlpha)),
+		.backgroundColor = ColorWithAlpha(Black, POPUP_DARKEN_AMOUNT * dialogAlpha),
 	})
 	{
 		Color32 dialogColor = ColorWithAlpha(BACKGROUND_GRAY, dialogAlpha);
@@ -163,19 +163,19 @@ void RenderPopupDialog(PopupDialog* dialog)
 					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->uiScale, (r32)appIn->screenSize.Height), (r32)appIn->screenSize.Height)
 				},
 			},
-			.backgroundColor = ToClayColor(dialogColor),
+			.backgroundColor = dialogColor,
 			.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(8)),
-			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = ToClayColor(TEXT_LIGHT_GRAY) },
+			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = TEXT_LIGHT_GRAY },
 		})
 		{
 			CLAY({ .layout={ .sizing={ .height=CLAY_SIZING_GROW(UI_U16(10), 0) } } }) {}
 			
 			CLAY_TEXT(
-				ToClayString(dialog->messageStr),
+				dialog->messageStr,
 				CLAY_TEXT_CONFIG({
 					.fontId = app->clayUiFontId,
 					.fontSize = (u16)app->uiFontSize,
-					.textColor = ToClayColor(ColorWithAlpha(TEXT_WHITE, textAlpha)),
+					.textColor = ColorWithAlpha(TEXT_WHITE, textAlpha),
 				})
 			);
 			
@@ -215,17 +215,17 @@ void RenderPopupDialog(PopupDialog* dialog)
 								.height = CLAY_SIZING_FIT(0, (r32)appIn->screenSize.Height) },
 							.childAlignment = { CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER },
 						},
-						.backgroundColor = ToClayColor(buttonColor),
+						.backgroundColor = buttonColor,
 						.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(9)),
-						.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color=ToClayColor(borderColor), }
+						.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color=borderColor, }
 					})
 					{
 						CLAY_TEXT(
-							ToClayString(button->displayStr),
+							button->displayStr,
 							CLAY_TEXT_CONFIG({
 								.fontId = app->clayUiFontId,
 								.fontSize = (u16)app->uiFontSize,
-								.textColor = ToClayColor(ColorWithAlpha(TEXT_WHITE, textAlpha)),
+								.textColor = ColorWithAlpha(TEXT_WHITE, textAlpha),
 							})
 						);
 					}
