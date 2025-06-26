@@ -12,7 +12,9 @@ Description:
 */
 
 #ifndef _BUILD_CONFIG_H
-#define _BUILD_CONFIG_H
+#define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
+
+#define BUILD_PIG_BUILD 1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -32,15 +34,16 @@ Description:
 #define BUILD_SHADERS 0
 
 
+// Compiles piggen/main.c
+#define BUILD_PIGGEN   0
+// Generates code using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
+#define RUN_PIGGEN    0
+
 // This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
 #define BUNDLE_RESOURCES_ZIP            0
-// Same as above but only if the resources_zip.c doesn't already exist in the _build folder
-#define BUNDLE_RESOURCES_ZIP_IF_NEEDED  1
 
-// Compiles piggen/main.c to either dynamic or static library
-#define BUILD_PIG_CORE_LIB            1
-// Same as above but only compiles if the dll doesn't already exist in the _build folder
-#define BUILD_PIG_CORE_LIB_IF_NEEDED  1
+// Builds dll_main.c into pig_core.dll and pig_core.lib
+#define BUILD_PIG_CORE_DLL            1
 
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
 #define BUILD_APP_EXE  1
@@ -58,13 +61,6 @@ Description:
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
 #define DUMP_PREPROCESSOR 0
-// After .wasm file(s) are generated, we will run wasm2wat on them to make a .wat
-// file (a text format of WebAssembly that is readable, mostly for debugging purposes)
-#define CONVERT_WASM_TO_WAT 0
-// Use emcc when compiling the WEB files
-#define USE_EMSCRIPTEN 0
-// Enables auto-profiling on function entry/exit (for clang only). Dumps to a file that can be viewed by spall
-#define ENABLE_AUTO_PROFILE 0
 
 // Enables using sokol_gfx.h header files (and on non-windows OS' adds required libraries for Sokol to work)
 #define BUILD_WITH_SOKOL_GFX  1

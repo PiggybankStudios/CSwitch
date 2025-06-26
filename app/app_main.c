@@ -208,7 +208,7 @@ v2i GetSheetFrameForKey(Key key, bool isPressed, i32* imageWidth, bool* isWideKe
 // |           AppInit            |
 // +==============================+
 // void* AppInit(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi)
-EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
+EXPORT_FUNC APP_INIT_DEF(AppInit)
 {
 	#if !BUILD_INTO_SINGLE_UNIT
 	InitScratchArenasVirtual(Gigabytes(4));
@@ -327,7 +327,7 @@ EXPORT_FUNC(AppInit) APP_INIT_DEF(AppInit)
 // |          AppUpdate           |
 // +==============================+
 // bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
-EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
+EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 {
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
@@ -1241,7 +1241,7 @@ EXPORT_FUNC(AppUpdate) APP_UPDATE_DEF(AppUpdate)
 // |          AppClosing          |
 // +==============================+
 // void AppClosing(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
-EXPORT_FUNC(AppClosing) APP_CLOSING_DEF(AppClosing)
+EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 {
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
@@ -1263,7 +1263,7 @@ EXPORT_FUNC(AppClosing) APP_CLOSING_DEF(AppClosing)
 // |          AppGetApi           |
 // +==============================+
 // AppApi AppGetApi()
-EXPORT_FUNC(AppGetApi) APP_GET_API_DEF(AppGetApi)
+EXPORT_FUNC APP_GET_API_DEF(AppGetApi)
 {
 	AppApi result = ZEROED;
 	result.AppInit = AppInit;
