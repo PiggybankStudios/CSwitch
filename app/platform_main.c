@@ -25,6 +25,10 @@ Description:
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
 
+#if BUILD_INTO_SINGLE_UNIT
+#include "base/base_debug_output_impl.h"
+#endif
+
 #if 0
 #include "Commctrl.h"
 #endif
@@ -61,7 +65,7 @@ Description:
 #include "platform_main.h"
 
 #if BUILD_INTO_SINGLE_UNIT
-EXPORT_FUNC(AppGetApi) APP_GET_API_DEF(AppGetApi);
+EXPORT_FUNC APP_GET_API_DEF(AppGetApi);
 #endif
 
 // +--------------------------------------------------------------+

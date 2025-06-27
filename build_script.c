@@ -34,6 +34,7 @@ Description:
 #define FOLDERNAME_LINUX           "linux"
 #define FOLDERNAME_OSX             "osx"
 
+#define FILENAME_RESOURCES_ZIP     "resources.zip"
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
 #define FILENAME_PIG_CORE_DLL      "pig_core.dll"
@@ -94,8 +95,24 @@ int main(int argc, char* argv[])
 	// +==============================+
 	if (BUILD_WINDOWS && !BUILDING_ON_WINDOWS)
 	{
-		PrintLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
+		WriteLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
 		BUILD_WINDOWS = false;
+	}
+	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_DLL && !BUILD_APP_EXE)
+	{
+		WriteLine_E("BUILD_INTO_SINGLE_UNIT works with BUILD_APP_EXE but only BUILD_APP_DLL is enabled. Assuming we want BUILD_APP_EXE instead");
+		BUILD_APP_DLL = false;
+		BUILD_APP_EXE = true;
+	}
+	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_DLL)
+	{
+		WriteLine_E("BUILD_INTO_SINGLE_UNIT implies that BUILD_APP_DLL is unnecassary. Only BUILD_APP_EXE matters");
+		BUILD_APP_DLL = false;
+	}
+	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_EXE && BUILD_PIG_CORE_DLL)
+	{
+		WriteLine_E("BUILD_INTO_SINGLE_UNIT implies that BUILD_PIG_CORE_DLL is unnecassary. Not building pig_core.dll/so");
+		BUILD_PIG_CORE_DLL = false;
 	}
 	
 	// +==============================+
@@ -217,6 +234,23 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_fuzzing/");
 		
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                       Bundle Resources                       |
+	// +--------------------------------------------------------------+
+	if (BUNDLE_RESOURCES_ZIP)
+	{
+		//TODO: Move away from using python! This is the last script we depend on, currently
+		CliArgList cmd = ZEROED;
+		AddArgNt(&cmd, CLI_UNQUOTED_ARG, "[ROOT]/core/_scripts/pack_resources.py");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/_data/resources");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_RESOURCES_ZIP);
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/resources_zip.h");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/resources_zip.c");
+		
+		RunCliProgramAndExitOnFailure(StrLit("python"), &cmd, StrLit("pack_resources.py Failed!"));
+		AssertFileExist(StrLit(FILENAME_RESOURCES_ZIP), true);
 	}
 	
 	// +--------------------------------------------------------------+
@@ -382,8 +416,8 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                      Build pig_core.dll                      |
 	// +--------------------------------------------------------------+
-	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_DLL))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_DLL); BUILD_PIG_CORE_DLL = true; BUILD_WINDOWS = true; }
-	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && !BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_SO))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_SO); BUILD_PIG_CORE_DLL = true; BUILD_LINUX = true; }
+	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && !BUILD_INTO_SINGLE_UNIT && BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_DLL))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_DLL); BUILD_PIG_CORE_DLL = true; BUILD_WINDOWS = true; }
+	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && !BUILD_INTO_SINGLE_UNIT && !BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_SO))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_SO); BUILD_PIG_CORE_DLL = true; BUILD_LINUX = true; }
 	if (BUILD_PIG_CORE_DLL)
 	{
 		if (BUILD_WINDOWS)
@@ -454,13 +488,14 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %.*s for Windows...]", filenameAppExe.length, filenameAppExe.chars);
 			
 			CliArgList cmd = ZEROED;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppExe);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
+			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB); }
+			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &cl_ShaderObjects); }
 			AddArgList(&cmd, &cl_PigCoreLibraries);
 			
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"), false);
@@ -475,12 +510,13 @@ int main(int argc, char* argv[])
 			
 			CliArgList cmd = ZEROED;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
-			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
+			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
+			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &clang_ShaderObjects); }
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			
@@ -528,7 +564,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
 			AddArgList(&cmd, &cl_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
+			AddArgList(&cmd, &cl_ShaderObjects);
 			
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppDll, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
@@ -551,7 +587,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
+			AddArgList(&cmd, &clang_ShaderObjects);
 			
 			#if BUILDING_ON_LINUX
 			Str8 clangExe = StrLit(EXE_CLANG);
