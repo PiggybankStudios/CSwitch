@@ -27,11 +27,11 @@ Description:
 
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   0
+#define BUILD_LINUX   1
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 0
+#define BUILD_SHADERS 1
 
 
 // Compiles piggen/main.c

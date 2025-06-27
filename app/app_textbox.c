@@ -128,7 +128,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 	ScratchBegin1(scratch, textbox->edit.arena);
 	ClayUIRendererFont* clayFont = VarArrayGetHard(ClayUIRendererFont, &app->clay.fonts, (uxx)textbox->clayFontId);
 	NotNull(clayFont);
-	Font* font = clayFont->pntr;
+	PigFont* font = clayFont->pntr;
 	FontAtlas* fontAtlas = GetFontAtlas(font, textbox->fontSize, clayFont->styleFlags);
 	NotNull(fontAtlas);
 	ClayId textboxId = ToClayId(textbox->idStr);
@@ -181,7 +181,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 	{
 		v2 relativeMousePos = Sub(appIn->mouse.position, textbox->textPos);
 		
-		v2 closestPos = V2_Zero_Const;
+		// v2 closestPos = V2_Zero_Const;
 		r32 closestDistSquared = 0.0f;
 		uxx closestIndex = 0;
 		VarArrayLoop(&textbox->flowGlyphs, gIndex)
@@ -191,7 +191,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			r32 leftDistSquared = LengthSquaredV2(Sub(relativeMousePos, leftPos));
 			if (gIndex == 0 || leftDistSquared < closestDistSquared)
 			{
-				closestPos = leftPos;
+				// closestPos = leftPos;
 				closestDistSquared = leftDistSquared;
 				closestIndex = gIndex;
 			}
@@ -201,7 +201,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 				r32 rightDistSquared = LengthSquaredV2(Sub(relativeMousePos, rightPos));
 				if (rightDistSquared < closestDistSquared)
 				{
-					closestPos = rightPos;
+					// closestPos = rightPos;
 					closestDistSquared = rightDistSquared;
 					closestIndex = gIndex + GetCodepointUtf8Size(glyph->codepoint);
 				}

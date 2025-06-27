@@ -264,15 +264,15 @@ int main(int argc, char* argv[])
 		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
-		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
-		{
-			PrintLine("Shader[%u]", sIndex);
-			PrintLine("\t\"%.*s\"", findContext.shaderPaths.strings[sIndex].length, findContext.shaderPaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.headerPaths.strings[sIndex].length, findContext.headerPaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.sourcePaths.strings[sIndex].length, findContext.sourcePaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.objPaths.strings[sIndex].length, findContext.objPaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.oPaths.strings[sIndex].length, findContext.oPaths.strings[sIndex].chars);
-		}
+		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		// {
+		// 	PrintLine("Shader[%u]", sIndex);
+		// 	PrintLine("\t\"%.*s\"", findContext.shaderPaths.strings[sIndex].length, findContext.shaderPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.headerPaths.strings[sIndex].length, findContext.headerPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.sourcePaths.strings[sIndex].length, findContext.sourcePaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.objPaths.strings[sIndex].length, findContext.objPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.oPaths.strings[sIndex].length, findContext.oPaths.strings[sIndex].chars);
+		// }
 		
 		// First use shdc.exe to generate header files for each .glsl file
 		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -350,6 +350,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
 				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
+				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument"); //Clang likes to warn about _lib_debug/_lib_release library folder being unused
 				AddArgList(&cmd, &clang_CommonFlags);
 				AddArgList(&cmd, &clang_LinuxFlags);
 				
@@ -478,6 +479,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
+			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
