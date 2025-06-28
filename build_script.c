@@ -83,7 +83,9 @@ RECURSIVE_DIR_WALK_CALLBACK_DEF(BundleResourcesCallback)
 		Str8 fileContents = ReadEntireFile(path);
 		assert(StrExactStartsWith(path, context->relativePath));
 		Str8 inZipPath = StrSliceFrom(path, context->relativePath.length);
+		if (inZipPath.length > 0 && IS_SLASH(inZipPath.chars[0])) { inZipPath.length--; inZipPath.chars++; }
 		Str8 inZipPathNt = CopyStr8(inZipPath, true);
+		FixPathSlashes(inZipPathNt, '/');
 		mz_bool addMemSuccess = mz_zip_writer_add_mem(&context->zip, inZipPathNt.chars, fileContents.bytes, (size_t)fileContents.length, (mz_uint)MZ_BEST_COMPRESSION);
 		assert(addMemSuccess == MZ_TRUE);
 		context->uncompressedSize += fileContents.length;
@@ -321,9 +323,14 @@ int main(int argc, char* argv[])
 		mz_bool initResult = mz_zip_writer_init(&context.zip, 0);
 		if (initResult != MZ_TRUE) { PrintLine_E("zip error: %s", mz_zip_get_error_string(context.zip.m_last_error)); }
 		assert(initResult == MZ_TRUE);
-		context.relativePath = StrLit("../_data/");
+		context.relativePath = StrLit("../_data/resources");
 		RecursiveDirWalk(StrLit("../_data/resources"), BundleResourcesCallback, &context);
+		mz_bool finalizeResult = mz_zip_writer_finalize_archive(&context.zip);
+		assert(finalizeResult == MZ_TRUE);
+		mz_zip_writer_end(&context.zip);
 		PrintLine("Found %u resource files, total %u bytes uncompressed, %u compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
+		
+		CreateAndWriteFile(StrLit("resources.zip"), NewStr8(context.archiveSize, context.archivePntr), false);
 		
 		//Create resources_zip.h
 		{

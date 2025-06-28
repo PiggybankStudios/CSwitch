@@ -130,6 +130,15 @@
 			"path": "core\\third_party\\cimgui",
 		},
 		{
+			"name": "miniz",
+			"path": "core\\third_party\\miniz",
+			"file_exclude_patterns": [
+				"Changelog.md",
+				"readme.md",
+				"LICENSE",
+			],
+		},
+		{
 			"name": "Dear ImGui",
 			"path": "core\\third_party\\imgui",
 		},
