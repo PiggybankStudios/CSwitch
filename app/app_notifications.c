@@ -46,7 +46,7 @@ void FreeNotification(Notification* notification)
 
 Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, Str8 message) //pre-declared in app_notifications_api.h
 {
-	NotNull(appIn);
+	// NotNull(appIn); NOTE: appIn could be nullptr if notifications happen in AppInit
 	NotNull(queue);
 	NotNull(queue->arena);
 	NotNullStr(message);
@@ -67,7 +67,7 @@ Notification* AddNotificationToQueue(NotificationQueue* queue, DbgLevel level, S
 	newNotification->id = queue->nextId;
 	queue->nextId++;
 	newNotification->messageStr = AllocStr8(queue->arena, message);
-	newNotification->spawnTime = appIn->programTime;
+	newNotification->spawnTime = (appIn != nullptr) ? appIn->programTime : 0;
 	newNotification->duration = DEFAULT_NOTIFICATION_TIME;
 	newNotification->level = level;
 	

@@ -221,6 +221,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
+	InitNotificationQueue(stdHeap, &app->notifications);
 	InitAppResources(&app->resources);
 	
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
@@ -256,7 +257,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitTooltipState(stdHeap, &app->tooltip);
 	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
 	app->nextTooltipId = 1;
-	InitNotificationQueue(stdHeap, &app->notifications);
 	
 	InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
 	
