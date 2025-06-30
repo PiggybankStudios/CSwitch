@@ -204,15 +204,24 @@ void AppLoadRecentFilesList()
 void AppSaveRecentFilesList()
 {
 	ScratchBegin(scratch);
+	
 	FilePath settingsFolderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
+	Result createSettingsFolderResult = OsCreateFolder(settingsFolderPath, true);
+	if (createSettingsFolderResult != Result_Success)
+	{
+		NotifyPrint_E("Failed to create settings folder at \"%.*s\": %s", StrPrint(settingsFolderPath), GetResultStr(createSettingsFolderResult));
+		return;
+	}
+	
 	FilePath savePath = PrintInArenaStr(scratch, "%.*s%s%s",
 		StrPrint(settingsFolderPath),
 		DoesPathHaveTrailingSlash(settingsFolderPath) ? "" : "/",
 		RECENT_FILES_SAVE_FILEPATH
 	);
 	
+	
 	OsFile fileHandle = ZEROED;
-	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Write, false, &fileHandle))
+	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Create, false, &fileHandle))
 	{
 		VarArrayLoop(&app->recentFiles, rIndex)
 		{
