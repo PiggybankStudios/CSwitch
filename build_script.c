@@ -28,12 +28,20 @@ Description:
 #include "tools/tools_build_helpers.h"
 #include "tools/tools_pig_core_build_flags.h"
 
+//NOTE: We use miniz.h when BUNDLE_RESOURCES_ZIP is enabled
+#define MINIZ_NO_STDIO //to disable all usage and any functions which rely on stdio for file I/O.
+#define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1
+#define MINIZ_LITTLE_ENDIAN                  1
+#include "third_party/miniz/miniz.h"
+#include "third_party/miniz/miniz.c"
+
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
 #define FOLDERNAME_GENERATED_CODE  "gen"
 #define FOLDERNAME_LINUX           "linux"
 #define FOLDERNAME_OSX             "osx"
 
+#define FILENAME_RESOURCES_ZIP     "resources.zip"
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
 #define FILENAME_PIG_CORE_DLL      "pig_core.dll"
@@ -49,6 +57,63 @@ Description:
 static inline void PrintUsage()
 {
 	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
+}
+
+typedef struct BundleResourcesContext BundleResourcesContext;
+struct BundleResourcesContext
+{
+	mz_zip_archive zip;
+	Str8 relativePath;
+	StrArray resourcePaths;
+	uxx uncompressedSize;
+	uxx archiveAllocSize;
+	uxx archiveSize;
+	uint8_t* archivePntr;
+};
+
+// +==============================+
+// |   BundleResourcesCallback    |
+// +==============================+
+// bool BundleResourcesCallback(Str8 path, bool isFolder, void* contextPntr)
+RECURSIVE_DIR_WALK_CALLBACK_DEF(BundleResourcesCallback)
+{
+	BundleResourcesContext* context = (BundleResourcesContext*)contextPntr;
+	if (!isFolder)
+	{
+		Str8 fileContents = ReadEntireFile(path);
+		assert(StrExactStartsWith(path, context->relativePath));
+		Str8 inZipPath = StrSliceFrom(path, context->relativePath.length);
+		if (inZipPath.length > 0 && IS_SLASH(inZipPath.chars[0])) { inZipPath.length--; inZipPath.chars++; }
+		Str8 inZipPathNt = CopyStr8(inZipPath, true);
+		FixPathSlashes(inZipPathNt, '/');
+		mz_bool addMemSuccess = mz_zip_writer_add_mem(&context->zip, inZipPathNt.chars, fileContents.bytes, (size_t)fileContents.length, (mz_uint)MZ_BEST_COMPRESSION);
+		assert(addMemSuccess == MZ_TRUE);
+		context->uncompressedSize += fileContents.length;
+		AddStr(&context->resourcePaths, inZipPath);
+		free(inZipPathNt.chars);
+		free(fileContents.chars);
+	}
+	return true;
+}
+size_t ZipFileWriteCallback(void* contextPntr, mz_uint64 fileOffset, const void* bufferPntr, size_t numBytes)
+{
+	// PrintLine("ZipFileWriteCallback(%p, %llu, %p, %zu)", contextPntr, fileOffset, bufferPntr, numBytes);
+	BundleResourcesContext* context = (BundleResourcesContext*)contextPntr;
+	assert(context != nullptr);
+	if (context->archiveAllocSize < fileOffset + numBytes)
+	{
+		uxx newAllocSize = context->archiveAllocSize;
+		if (newAllocSize < 8) { newAllocSize = 8; }
+		while (newAllocSize < fileOffset + numBytes) { newAllocSize *= 2; }
+		void* newAllocPntr = malloc(newAllocSize);
+		if (context->archiveSize > 0) { memcpy(newAllocPntr, context->archivePntr, context->archiveSize); }
+		if (context->archivePntr != nullptr) { free(context->archivePntr); }
+		context->archivePntr = newAllocPntr;
+		context->archiveAllocSize = newAllocSize;
+	}
+	memcpy(&context->archivePntr[fileOffset], bufferPntr, numBytes);
+	if (context->archiveSize < fileOffset + numBytes) { context->archiveSize = fileOffset + numBytes; }
+	return numBytes;
 }
 
 int main(int argc, char* argv[])
@@ -94,8 +159,24 @@ int main(int argc, char* argv[])
 	// +==============================+
 	if (BUILD_WINDOWS && !BUILDING_ON_WINDOWS)
 	{
-		PrintLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
+		WriteLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
 		BUILD_WINDOWS = false;
+	}
+	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_DLL && !BUILD_APP_EXE)
+	{
+		WriteLine_E("BUILD_INTO_SINGLE_UNIT works with BUILD_APP_EXE but only BUILD_APP_DLL is enabled. Assuming we want BUILD_APP_EXE instead");
+		BUILD_APP_DLL = false;
+		BUILD_APP_EXE = true;
+	}
+	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_DLL)
+	{
+		WriteLine_E("BUILD_INTO_SINGLE_UNIT implies that BUILD_APP_DLL is unnecassary. Only BUILD_APP_EXE matters");
+		BUILD_APP_DLL = false;
+	}
+	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_EXE && BUILD_PIG_CORE_DLL)
+	{
+		WriteLine_E("BUILD_INTO_SINGLE_UNIT implies that BUILD_PIG_CORE_DLL is unnecassary. Not building pig_core.dll/so");
+		BUILD_PIG_CORE_DLL = false;
 	}
 	
 	// +==============================+
@@ -220,6 +301,104 @@ int main(int argc, char* argv[])
 	}
 	
 	// +--------------------------------------------------------------+
+	// |                       Bundle Resources                       |
+	// +--------------------------------------------------------------+
+	if (BUNDLE_RESOURCES_ZIP)
+	{
+		#if 0
+		//TODO: Move away from using python! This is the last script we depend on, currently
+		CliArgList cmd = ZEROED;
+		AddArgNt(&cmd, CLI_UNQUOTED_ARG, "[ROOT]/core/_scripts/pack_resources.py");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/_data/resources");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_RESOURCES_ZIP);
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/resources_zip.h");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/resources_zip.c");
+		
+		RunCliProgramAndExitOnFailure(StrLit("python"), &cmd, StrLit("pack_resources.py Failed!"));
+		AssertFileExist(StrLit(FILENAME_RESOURCES_ZIP), true);
+		#else
+		BundleResourcesContext context = ZEROED;
+		context.zip.m_pWrite = ZipFileWriteCallback;
+		context.zip.m_pIO_opaque = &context;
+		mz_bool initResult = mz_zip_writer_init(&context.zip, 0);
+		if (initResult != MZ_TRUE) { PrintLine_E("zip error: %s", mz_zip_get_error_string(context.zip.m_last_error)); }
+		assert(initResult == MZ_TRUE);
+		context.relativePath = StrLit("../_data/resources");
+		RecursiveDirWalk(StrLit("../_data/resources"), BundleResourcesCallback, &context);
+		mz_bool finalizeResult = mz_zip_writer_finalize_archive(&context.zip);
+		assert(finalizeResult == MZ_TRUE);
+		mz_zip_writer_end(&context.zip);
+		PrintLine("Found %u resource files, total %u bytes uncompressed, %u compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
+		
+		CreateAndWriteFile(StrLit("resources.zip"), NewStr8(context.archiveSize, context.archivePntr), false);
+		
+		//Create resources_zip.h
+		{
+			Str8 cFileContents = ZEROED;
+			for (int pass = 0; pass < 2; pass++)
+			{
+				uxx fileSize = 0;
+				
+				TwoPassPrint(&cFileContents, &fileSize,
+					"/*\n"
+					"File:   resources_zip.h\n"
+					"Author: WARNING: This file is generated by pig_build.exe! Any hand edits will be lost!\n"
+					"*/\n\n"
+					"#ifndef _RESOURCES_ZIP_H\n"
+					"#define _RESOURCES_ZIP_H\n\n"
+				);
+				TwoPassPrint(&cFileContents, &fileSize, "u8 resources_zip_bytes[%u];\n\n", context.archiveSize);
+				TwoPassPrint(&cFileContents, &fileSize, "#endif //_RESOURCES_ZIP_H\n");
+				
+				if (pass == 0)
+				{
+					cFileContents.length = fileSize;
+					cFileContents.pntr = malloc(cFileContents.length+1);
+					assert(cFileContents.pntr != nullptr);
+				}
+				else { assert(fileSize == cFileContents.length); cFileContents.chars[cFileContents.length] = '\0'; }
+			}
+			CreateAndWriteFile(StrLit("../app/resources_zip.h"), cFileContents, true);
+			free(cFileContents.chars);
+		}
+		
+		//Create resources_zip.c
+		{
+			Str8 cFileContents = ZEROED;
+			for (int pass = 0; pass < 2; pass++)
+			{
+				uxx fileSize = 0;
+				
+				TwoPassPrint(&cFileContents, &fileSize, "// This file is generated by pig_build.exe! Any hand edits will be lost!\n\n");
+				TwoPassPrint(&cFileContents, &fileSize, "// Archive Contents (%u file%s, %u bytes uncompressed):\n", context.resourcePaths.length, (context.resourcePaths.length == 1) ? "" : "s", context.uncompressedSize);
+				for (uxx rIndex = 0; rIndex < context.resourcePaths.length; rIndex++)
+				{
+					TwoPassPrint(&cFileContents, &fileSize, "//\t%.*s\n", context.resourcePaths.strings[rIndex].length, context.resourcePaths.strings[rIndex].chars);
+				}
+				TwoPassPrint(&cFileContents, &fileSize, "\nu8 resources_zip_bytes[%u] = {\n\t", context.archiveSize);
+				for (uxx bIndex = 0; bIndex < context.archiveSize; bIndex++)
+				{
+					if (bIndex > 0) { TwoPassPrint(&cFileContents, &fileSize, ",%s", (bIndex%32) == 0 ? "\n\t" : " "); }
+					TwoPassPrint(&cFileContents, &fileSize, "0x%02X", context.archivePntr[bIndex]);
+				}
+				TwoPassPrint(&cFileContents, &fileSize, "\n};\n");
+				
+				if (pass == 0)
+				{
+					cFileContents.length = fileSize;
+					cFileContents.pntr = malloc(cFileContents.length+1);
+					assert(cFileContents.pntr != nullptr);
+				}
+				else { assert(fileSize == cFileContents.length); cFileContents.chars[cFileContents.length] = '\0'; }
+			}
+			CreateAndWriteFile(StrLit("../app/resources_zip.c"), cFileContents, true);
+			free(cFileContents.chars);
+		}
+		
+		#endif
+	}
+	
+	// +--------------------------------------------------------------+
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
 	FindShadersContext findContext = ZEROED;
@@ -264,15 +443,15 @@ int main(int argc, char* argv[])
 		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
-		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
-		{
-			PrintLine("Shader[%u]", sIndex);
-			PrintLine("\t\"%.*s\"", findContext.shaderPaths.strings[sIndex].length, findContext.shaderPaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.headerPaths.strings[sIndex].length, findContext.headerPaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.sourcePaths.strings[sIndex].length, findContext.sourcePaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.objPaths.strings[sIndex].length, findContext.objPaths.strings[sIndex].chars);
-			PrintLine("\t\"%.*s\"", findContext.oPaths.strings[sIndex].length, findContext.oPaths.strings[sIndex].chars);
-		}
+		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		// {
+		// 	PrintLine("Shader[%u]", sIndex);
+		// 	PrintLine("\t\"%.*s\"", findContext.shaderPaths.strings[sIndex].length, findContext.shaderPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.headerPaths.strings[sIndex].length, findContext.headerPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.sourcePaths.strings[sIndex].length, findContext.sourcePaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.objPaths.strings[sIndex].length, findContext.objPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", findContext.oPaths.strings[sIndex].length, findContext.oPaths.strings[sIndex].chars);
+		// }
 		
 		// First use shdc.exe to generate header files for each .glsl file
 		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -350,6 +529,7 @@ int main(int argc, char* argv[])
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
 				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
+				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument"); //Clang likes to warn about _lib_debug/_lib_release library folder being unused
 				AddArgList(&cmd, &clang_CommonFlags);
 				AddArgList(&cmd, &clang_LinuxFlags);
 				
@@ -381,8 +561,8 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                      Build pig_core.dll                      |
 	// +--------------------------------------------------------------+
-	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_DLL))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_DLL); BUILD_PIG_CORE_DLL = true; BUILD_WINDOWS = true; }
-	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && !BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_SO))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_SO); BUILD_PIG_CORE_DLL = true; BUILD_LINUX = true; }
+	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && !BUILD_INTO_SINGLE_UNIT && BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_DLL))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_DLL); BUILD_PIG_CORE_DLL = true; BUILD_WINDOWS = true; }
+	if ((BUILD_APP_EXE || BUILD_APP_DLL) && !BUILD_PIG_CORE_DLL && !BUILD_INTO_SINGLE_UNIT && !BUILDING_ON_WINDOWS && !DoesFileExist(StrLit(FILENAME_PIG_CORE_SO))) { PrintLine("Building %s because it's missing", FILENAME_PIG_CORE_SO); BUILD_PIG_CORE_DLL = true; BUILD_LINUX = true; }
 	if (BUILD_PIG_CORE_DLL)
 	{
 		if (BUILD_WINDOWS)
@@ -453,13 +633,14 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %.*s for Windows...]", filenameAppExe.length, filenameAppExe.chars);
 			
 			CliArgList cmd = ZEROED;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppExe);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
+			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB); }
+			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &cl_ShaderObjects); }
 			AddArgList(&cmd, &cl_PigCoreLibraries);
 			
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"), false);
@@ -474,11 +655,13 @@ int main(int argc, char* argv[])
 			
 			CliArgList cmd = ZEROED;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LinuxFlags);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
+			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
+			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
+			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &clang_ShaderObjects); }
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
 			
@@ -526,7 +709,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
 			AddArgList(&cmd, &cl_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &cl_ShaderObjects); }
+			AddArgList(&cmd, &cl_ShaderObjects);
 			
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppDll, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
@@ -549,7 +732,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLibraries);
-			if (BUILD_WITH_SOKOL_GFX) { AddArgList(&cmd, &clang_ShaderObjects); }
+			AddArgList(&cmd, &clang_ShaderObjects);
 			
 			#if BUILDING_ON_LINUX
 			Str8 clangExe = StrLit(EXE_CLANG);
@@ -581,13 +764,13 @@ int main(int argc, char* argv[])
 		Str8 dataFolder = StrLit("../_data");
 		PrintLine("Copying files to %.*s...", dataFolder.length, dataFolder.chars);
 		#if BUILDING_ON_WINDOWS
-		CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder);
-		CopyFileToFolder(filenameAppExe, dataFolder);
-		CopyFileToFolder(filenameAppDll, dataFolder);
+		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder); }
+		if (BUILD_APP_EXE) { CopyFileToFolder(filenameAppExe, dataFolder); }
+		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppDll, dataFolder); }
 		#elif BUILDING_ON_LINUX
-		CopyFileToFolder(StrLit(FILENAME_PIG_CORE_SO), dataFolder);
-		CopyFileToFolder(filenameApp, dataFolder);
-		CopyFileToFolder(filenameAppSo, dataFolder);
+		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_SO), dataFolder); }
+		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder); }
+		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppSo, dataFolder); }
 		#endif
 	}
 	
