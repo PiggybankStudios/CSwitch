@@ -275,6 +275,44 @@ void UpdateFileTabOptions(FileTab* tab)
 				}
 			}
 		}
+		else if (StrExactContains(line, StrLit("::"))) //jai constant syntax
+		{
+			uxx lineStartIndex = lineParser.lineBeginByteIndex + (uxx)(line.chars - fullLine.chars);
+			uxx colonsIndex = StrExactFind(line, StrLit("::"));
+			Str8 namePart = TrimWhitespace(StrSlice(line, 0, colonsIndex));
+			Str8 valuePart = TrimWhitespace(StrSliceFrom(line, colonsIndex+2));
+			if (IsValidIdentifier(namePart.length, namePart.chars, false, false, false) &&
+				StrExactEndsWith(valuePart, StrLit(";")))
+			{
+				valuePart = StrSlice(valuePart, 0, valuePart.length-1);
+				
+				bool isBooleanValue = false;
+				bool isBooleanTrue = false;
+				const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
+				for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
+				{
+					Str8 boolValueStr = StrLit(possibleBoolValues[vIndex]);
+					if (StrExactEquals(valuePart, boolValueStr)) { isBooleanValue = true; isBooleanTrue = ((vIndex%2) == 0); break; }
+				}
+				
+				if (isBooleanValue)
+				{
+					FileOption* newOption = VarArrayAdd(FileOption, &tab->fileOptions);
+					NotNull(newOption);
+					ClearPointer(newOption);
+					newOption->name = AllocStr8(stdHeap, namePart);
+					newOption->abbreviation = GetOptionNameAbbreviation(stdHeap, newOption->name);
+					newOption->type = FileOptionType_Bool;
+					newOption->valueBool = isBooleanTrue;
+					newOption->fileContentsStartIndex = lineStartIndex + (uxx)(valuePart.chars - line.chars);
+					newOption->fileContentsEndIndex = newOption->fileContentsStartIndex + valuePart.length;
+					newOption->valueStr = AllocStr8(stdHeap, StrSlice(tab->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
+					AddTooltipForFileOption(newOption, lineParser.lineIndex);
+					prevOption = newOption;
+					isOption = true;
+				}
+			}
+		}
 		
 		if (!isOption && IsEmptyStr(line) && IsEmptyStr(lineComment) && prevOption != nullptr && prevOption->numEmptyLinesAfter < MAX_LINE_BREAKS_CONSIDERED)
 		{

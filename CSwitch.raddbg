@@ -1,0 +1,9 @@
+// raddbg 0.9.21 project file
+
+target:
+{
+  executable: "_build/cswitch.exe"
+  working_directory: "_data/"
+  enabled: 1
+}
+theme: "VS (Dark)"
