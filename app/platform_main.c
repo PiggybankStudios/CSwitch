@@ -352,7 +352,7 @@ void PlatSappEvent(const sapp_event* event)
 			case SAPP_EVENTTYPE_FILES_DROPPED:
 			{
 				int numDroppedFiles = sapp_get_num_dropped_files();
-				Assert(numDroppedFiles > 0)
+				Assert(numDroppedFiles > 0);
 				Str8* newDroppedFilePaths = VarArrayAddMulti(Str8, &platformData->currentAppInput->droppedFilePaths, (uxx)numDroppedFiles);
 				for (uxx fIndex = 0; fIndex < (uxx)numDroppedFiles; fIndex++)
 				{
