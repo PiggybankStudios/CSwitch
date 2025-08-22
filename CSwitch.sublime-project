@@ -191,6 +191,7 @@
 			"DEFAULT_NOTIFICATION_TIME",
 			"DEFAULT_UI_FONT_SIZE",
 			"ERROR_RED",
+			"FILENAME_WIN_RESOURCES_RES",
 			"FileOptionType_Bool",
 			"FileOptionType_Count",
 			"FileOptionType_I32",

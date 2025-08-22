@@ -42,6 +42,7 @@ Description:
 #define FOLDERNAME_OSX             "osx"
 
 #define FILENAME_RESOURCES_ZIP     "resources.zip"
+#define FILENAME_WIN_RESOURCES_RES "resources.res"
 #define FILENAME_PIGGEN_EXE        "piggen.exe"
 #define FILENAME_PIGGEN            "piggen"
 #define FILENAME_PIG_CORE_DLL      "pig_core.dll"
@@ -632,6 +633,17 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(&isMsvcInitialized);
 			PrintLine("\n[Building %.*s for Windows...]", filenameAppExe.length, filenameAppExe.chars);
 			
+			// Build app/win_resources.rc file into resources.res
+			if (!DoesFileExist(StrLit(FILENAME_WIN_RESOURCES_RES)))
+			{
+				PrintLine("Generating %s...", FILENAME_WIN_RESOURCES_RES);
+				CliArgList rcCmd = ZEROED;
+				AddArg(&rcCmd, RC_NO_LOGO);
+				AddArgNt(&rcCmd, RC_OUTPUT_FILE, FILENAME_WIN_RESOURCES_RES);
+				AddArgNt(&rcCmd, CLI_QUOTED_ARG, "[ROOT]/app/win_resources.rc");
+				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_RC), &rcCmd, StrLit("Failed to generate resources.res for Windows embedded icon in .exe!"));
+			}
+			
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppExe);
@@ -642,6 +654,7 @@ int main(int argc, char* argv[])
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB); }
 			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &cl_ShaderObjects); }
 			AddArgList(&cmd, &cl_PigCoreLibraries);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_WIN_RESOURCES_RES);
 			
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
