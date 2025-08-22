@@ -168,7 +168,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		flow.numGlyphsAlloc = textbox->flowGlyphs.allocLength;
 		flow.glyphs = (FontFlowGlyph*)textbox->flowGlyphs.items;
 		
-		textbox->measure = MeasureTextFlow(font, textbox->fontSize, clayFont->styleFlags, textbox->edit.str, &flow);
+		textbox->measure = MeasureTextFlow(font, textbox->fontSize, clayFont->styleFlags, false, 0.0f, textbox->edit.str, &flow);
 		
 		Assert(flow.numGlyphs <= textbox->flowGlyphs.allocLength);
 		textbox->flowGlyphs.length = flow.numGlyphs;
@@ -233,7 +233,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		// |      Handle Arrow Keys       |
 		// +==============================+
 		//TODO: Handle Ctrl and Alt modifiers!
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true))
 		{
 			if (textbox->edit.cursorActive)
 			{
@@ -258,7 +258,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			}
 			EditTextResetCursorBlink(&textbox->edit);
 		}
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true))
 		{
 			if (textbox->edit.cursorActive)
 			{
@@ -287,7 +287,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		// +==============================+
 		// |       Handle Backspace       |
 		// +==============================+
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Backspace))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Backspace, true))
 		{
 			if (!textbox->edit.cursorActive)
 			{
@@ -310,7 +310,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		// +==============================+
 		// |        Handle Delete         |
 		// +==============================+
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Delete))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Delete, true))
 		{
 			if (!textbox->edit.cursorActive)
 			{

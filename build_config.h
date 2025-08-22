@@ -21,9 +21,9 @@ Description:
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD  1
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  1
+#define BUILD_INTO_SINGLE_UNIT  0
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
-#define USE_BUNDLED_RESOURCES   1
+#define USE_BUNDLED_RESOURCES   0
 
 
 // Build .exe binaries for Windows platform
@@ -40,15 +40,15 @@ Description:
 #define RUN_PIGGEN    0
 
 // This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
-#define BUNDLE_RESOURCES_ZIP            1
+#define BUNDLE_RESOURCES_ZIP            0
 
 // Builds dll_main.c into pig_core.dll and pig_core.lib
-#define BUILD_PIG_CORE_DLL            0
+#define BUILD_PIG_CORE_DLL            1
 
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
 #define BUILD_APP_EXE  1
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
-#define BUILD_APP_DLL  0
+#define BUILD_APP_DLL  1
 // Runs the %PROJECT_EXE_NAME%.exe
 #define RUN_APP        0
 
@@ -60,14 +60,10 @@ Description:
 
 // Rather than compiling the project(s) it will simply output the
 // result of the preprocessor's pass over the code to the build folder
-#define DUMP_PREPROCESSOR 0
+#define DUMP_PREPROCESSOR   0
+// Generates assembly listing files for all compilation units
+#define DUMP_ASSEMBLY       0
 
-// Enables using sokol_gfx.h header files (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL_GFX  1
-// Enables using sokol_app.h header files (and on non-windows OS' adds required libraries for Sokol to work)
-#define BUILD_WITH_SOKOL_APP  1
-// Enables using Clay header files
-#define BUILD_WITH_CLAY       1
 // Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
 #define PREFER_OPENGL_OVER_D3D11 1
 
@@ -87,11 +83,18 @@ Description:
 #define PROJECT_DLL_NAME_STR       STRINGIFY_DEFINE(PROJECT_DLL_NAME)
 #define PROJECT_EXE_NAME_STR       STRINGIFY_DEFINE(PROJECT_EXE_NAME)
 
+
+
+//These are all expected to be constant for the duration of the project
+#define BUILD_WITH_SOKOL_GFX  1
+#define BUILD_WITH_SOKOL_APP  1
+#define BUILD_WITH_CLAY       1
 #define BUILD_WITH_RAYLIB     0
 #define BUILD_WITH_BOX2D      0
 #define BUILD_WITH_SDL        0
 #define BUILD_WITH_OPENVR     0
 #define BUILD_WITH_IMGUI      0
 #define BUILD_WITH_PHYSX      0
+#define BUILD_WITH_HTTP       0
 
 #endif //  _BUILD_CONFIG_H

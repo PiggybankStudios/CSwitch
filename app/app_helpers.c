@@ -187,7 +187,7 @@ void AppLoadRecentFilesList()
 					NotNull(newFile);
 					newFile->path = AllocStr8(stdHeap, fileLine);
 					newFile->fileExists = OsDoesFileExist(newFile->path);
-					ClayId buttonClayId = ToClayIdPrint("%.*s_Btn", StrPrint(newFile->path));
+					ClayId buttonClayId = ToClayIdPrint(scratch, "%.*s_Btn", StrPrint(newFile->path)); //TODO: This should go on uiArena
 					newFile->tooltipId = AddTooltipClay(&app->tooltipRegions, buttonClayId, newFile->path, DEFAULT_TOOLTIP_DELAY, 2)->id;
 				}
 			}
@@ -279,7 +279,7 @@ void AppRememberRecentFile(FilePath filePath)
 		newRecentFile->path = AllocStr8(stdHeap, fullPath);
 		newRecentFile->fileExists = true;
 		NotNull(newRecentFile->path.chars);
-		ClayId buttonClayId = ToClayIdPrint("%.*s_Btn", StrPrint(newRecentFile->path));
+		ClayId buttonClayId = ToClayIdPrint(scratch, "%.*s_Btn", StrPrint(newRecentFile->path)); //TODO: This should go on uiArena
 		newRecentFile->tooltipId = AddTooltipClay(&app->tooltipRegions, buttonClayId, newRecentFile->path, DEFAULT_TOOLTIP_DELAY, 2)->id;
 		
 		while (app->recentFiles.length > RECENT_FILES_MAX_LENGTH)

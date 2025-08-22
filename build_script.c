@@ -130,12 +130,14 @@ int main(int argc, char* argv[])
 	
 	// Str8 PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
 	// Str8 PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
-	Str8 PROJECT_DLL_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME"));
-	Str8 PROJECT_EXE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME"));
-	Str8 filenameAppDll   = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dll"), true);
-	Str8 filenameAppSo    = JoinStrings2(PROJECT_DLL_NAME, StrLit(".so"), true);
-	Str8 filenameAppExe   = JoinStrings2(PROJECT_EXE_NAME, StrLit(".exe"), true);
-	Str8 filenameApp      = JoinStrings2(PROJECT_EXE_NAME, StrLit(""), true);
+	Str8 PROJECT_DLL_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME"));
+	Str8 PROJECT_EXE_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME"));
+	Str8 filenameAppDll    = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dll"), true);
+	Str8 filenameAppDllAsm = JoinStrings2(PROJECT_DLL_NAME, StrLit(".asm"), true);
+	Str8 filenameAppSo     = JoinStrings2(PROJECT_DLL_NAME, StrLit(".so"), true);
+	Str8 filenameAppExe    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".exe"), true);
+	Str8 filenameAppAsm    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".asm"), true);
+	Str8 filenameApp       = JoinStrings2(PROJECT_EXE_NAME, StrLit(""), true);
 	
 	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
 	bool BUILD_INTO_SINGLE_UNIT   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_INTO_SINGLE_UNIT"));
@@ -152,6 +154,7 @@ int main(int argc, char* argv[])
 	bool RUN_APP                  = ExtractBoolDefine(buildConfigContents, StrLit("RUN_APP"));
 	bool COPY_TO_DATA_DIRECTORY   = ExtractBoolDefine(buildConfigContents, StrLit("COPY_TO_DATA_DIRECTORY"));
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
+	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
 	
 	free(buildConfigContents.chars);
 	
@@ -191,14 +194,15 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_OPENVR    = false;
 	bool BUILD_WITH_IMGUI     = false;
 	bool BUILD_WITH_PHYSX     = false;
-	CliArgList cl_CommonFlags             = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
+	bool BUILD_WITH_HTTP      = false;
+	CliArgList cl_CommonFlags             = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY);
 	CliArgList cl_LangCFlags              = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags            = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
 	CliArgList clang_CommonFlags          = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR);
 	CliArgList clang_LinuxFlags           = ZEROED; Fill_clang_LinuxFlags(&clang_LinuxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags       = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_LinuxCommonLibraries = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
-	CliArgList cl_PigCoreLibraries        = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX);
+	CliArgList cl_PigCoreLibraries        = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
 	CliArgList clang_PigCoreLibraries     = ZEROED; Fill_clang_PigCoreLibraries(&clang_PigCoreLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX, !BUILDING_ON_OSX);
 	
 	AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/app");
@@ -219,7 +223,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
 			CliArgList cmd = ZEROED;
@@ -227,6 +231,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIGGEN_EXE);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "piggen.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
@@ -441,7 +446,7 @@ int main(int argc, char* argv[])
 	
 	if (BUILD_SHADERS)
 	{
-		if (BUILD_WINDOWS) { InitializeMsvcIf(&isMsvcInitialized); }
+		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized); }
 		
 		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
@@ -568,7 +573,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgList cmd = ZEROED;
@@ -577,6 +582,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_DEFINE, "PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL=1");
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "pig_core.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
@@ -630,7 +636,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %.*s for Windows...]", filenameAppExe.length, filenameAppExe.chars);
 			
 			// Build app/win_resources.rc file into resources.res
@@ -649,6 +655,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppExe);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgStr(&cmd, CL_ASSEMB_LISTING_FILE, filenameAppAsm); }
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB); }
@@ -709,7 +716,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS)
 		{
-			InitializeMsvcIf(&isMsvcInitialized);
+			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %.*s for Windows...]", filenameAppDll.length, filenameAppDll.chars);
 			
 			CliArgList cmd = ZEROED;
@@ -717,6 +724,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppDll);
 			AddArgList(&cmd, &cl_CommonFlags);
 			AddArgList(&cmd, &cl_LangCFlags);
+			if (DUMP_ASSEMBLY) { AddArgStr(&cmd, CL_ASSEMB_LISTING_FILE, filenameAppDllAsm); }
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
 			AddArgList(&cmd, &cl_CommonLinkerFlags);

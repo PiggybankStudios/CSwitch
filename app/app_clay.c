@@ -382,7 +382,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 	Str8 gutterIdStr = PrintInArenaStr(scratch, "%.*s_Gutter", StrPrint(scrollbarIdStr));
 	ClayId gutterId = ToClayId(gutterIdStr);
 	ClayId scrollbarId = ToClayId(scrollbarIdStr);
-	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(scrollContainerId);
+	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
 	r32 scrollbarYPercent = 0.0f;
 	r32 scrollbarSizePercent = 1.0f;
 	if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
