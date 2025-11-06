@@ -258,7 +258,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
 	app->nextTooltipId = 1;
 	
-	InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
+	// InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
 	
 	app->smoothScrollingEnabled = true;
 	app->optionTooltipsEnabled = true;
@@ -671,10 +671,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	
-	if (app->currentTab == nullptr)
-	{
-		UpdateClayTextbox(&app->testTextbox);
-	}
+	// if (app->currentTab == nullptr)
+	// {
+	// 	UpdateClayTextbox(&app->testTextbox);
+	// }
 	
 	// +==============================+
 	// |          Rendering           |
@@ -1113,10 +1113,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							}
 						}
 						
-						if (app->currentTab == nullptr)
-						{
-							DrawClayTextbox(&app->testTextbox, CLAY_SIZING_GROW(0));
-						}
+						// if (app->currentTab == nullptr)
+						// {
+						// 	DrawClayTextbox(&app->testTextbox, CLAY_SIZING_GROW(0));
+						// }
 						
 						#if 0
 						if (app->currentTab == nullptr)

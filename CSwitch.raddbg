@@ -1,9 +1,10 @@
-// raddbg 0.9.21 project file
+// raddbg 0.9.22 project file
 
+recent_file: path: "app/app_textbox.c"
 target:
 {
   executable: "_build/cswitch.exe"
-  working_directory: "_data/"
+  working_directory: _data
   enabled: 1
 }
 theme: "VS (Dark)"
