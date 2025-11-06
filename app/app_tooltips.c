@@ -116,7 +116,7 @@ void ShowTooltip(TooltipState* tooltip, TooltipRegion* region)
 	if (tooltip->isOpen) { CloseTooltip(tooltip); }
 	tooltip->regionId = region->id;
 	tooltip->displayStr = AllocStr8(tooltip->arena, region->displayStr);
-	tooltip->displayStrMeasure = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, tooltip->displayStr);
+	tooltip->displayStrMeasure = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, true, 0.0f, tooltip->displayStr);
 	tooltip->focusPos = appIn->mouse.position;
 	tooltip->isOpen = true;
 	UpdateTooltipPlacement(tooltip, ToV2Fromi(appIn->screenSize));

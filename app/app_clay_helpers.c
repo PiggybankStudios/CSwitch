@@ -24,7 +24,7 @@ bool IsMouseOverClayInContainer(ClayId containerId, ClayId clayId)
 // This should produce the same value as ClayUIRendererMeasureText in gfx_clay_renderer.h
 v2 ClayUiTextSize(PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 {
-	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, text);
+	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, true, 0.0f, text);
 	return NewV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
 }
 

@@ -8,3 +8,89 @@ target:
   enabled: 1
 }
 theme: "VS (Dark)"
+type_view:
+{
+  type: Str8
+  expr: "rows($, array($.chars, $.length), $.length)"
+}
+type_view:
+{
+  { HMM_Vec2 }
+  type: HMM_Vec2
+  expr: "rows($, $.X, $.Y)"
+}
+type_view:
+{
+  type: HMM_Vec3
+  expr: "rows($, $.X, $.Y, $.Z)"
+}
+type_view:
+{
+  type: HMM_Vec4
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+type_view:
+{
+  type: Vec4Raw
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+type_view:
+{
+  type: Vec2i
+  expr: "rows($, $.X, $.Y)"
+}
+type_view:
+{
+  type: Vec3i
+  expr: "rows($, $.X, $.Y, $.Z)"
+}
+type_view:
+{
+  type: Vec4i
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+type_view:
+{
+  type: Vec2R64
+  expr: "rows($, $.X, $.Y)"
+}
+type_view:
+{
+  type: Vec3R64
+  expr: "rows($, $.X, $.Y, $.Z)"
+}
+type_view:
+{
+  type: Vec4R64
+  expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+type_view:
+{
+  type: Color32
+  expr: "rows($, color((($.valueU32&0x00FFFFFF) << 8) | (($.valueU32&0xFF000000)>>24)), hex(r), hex(g), hex(b), hex(a))"
+}
+type_view:
+{
+  type: RangeUXX
+  expr: "rows($, $.min, $.max)"
+}
+type_view:
+{
+  type: RangeIXX
+  expr: "rows($, $.min, $.max)"
+}
+type_view:
+{
+  type: RangeR32
+  expr: "rows($, $.min, $.max)"
+}
+type_view:
+{
+  type: RangeR64
+  expr: "rows($, $.min, $.max)"
+}
+type_view:
+{
+  type: Rectanglef
+  expr: "rows($, $.X, $.Y, $.Width, $.Height)"
+}

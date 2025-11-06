@@ -413,7 +413,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	
 	#if 0
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false))
 	{
 		HWND windowHandle = (HWND)platform->GetNativeWindowHandle();
 		if (app->tooltipWindowHandle == NULL)
@@ -461,7 +461,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notifications, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
@@ -470,7 +470,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
 	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
 		{
@@ -488,7 +488,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F10 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10, false))
 	{
 		app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
 	}
@@ -496,7 +496,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F11 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11, false))
 	{
 		app->minimalModeEnabled = !app->minimalModeEnabled;
 	}
@@ -504,7 +504,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle Escape Key       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape, false))
 	{
 		if (app->popup.isOpen)
 		{
@@ -528,15 +528,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==================================================+
 	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
 	// +==================================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		AppChangeFontSize(true);
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		AppChangeFontSize(false);
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
@@ -556,7 +556,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +================================+
 	// | Handle Alt+F and Alt+V Hotkeys |
 	// +================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
 	{
 		app->isFileMenuOpen = !app->isFileMenuOpen;
 		if (app->isFileMenuOpen)
@@ -565,7 +565,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			app->keepFileMenuOpenUntilMouseOver = true;
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
 	{
 		app->isViewMenuOpen = !app->isViewMenuOpen;
 		if (app->isViewMenuOpen)
@@ -579,7 +579,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |     Handle Ctrl+O Hotkey     |
 	// +==============================+
 	bool shouldOpenFile = false;
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		shouldOpenFile = true;
 	}
@@ -587,7 +587,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
 	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		if (app->tabs.length > 1)
 		{
@@ -605,7 +605,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+E Hotkey     |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 		{
@@ -620,7 +620,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+T Hotkey     |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		platform->SetWindowTopmost(!appIn->isWindowTopmost);
 	}
@@ -629,7 +629,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |     Handle Tilde Hotkey      |
 	// +==============================+
 	#if DEBUG_BUILD
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde, false))
 	{
 		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 	}
@@ -638,32 +638,32 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +======================================+
 	// | Handle Home/End and PageUp/PageDown  |
 	// +======================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home, false))
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, false))
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
 		{
 			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 			optionsListScrollData.scrollTarget->Y = -maxScroll;
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp, true))
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
 		{
 			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown, true))
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"));
+		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
 		{
 			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
