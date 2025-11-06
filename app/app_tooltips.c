@@ -198,11 +198,9 @@ void RenderTooltip(TooltipState* tooltip)
 	{
 		UpdateTooltipPlacement(tooltip, ToV2Fromi(appIn->screenSize));
 		DrawRectangle(tooltip->mainRec, TEXT_WHITE);
-		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
-		NotNull(fontAtlas);
 		v2 textPos = NewV2(
 			tooltip->mainRec.X + tooltip->mainRec.Width/2 - tooltip->displayStrMeasure.Width/2,
-			tooltip->mainRec.Y + tooltip->mainRec.Height/2 + fontAtlas->centerOffset
+			tooltip->mainRec.Y + tooltip->mainRec.Height/2 + GetFontCenterOffset(&app->uiFont, app->uiFontSize, UI_FONT_STYLE)
 		);
 		AlignV2(&textPos);
 		reci oldClipRec = AddClipRec(ToReciFromf(tooltip->mainRec));

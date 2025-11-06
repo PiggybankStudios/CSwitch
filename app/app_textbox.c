@@ -129,8 +129,6 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 	ClayUIRendererFont* clayFont = VarArrayGetHard(ClayUIRendererFont, &app->clay.fonts, (uxx)textbox->clayFontId);
 	NotNull(clayFont);
 	PigFont* font = clayFont->pntr;
-	FontAtlas* fontAtlas = GetFontAtlas(font, textbox->fontSize, clayFont->styleFlags);
-	NotNull(fontAtlas);
 	ClayId textboxId = ToClayId(textbox->idStr);
 	rec textboxDrawRec = GetClayElementDrawRec(textboxId);
 	bool isBoxHovered = IsMouseOverClay(textboxId);
@@ -148,7 +146,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			AlignRec(&textbox->mainRec);
 			textbox->textPos = NewV2(
 				textboxDrawRec.X + UI_U16(4),
-				textboxDrawRec.Y + textboxDrawRec.Height/2 + fontAtlas->centerOffset
+				textboxDrawRec.Y + textboxDrawRec.Height/2 + GetFontCenterOffset(font, textbox->fontSize, clayFont->styleFlags)
 			);
 			AlignV2(&textbox->textPos);
 			//TODO: Handle any input fixups to account for textbox moving!
@@ -197,7 +195,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			}
 			if (glyph->glyph != nullptr)
 			{
-				v2 rightPos = Add(glyph->position, NewV2(glyph->glyph->advanceX, 0));
+				v2 rightPos = Add(glyph->position, NewV2(glyph->glyph->metrics.advanceX, 0));
 				r32 rightDistSquared = LengthSquaredV2(Sub(relativeMousePos, rightPos));
 				if (rightDistSquared < closestDistSquared)
 				{
@@ -354,12 +352,10 @@ void DrawClayTextbox(ClayTextbox* textbox, Clay_SizingAxis boxSizingWidth)
 	
 	ClayUIRendererFont* clayFont = VarArrayGetHard(ClayUIRendererFont, &app->clay.fonts, (uxx)textbox->clayFontId);
 	NotNull(clayFont);
-	FontAtlas* fontAtlas = GetFontAtlas(clayFont->pntr, textbox->fontSize, clayFont->styleFlags);
-	NotNull(fontAtlas);
 	u16 borderWidth = (textbox->edit.isFocused) ? 1 : 0;
 	Color32 hintColor = (textbox->edit.str.length > 0 || textbox->hintStr.length == 0) ? Transparent : TEXT_LIGHT_GRAY;
 	Str8 hintStr = IsEmptyStr(textbox->hintStr) ? StrLit("W") : textbox->hintStr;
-	r32 textboxHeight = fontAtlas->lineHeight + UI_U16(4)*2.0f;
+	r32 textboxHeight = GetFontLineHeight(clayFont->pntr, textbox->fontSize, clayFont->styleFlags) + UI_U16(4)*2.0f;
 	
 	CLAY({ .id = ToClayId(textbox->idStr),
 		.layout = {
@@ -406,9 +402,10 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 	
 	if (textbox->edit.isFocused && textbox->edit.cursorActive)
 	{
+		r32 lineHeight = GetFontLineHeight(clayFont->pntr, textbox->fontSize, clayFont->styleFlags);
+		r32 centerOffset = GetFontCenterOffset(clayFont->pntr, textbox->fontSize, clayFont->styleFlags);
 		bool foundCursorPos = false;
 		v2 cursorPos = V2_Zero_Const;
-		FontAtlas* cursorFontAtlas = nullptr;
 		VarArrayLoop(&textbox->flowGlyphs, gIndex)
 		{
 			VarArrayLoopGet(FontFlowGlyph, glyph, &textbox->flowGlyphs, gIndex);
@@ -417,14 +414,12 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 			{
 				foundCursorPos = true;
 				cursorPos = Add(textbox->textPos, glyph->position);
-				cursorFontAtlas = glyph->atlas;
 				break;
 			}
 			else if (glyph->glyph != nullptr && glyph->byteIndex + glyphByteSize == textbox->edit.cursorEnd)
 			{
 				foundCursorPos = true;
-				cursorPos = Add(textbox->textPos, Add(glyph->position, NewV2(glyph->glyph->advanceX, 0)));
-				cursorFontAtlas = glyph->atlas;
+				cursorPos = Add(textbox->textPos, Add(glyph->position, NewV2(glyph->glyph->metrics.advanceX, 0)));
 				break;
 			}
 		}
@@ -433,16 +428,12 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 			foundCursorPos = true;
 			cursorPos = textbox->textPos;
 		}
-		if (cursorFontAtlas == nullptr)
-		{
-			cursorFontAtlas = GetFontAtlas(clayFont->pntr, textbox->fontSize, clayFont->styleFlags);
-		}
 		
 		rec cursorRec = NewRec(
 			cursorPos.X,
-			cursorPos.Y - cursorFontAtlas->centerOffset - cursorFontAtlas->lineHeight/2.0f,
+			cursorPos.Y - centerOffset - lineHeight/2.0f,
 			1.0f,
-			cursorFontAtlas->lineHeight
+			lineHeight
 		);
 		AlignV2(&cursorRec.TopLeft);
 		

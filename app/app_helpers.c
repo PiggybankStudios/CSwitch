@@ -39,7 +39,7 @@ bool AppCreateFonts()
 {
 	FontCharRange fontCharRanges[] = {
 		FontCharRange_ASCII,
-		FontCharRange_LatinExt,
+		FontCharRange_LatinExtA,
 		NewFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
 		NewFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
 	};
@@ -67,44 +67,36 @@ bool AppCreateFonts()
 		CustomFontCharRange customGlyphsRange = NewCustomFontCharRange(numKeyCodepoints, &customGlyphs[0]);
 		#endif
 		newUiFont = InitFont(stdHeap, StrLit("uiFont"));
-		Result attachResult = AttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE);
+		Result attachResult = TryAttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE);
 		Assert(attachResult == Result_Success);
-		Result bakeResult = BakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		Result bakeResult = TryBakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
 		if (bakeResult != Result_Success)
 		{
-			bakeResult = BakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, NewV2i(512, 512), ArrayCount(fontCharRanges), &fontCharRanges[0]);
-			if (bakeResult != Result_Success)
-			{
-				RemoveAttachedTtfFile(&newUiFont);
-				FreeFont(&newUiFont);
-				return false;
-			}
+			RemoveAttachedFontFiles(&newUiFont);
+			FreeFont(&newUiFont);
+			return false;
 		}
 		Assert(bakeResult == Result_Success);
 		FillFontKerningTable(&newUiFont);
-		RemoveAttachedTtfFile(&newUiFont);
+		RemoveAttachedFontFiles(&newUiFont);
 	}
 	
 	PigFont newMainFont = ZEROED;
 	{
 		newMainFont = InitFont(stdHeap, StrLit("mainFont"));
-		Result attachResult = AttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE);
+		Result attachResult = TryAttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE);
 		Assert(attachResult == Result_Success);
 		
-		Result bakeResult = BakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, NewV2i(256, 256), ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		Result bakeResult = TryBakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
 		if (bakeResult != Result_Success)
 		{
-			bakeResult = BakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, NewV2i(512, 512), ArrayCount(fontCharRanges), &fontCharRanges[0]);
-			if (bakeResult != Result_Success)
-			{
-				RemoveAttachedTtfFile(&newMainFont);
-				FreeFont(&newMainFont);
-				FreeFont(&newUiFont);
-				return false;
-			}
+			RemoveAttachedFontFiles(&newMainFont);
+			FreeFont(&newMainFont);
+			FreeFont(&newUiFont);
+			return false;
 		}
 		FillFontKerningTable(&newMainFont);
-		RemoveAttachedTtfFile(&newMainFont);
+		RemoveAttachedFontFiles(&newMainFont);
 	}
 	
 	if (app->uiFont.arena != nullptr) { FreeFont(&app->uiFont); }

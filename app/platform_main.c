@@ -24,6 +24,7 @@ Description:
 #include "gfx/gfx_all.h"
 #include "gfx/gfx_system_global.h"
 #include "phys/phys_all.h"
+#include "lib/lib_all.h"
 
 #if BUILD_INTO_SINGLE_UNIT
 #include "base/base_debug_output_impl.h"
@@ -37,21 +38,7 @@ Description:
 #include "third_party/raylib/raylib.h"
 #endif
 
-#if BUILD_WITH_SOKOL_APP
-#define SOKOL_APP_IMPL
-#if TARGET_IS_LINUX
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-field-initializers" //warning: missing field 'revents' initializer [-Wmissing-field-initializers]
-#endif
-#include "third_party/sokol/sokol_app.h"
-#if TARGET_IS_LINUX
-#pragma clang diagnostic pop
-#endif
-#endif //BUILD_WITH_SOKOL_APP
-
-#if BUILD_WITH_SOKOL_APP
-#include "misc/misc_sokol_app_helpers.c"
-#endif
+#include "lib/lib_sokol_app_impl.c"
 
 #define ENABLE_RAYLIB_LOGS_DEBUG   0
 #define ENABLE_RAYLIB_LOGS_INFO    0
@@ -294,12 +281,13 @@ void PlatSappEvent(const sapp_event* event)
 	
 	if (platformData->currentAppInput != nullptr)
 	{
-		handledEvent = HandleSokolKeyboardAndMouseEvents(
+		handledEvent = HandleSokolKeyboardMouseAndTouchEvents(
 			event,
 			platformData->currentAppInput->programTime, //TODO: Calculate a more accurate programTime to pass here!
 			NewV2i((i32)sapp_width(), (i32)sapp_height()),
 			&platformData->currentAppInput->keyboard,
 			&platformData->currentAppInput->mouse,
+			nullptr, //TODO: Add touch support?
 			sapp_mouse_locked()
 		);
 	}

@@ -14,16 +14,16 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 1
+#define BUILD_PIG_BUILD 0
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
-#define DEBUG_BUILD  1
+#define DEBUG_BUILD  0
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  0
+#define BUILD_INTO_SINGLE_UNIT  1
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
-#define USE_BUNDLED_RESOURCES   0
+#define USE_BUNDLED_RESOURCES   1
 
 
 // Build .exe binaries for Windows platform
@@ -40,15 +40,15 @@ Description:
 #define RUN_PIGGEN    0
 
 // This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
-#define BUNDLE_RESOURCES_ZIP            0
+#define BUNDLE_RESOURCES_ZIP            1
 
 // Builds dll_main.c into pig_core.dll and pig_core.lib
-#define BUILD_PIG_CORE_DLL            1
+#define BUILD_PIG_CORE_DLL            0
 
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
 #define BUILD_APP_EXE  1
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
-#define BUILD_APP_DLL  1
+#define BUILD_APP_DLL  0
 // Runs the %PROJECT_EXE_NAME%.exe
 #define RUN_APP        0
 
@@ -96,5 +96,6 @@ Description:
 #define BUILD_WITH_IMGUI      0
 #define BUILD_WITH_PHYSX      0
 #define BUILD_WITH_HTTP       0
+#define BUILD_WITH_FREETYPE   1
 
 #endif //  _BUILD_CONFIG_H
