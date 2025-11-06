@@ -52,21 +52,6 @@
 			],
 		},
 		{
-			"name": "raylib",
-			"path": "core\\third_party\\raylib",
-			"file_exclude_patterns": [
-				"LICENSE",
-				"README.md",
-			],
-		},
-		{
-			"name": "Box2D",
-			"path": "core\\third_party\\box2d",
-			"file_exclude_patterns": [
-				"LICENSE",
-			],
-		},
-		{
 			"name": "Sokol",
 			"path": "core\\third_party\\sokol",
 			"folder_exclude_patterns": [
@@ -83,27 +68,6 @@
 		{
 			"name": "HandmadeMath",
 			"path": "core\\third_party\\handmade_math",
-			"file_exclude_patterns": [
-				"LICENSE",
-				"README.md",
-			],
-		},
-		{
-			"name": "meow_hash",
-			"path": "core\\third_party\\meow_hash",
-			"file_exclude_patterns": [
-				"LICENSE",
-				"README.md",
-			],
-		},
-		{
-			"name": "cgltf",
-			"path": "core\\third_party\\cgltf",
-			"folder_exclude_patterns": [
-				".github",
-				"fuzz",
-				"test",
-			],
 			"file_exclude_patterns": [
 				"LICENSE",
 				"README.md",
@@ -685,6 +649,8 @@
 			"u32 GetMonospaceCodepointFor(u32 codepoint)",
 			"u32 GetRegularCodepointForMonospace(u32 monospaceCodepoint)",
 			"u32 GetUppercaseCodepoint(u32 codepoint)",
+			"u64 OsGetCurrentTimestamp(bool offsetToLocal)",
+			"u64 OsGetCurrentTimestampEx(bool offsetToLocal, i64* timezoneOffsetOut, bool* timezoneDoesDstOut)",
 			"u8 GetCodepointBeforeIndex(const char* strPntr, u64 startIndex, u32* codepointOut)",
 			"u8 GetCodepointForUcs2(u64 maxNumWords, const u16* strPntr, u32* codepointOut)",
 			"u8 GetCodepointForUtf8(u64 maxNumBytes, const char* strPntr, u32* codepointOut)",
