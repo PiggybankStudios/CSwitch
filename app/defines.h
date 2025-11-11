@@ -24,6 +24,9 @@ Date:   02\25\2025
 #define DEFAULT_UI_FONT_SIZE   14
 #define MAIN_TO_UI_FONT_RATIO  1.3f //Default main font size will be 18
 
+#define NOTIFICATION_ICONS_TEXTURE_PATH "resources/image/notifications_2x2.png"
+#define NOTIFICATION_ICONS_SIZE         24 //px
+
 #define DEFAULT_WINDOW_SIZE        NewV2(360, 500)
 #define MIN_WINDOW_SIZE            NewV2(50, 50)
 #define SCROLLBAR_WIDTH            10 //px (at uiScale=1.0f)

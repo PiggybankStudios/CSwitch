@@ -56,13 +56,11 @@ static Arena* stdHeap = nullptr;
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
 #include "main2d_shader.glsl.h"
-#include "app_notifications_api.h"
 #include "app_resources.c"
 #include "app_file_watch.c"
 #include "app_clay_helpers.c"
 #include "app_textbox.c"
 #include "app_tooltips.c"
-#include "app_notifications.c"
 #include "app_popup_dialog.c"
 #include "app_helpers.c"
 #include "app_tab.c"
@@ -104,6 +102,10 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 	#endif
 	app = (AppData*)memoryPntr;
 	appIn = appInput;
+	
+	#if NOTIFICATION_QUEUE_AVAILABLE
+	SetGlobalNotificationQueue((app != nullptr) ? &app->notificationQueue : nullptr);
+	#endif
 }
 
 #if 0
@@ -223,8 +225,9 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
-	InitNotificationQueue(stdHeap, &app->notifications);
+	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	InitAppResources(&app->resources);
+	LoadNotificationIcons();
 	
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();
@@ -236,7 +239,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 		if (iconPath != nullptr)
 		{
 			ImageData iconImageData = LoadImageData(scratch, iconPath);
-			app->icons[iIndex] = InitTexture(stdHeap, StrLit(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
+			app->icons[iIndex] = InitTexture(stdHeap, NewStr8Nt(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
 			Assert(app->icons[iIndex].error == Result_Success);
 		}
 	}
@@ -339,7 +342,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	UpdateFileWatches(&app->fileWatches);
 	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	UpdatePopupDialog(&app->popup);
-	UpdateNotificationQueue(&app->notifications);
 	
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
@@ -357,7 +359,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
-		if (app->notifications.notifications.length > 0) { refreshScreen = true; }
+		if (app->notificationQueue.notifications.length > 0) { refreshScreen = true; }
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
 		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
@@ -466,7 +468,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
-		AddNotificationToQueue(&app->notifications, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
+		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
 	
 	// +========================================+
@@ -696,6 +698,17 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		uiArena = scratch3;
 		FlagSet(uiArena->flags, ArenaFlag_DontPop);
 		uxx uiArenaMark = ArenaGetMark(uiArena);
+		UiWidgetContext uiContext = NewUiWidgetContext(
+			uiArena,
+			&app->clay,
+			&appIn->keyboard,
+			&appIn->mouse,
+			app->uiScale,
+			nullptr, //TODO: Fill focusedElementPntr
+			CursorShape_Default,
+			OsWindowHandleEmpty,
+			appIn->programTime
+		);
 		
 		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
@@ -1060,7 +1073,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->isUncommented))
 										{
 											option->isUncommented = !option->isUncommented;
-											SetOptionValue(app->currentTab, option, StrLit(option->isUncommented ? "" : "// "));
+											SetOptionValue(app->currentTab, option, option->isUncommented ? StrLit("") : StrLit("// "));
 										}
 									}
 									else
@@ -1096,7 +1109,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
 										{
 											option->isUncommented = !option->isUncommented;
-											SetOptionValue(app->currentTab, option, StrLit(option->isUncommented ? "" : "// "));
+											SetOptionValue(app->currentTab, option, option->isUncommented ? StrLit("") : StrLit("// "));
 										}
 									}
 									else
@@ -1156,7 +1169,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				}
 				
 				RenderPopupDialog(&app->popup);
-				RenderNotificationQueue(&app->notifications);
+				DoUiNotificationQueue(&uiContext, &app->notificationQueue, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, appIn->screenSize);
 			}
 		}
 		

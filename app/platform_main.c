@@ -347,7 +347,7 @@ void PlatSappEvent(const sapp_event* event)
 				{
 					const char* filePathPntr = sapp_get_dropped_file_path((int)fIndex);
 					NotNull(filePathPntr);
-					newDroppedFilePaths[fIndex] = AllocStr8(stdHeap, StrLit(filePathPntr));
+					newDroppedFilePaths[fIndex] = AllocStr8(stdHeap, NewStr8Nt(filePathPntr));
 				}
 			}break;
 			

@@ -12,7 +12,7 @@ ImageData LoadImageData(Arena* arena, const char* path)
 	Slice fileContents = Slice_Empty;
 	// bool readFileResult = OsReadFile(FilePathLit(path), scratch, false, &fileContents);
 	// Assert(readFileResult);
-	Result readFileResult = TryReadAppResource(&app->resources, scratch, FilePathLit(path), false, &fileContents);
+	Result readFileResult = TryReadAppResource(&app->resources, scratch, NewFilePathNt(path), false, &fileContents);
 	Assert(readFileResult == Result_Success);
 	ImageData imageData = ZEROED;
 	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
@@ -33,6 +33,51 @@ void LoadWindowIcon()
 	iconImageDatas[5] = LoadImageData(scratch, "resources/image/icon_256.png");
 	platform->SetWindowIcon(ArrayCount(iconImageDatas), &iconImageDatas[0]);
 	ScratchEnd(scratch);
+}
+
+void LoadNotificationIcons()
+{
+	{
+		ScratchBegin(scratch);
+		ImageData imageData = LoadImageData(scratch, NOTIFICATION_ICONS_TEXTURE_PATH);
+		AssertMsg(imageData.pixels != nullptr && imageData.size.Width > 0 && imageData.size.Height > 0, "Failed to load notification icons texture!");
+		Texture newTexture = InitTexture(stdHeap, StrLit("notificationIcons"), imageData.size, imageData.pixels, 0x00);
+		AssertMsg(newTexture.error == Result_Success, "Failed to init texture for notification icons!");
+		FreeTexture(&app->notificationIconsTexture);
+		app->notificationIconsTexture = newTexture;
+		ScratchEnd(scratch);
+	}
+	
+	const v2i sheetSize = { .X=2, .Y=2 };
+	v2 cellSize = NewV2(
+		(r32)app->notificationIconsTexture.Width / (r32)sheetSize.Width,
+		(r32)app->notificationIconsTexture.Height / (r32)sheetSize.Height
+	);
+	r32 iconScale = NOTIFICATION_ICONS_SIZE / cellSize.Width;
+	for (uxx lIndex = DbgLevel_Debug; lIndex < DbgLevel_Count; lIndex++)
+	{
+		DbgLevel dbgLevel = (DbgLevel)lIndex;
+		v2i cellPos = NewV2i(0, 0);
+		switch (dbgLevel)
+		{
+			// case DbgLevel_Debug:   cellPos = NewV2i(1, 0); break;
+			case DbgLevel_Regular: cellPos = NewV2i(1, 0); break;
+			case DbgLevel_Info:    cellPos = NewV2i(1, 0); break;
+			case DbgLevel_Notify:  cellPos = NewV2i(1, 0); break;
+			case DbgLevel_Other:   cellPos = NewV2i(1, 0); break;
+			case DbgLevel_Warning: cellPos = NewV2i(0, 1); break;
+			case DbgLevel_Error:   cellPos = NewV2i(1, 1); break;
+		}
+		if (cellPos.X != 0 || cellPos.Y != 0)
+		{
+			rec iconSourceRec = NewRec(
+				cellSize.Width * cellPos.X,
+				cellSize.Height * cellPos.Y,
+				cellSize.Width, cellSize.Height
+			);
+			SetNotificationIconEx(&app->notificationQueue, dbgLevel, &app->notificationIconsTexture, iconScale, GetDbgLevelTextColor(dbgLevel), iconSourceRec);
+		}
+	}
 }
 
 bool AppCreateFonts()

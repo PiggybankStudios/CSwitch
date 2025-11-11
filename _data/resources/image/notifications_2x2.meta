@@ -1,0 +1,9 @@
+# Sprite Meta
+// November 10th 2025
+
+(1, 0)
+	Name: message
+(0, 1)
+	Name: warning
+(1, 1)
+	Name: error

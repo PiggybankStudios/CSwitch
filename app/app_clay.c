@@ -12,7 +12,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	ScratchBegin(scratch);
 	ScratchBegin1(persistScratch, scratch);
 	
-	Str8 normalDisplayStr = StrLit(btnText);
+	Str8 normalDisplayStr = NewStr8Nt(btnText);
 	Assert(!IsEmptyStr(normalDisplayStr));
 	Str8 altDisplayStr = PrintInArenaStr(persistScratch, "(%c)%.*s", normalDisplayStr.chars[0], normalDisplayStr.length-1, &normalDisplayStr.chars[1]);
 	v2 normalDisplayStrSize = ClayUiTextSize(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, normalDisplayStr);
@@ -130,7 +130,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), TEXT_WHITE);
 		}
 		CLAY_TEXT(
-			StrLit(btnText),
+			NewStr8Nt(btnText),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
@@ -269,7 +269,7 @@ bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, bool isEnabled, Texture* icon)
 }
 bool ClayBtn(const char* btnText, const char* hotkeyStr, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStr(StrLit(btnText), StrLit(hotkeyStr), isEnabled, icon);
+	return ClayBtnStr(NewStr8Nt(btnText), NewStr8Nt(hotkeyStr), isEnabled, icon);
 }
 
 //Call Clay__CloseElement once after if statement

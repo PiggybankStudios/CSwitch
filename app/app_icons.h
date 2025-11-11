@@ -26,9 +26,6 @@ enum AppIcon
 	AppIcon_Topbar,
 	AppIcon_Debug,
 	AppIcon_CloseWindow,
-	AppIcon_NotificationMessage,
-	AppIcon_NotificationWarning,
-	AppIcon_NotificationError,
 	AppIcon_Count,
 };
 const char* GetAppIconStr(AppIcon enumValue)
@@ -51,9 +48,6 @@ const char* GetAppIconStr(AppIcon enumValue)
 		case AppIcon_Topbar:              return "Topbar";
 		case AppIcon_Debug:               return "Debug";
 		case AppIcon_CloseWindow:         return "CloseWindow";
-		case AppIcon_NotificationMessage: return "NotificationMessage";
-		case AppIcon_NotificationWarning: return "NotificationWarning";
-		case AppIcon_NotificationError:   return "NotificationError";
 		default: return "Unknown";
 	}
 }
@@ -76,9 +70,6 @@ const char* GetAppIconPath(AppIcon enumValue)
 		case AppIcon_Topbar:              return "resources/image/topbar.png";
 		case AppIcon_Debug:               return "resources/image/debug.png";
 		case AppIcon_CloseWindow:         return "resources/image/close_window.png";
-		case AppIcon_NotificationMessage: return "resources/image/notification_message.png";
-		case AppIcon_NotificationWarning: return "resources/image/notification_warning.png";
-		case AppIcon_NotificationError:   return "resources/image/notification_error.png";
 		default: return nullptr;
 	}
 }
