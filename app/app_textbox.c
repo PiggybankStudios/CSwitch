@@ -405,7 +405,7 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 		r32 lineHeight = GetFontLineHeight(clayFont->pntr, textbox->fontSize, clayFont->styleFlags);
 		r32 centerOffset = GetFontCenterOffset(clayFont->pntr, textbox->fontSize, clayFont->styleFlags);
 		bool foundCursorPos = false;
-		v2 cursorPos = V2_Zero_Const;
+		v2 cursorPos = V2_Zero;
 		VarArrayLoop(&textbox->flowGlyphs, gIndex)
 		{
 			VarArrayLoopGet(FontFlowGlyph, glyph, &textbox->flowGlyphs, gIndex);

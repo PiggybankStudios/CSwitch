@@ -393,7 +393,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 	Str8 sizeStr = FindNamedProgramArgStr(&programArgs, StrLit("size"), StrLit("s"), Str8_Empty);
 	if (!IsEmptyStr(sizeStr))
 	{
-		v2 newSize = V2_Zero_Const;
+		v2 newSize = V2_Zero;
 		if (TryParseV2(sizeStr, &newSize, nullptr))
 		{
 			windowSize = newSize;
