@@ -91,7 +91,7 @@ void UpdateTooltipPlacement(TooltipState* tooltip, v2 screenSize)
 {
 	if (tooltip->isOpen)
 	{
-		tooltip->mainRec.Size = Add(tooltip->displayStrMeasure.logicalRec.Size, NewV2(UI_R32(TOOLTIP_TEXT_MARGIN_X*2), UI_R32(TOOLTIP_TEXT_MARGIN_Y*2)));
+		tooltip->mainRec.Size = Add(tooltip->displayStrMeasure.logicalRec.Size, MakeV2(UI_R32(TOOLTIP_TEXT_MARGIN_X*2), UI_R32(TOOLTIP_TEXT_MARGIN_Y*2)));
 		if (tooltip->mainRec.Width >= (r32)screenSize.Width) { tooltip->mainRec.Width = (r32)screenSize.Width; }
 		tooltip->mainRec.X = tooltip->focusPos.X - tooltip->mainRec.Width/2;
 		if (tooltip->mainRec.X < 0) { tooltip->mainRec.X = 0; }
@@ -198,7 +198,7 @@ void RenderTooltip(TooltipState* tooltip)
 	{
 		UpdateTooltipPlacement(tooltip, ToV2Fromi(appIn->screenSize));
 		DrawRectangle(tooltip->mainRec, TEXT_WHITE);
-		v2 textPos = NewV2(
+		v2 textPos = MakeV2(
 			tooltip->mainRec.X + tooltip->mainRec.Width/2 - tooltip->displayStrMeasure.Width/2,
 			tooltip->mainRec.Y + tooltip->mainRec.Height/2 + GetFontCenterOffset(&app->uiFont, app->uiFontSize, UI_FONT_STYLE)
 		);

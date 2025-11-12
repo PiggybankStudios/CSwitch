@@ -18,7 +18,7 @@ void InitAppResources(AppResources* resources)
 	ClearPointer(resources);
 	resources->isLoadingFromDisk = (USE_BUNDLED_RESOURCES == 0);
 	#if USE_BUNDLED_RESOURCES
-	Slice zipFileContents = NewStr8(ArrayCount(resources_zip_bytes), &resources_zip_bytes[0]);
+	Slice zipFileContents = MakeStr8(ArrayCount(resources_zip_bytes), &resources_zip_bytes[0]);
 	Result openResult = OpenZipArchive(stdHeap, zipFileContents, &resources->zipFile);
 	if (openResult != Result_Success) { NotifyPrint_E("Failed to parse builtin zip file %llu bytes as zip archive: %s", zipFileContents.length, GetResultStr(openResult)); }
 	Assert(openResult == Result_Success);

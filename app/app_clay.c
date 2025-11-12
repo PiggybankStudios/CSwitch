@@ -12,7 +12,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	ScratchBegin(scratch);
 	ScratchBegin1(persistScratch, scratch);
 	
-	Str8 normalDisplayStr = NewStr8Nt(btnText);
+	Str8 normalDisplayStr = MakeStr8Nt(btnText);
 	Assert(!IsEmptyStr(normalDisplayStr));
 	Str8 altDisplayStr = PrintInArenaStr(persistScratch, "(%c)%.*s", normalDisplayStr.chars[0], normalDisplayStr.length-1, &normalDisplayStr.chars[1]);
 	v2 normalDisplayStrSize = ClayUiTextSize(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, normalDisplayStr);
@@ -130,7 +130,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), TEXT_WHITE);
 		}
 		CLAY_TEXT(
-			NewStr8Nt(btnText),
+			MakeStr8Nt(btnText),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
@@ -269,7 +269,7 @@ bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, bool isEnabled, Texture* icon)
 }
 bool ClayBtn(const char* btnText, const char* hotkeyStr, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStr(NewStr8Nt(btnText), NewStr8Nt(hotkeyStr), isEnabled, icon);
+	return ClayBtnStr(MakeStr8Nt(btnText), MakeStr8Nt(hotkeyStr), isEnabled, icon);
 }
 
 //Call Clay__CloseElement once after if statement
@@ -409,7 +409,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 		})
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
-			v2 scrollBarSize = NewV2(
+			v2 scrollBarSize = MakeV2(
 				gutterWidth - (UI_U16(1) * 2.0f),
 				scrollGutterDrawRec.Height * scrollbarSizePercent
 			);
@@ -418,7 +418,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
 					.zIndex = 1,
-					.offset = NewV2(UI_R32(1), scrollBarOffsetY),
+					.offset = MakeV2(UI_R32(1), scrollBarOffsetY),
 				},
 				.layout = {
 					.sizing = {
@@ -447,7 +447,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 					rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
 					state->isDragging = true;
 					state->isDraggingSmooth = true;
-					state->grabOffset = NewV2(scrollbarDrawRec.Width/2, scrollbarDrawRec.Height/2);
+					state->grabOffset = MakeV2(scrollbarDrawRec.Width/2, scrollbarDrawRec.Height/2);
 				}
 			}
 		}

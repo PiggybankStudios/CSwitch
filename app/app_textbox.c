@@ -32,7 +32,7 @@ void InitClayTextbox(Arena* arena, Str8 idStr, Str8 initialText, u16 clayFontId,
 	textboxOut->edit.arena = arena;
 	
 	InitVarArrayWithInitial(char, &textboxOut->edit.strBuffer, arena, initialText.length);
-	textboxOut->edit.str = NewStr8(initialText.length, (char*)textboxOut->edit.strBuffer.items);
+	textboxOut->edit.str = MakeStr8(initialText.length, (char*)textboxOut->edit.strBuffer.items);
 	if (initialText.length > 0)
 	{
 		MyMemCopy(textboxOut->edit.str.chars, initialText.chars, initialText.length);
@@ -115,7 +115,7 @@ bool EditTextHandleCharInput(EditableText* editText, KeyboardCharInput* charInpu
 	u8 utf8ByteSize = GetUtf8BytesForCode(charInput->codepoint, &utf8Bytes[0], false);
 	if (utf8ByteSize == 0) { return false; } //codepoint can't be UTF-8 encoded!
 	if (editText->cursorStart != editText->cursorEnd) { EditTextDeleteRange(editText, editText->cursorStart, editText->cursorEnd); }
-	EditTextInsertAt(editText, NewStr8(utf8ByteSize, (char*)&utf8Bytes[0]), editText->cursorEnd);
+	EditTextInsertAt(editText, MakeStr8(utf8ByteSize, (char*)&utf8Bytes[0]), editText->cursorEnd);
 	EditTextResetCursorBlink(editText);
 	return true;
 }
@@ -144,7 +144,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			textbox->mainRecChanged = true;
 			textbox->mainRec = textboxDrawRec;
 			AlignRec(&textbox->mainRec);
-			textbox->textPos = NewV2(
+			textbox->textPos = MakeV2(
 				textboxDrawRec.X + UI_U16(4),
 				textboxDrawRec.Y + textboxDrawRec.Height/2 + GetFontCenterOffset(font, textbox->fontSize, clayFont->styleFlags)
 			);
@@ -179,7 +179,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 	{
 		v2 relativeMousePos = Sub(appIn->mouse.position, textbox->textPos);
 		
-		// v2 closestPos = V2_Zero_Const;
+		// v2 closestPos = V2_Zero;
 		r32 closestDistSquared = 0.0f;
 		uxx closestIndex = 0;
 		VarArrayLoop(&textbox->flowGlyphs, gIndex)
@@ -195,7 +195,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			}
 			if (glyph->glyph != nullptr)
 			{
-				v2 rightPos = Add(glyph->position, NewV2(glyph->glyph->metrics.advanceX, 0));
+				v2 rightPos = Add(glyph->position, MakeV2(glyph->glyph->metrics.advanceX, 0));
 				r32 rightDistSquared = LengthSquaredV2(Sub(relativeMousePos, rightPos));
 				if (rightDistSquared < closestDistSquared)
 				{
@@ -419,7 +419,7 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 			else if (glyph->glyph != nullptr && glyph->byteIndex + glyphByteSize == textbox->edit.cursorEnd)
 			{
 				foundCursorPos = true;
-				cursorPos = Add(textbox->textPos, Add(glyph->position, NewV2(glyph->glyph->metrics.advanceX, 0)));
+				cursorPos = Add(textbox->textPos, Add(glyph->position, MakeV2(glyph->glyph->metrics.advanceX, 0)));
 				break;
 			}
 		}
@@ -429,7 +429,7 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 			cursorPos = textbox->textPos;
 		}
 		
-		rec cursorRec = NewRec(
+		rec cursorRec = MakeRec(
 			cursorPos.X,
 			cursorPos.Y - centerOffset - lineHeight/2.0f,
 			1.0f,

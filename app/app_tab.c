@@ -176,7 +176,7 @@ void UpdateFileTabOptions(FileTab* tab)
 	VarArrayClear(&tab->fileOptions);
 	
 	Str8 commentStartStr = StrLit("//");
-	LineParser lineParser = NewLineParser(tab->fileContents);
+	LineParser lineParser = MakeLineParser(tab->fileContents);
 	Str8 fullLine = Str8_Empty;
 	FileOption* prevOption = nullptr;
 	while (LineParserGetLine(&lineParser, &fullLine))
@@ -227,7 +227,7 @@ void UpdateFileTabOptions(FileTab* tab)
 			const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
 			for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
 			{
-				Str8 boolValueStr = NewStr8Nt(possibleBoolValues[vIndex]);
+				Str8 boolValueStr = MakeStr8Nt(possibleBoolValues[vIndex]);
 				if (line.length >= defineStr.length + 1 + boolValueStr.length &&
 					StrExactEndsWith(line, boolValueStr) &&
 					IsCharWhitespace(line.chars[line.length-boolValueStr.length-1], false))
@@ -291,7 +291,7 @@ void UpdateFileTabOptions(FileTab* tab)
 				const char* possibleBoolValues[] = { "1", "0", "true", "false" }; //NOTE: These must alternate truthy/falsey so %2 logic below works
 				for (uxx vIndex = 0; vIndex < ArrayCount(possibleBoolValues); vIndex++)
 				{
-					Str8 boolValueStr = NewStr8Nt(possibleBoolValues[vIndex]);
+					Str8 boolValueStr = MakeStr8Nt(possibleBoolValues[vIndex]);
 					if (StrExactEquals(valuePart, boolValueStr)) { isBooleanValue = true; isBooleanTrue = ((vIndex%2) == 0); break; }
 				}
 				

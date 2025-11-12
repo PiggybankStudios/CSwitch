@@ -129,15 +129,15 @@ bool PlatDoUpdate(void)
 	AppInput* newAppInput = (platformData->currentAppInput == &platformData->appInputs[0]) ? &platformData->appInputs[1] : &platformData->appInputs[0];
 	
 	#if BUILD_WITH_RAYLIB
-	v2i newScreenSize = NewV2i((i32)GetRenderWidth(), (i32)GetRenderHeight());
+	v2i newScreenSize = MakeV2i((i32)GetRenderWidth(), (i32)GetRenderHeight());
 	bool newIsFullScreen = IsWindowFullscreen();
 	bool isMouseLocked = IsCursorHidden();
 	#elif BUILD_WITH_SOKOL_APP
-	v2i newScreenSize = NewV2i(sapp_width(), sapp_height());
+	v2i newScreenSize = MakeV2i(sapp_width(), sapp_height());
 	bool newIsFullScreen = sapp_is_fullscreen();
 	bool isMouseLocked = sapp_mouse_locked();
 	#else
-	v2i newScreenSize = NewV2i(800, 600);
+	v2i newScreenSize = MakeV2i(800, 600);
 	bool newIsFullScreen = false;
 	bool isMouseLocked = false;
 	#endif
@@ -159,7 +159,7 @@ bool PlatDoUpdate(void)
 	newAppInput->isMinimizedChanged = false;
 	newAppInput->isFocusedChanged = false;
 	RefreshKeyboardState(&newAppInput->keyboard);
-	RefreshMouseState(&newAppInput->mouse, isMouseLocked, NewV2((r32)newScreenSize.Width/2.0f, (r32)newScreenSize.Height/2.0f));
+	RefreshMouseState(&newAppInput->mouse, isMouseLocked, MakeV2((r32)newScreenSize.Width/2.0f, (r32)newScreenSize.Height/2.0f));
 	IncrementU64(newAppInput->frameIndex);
 	IncrementU64By(newAppInput->programTime, 16); //TODO: Replace this hardcoded increment!
 	platformData->oldAppInput = oldAppInput;
@@ -285,7 +285,7 @@ void PlatSappEvent(const sapp_event* event)
 		handledEvent = HandleSokolKeyboardMouseAndTouchEvents(
 			event,
 			platformData->currentAppInput->programTime, //TODO: Calculate a more accurate programTime to pass here!
-			NewV2i((i32)sapp_width(), (i32)sapp_height()),
+			MakeV2i((i32)sapp_width(), (i32)sapp_height()),
 			&platformData->currentAppInput->keyboard,
 			&platformData->currentAppInput->mouse,
 			nullptr, //TODO: Add touch support?
@@ -347,7 +347,7 @@ void PlatSappEvent(const sapp_event* event)
 				{
 					const char* filePathPntr = sapp_get_dropped_file_path((int)fIndex);
 					NotNull(filePathPntr);
-					newDroppedFilePaths[fIndex] = AllocStr8(stdHeap, NewStr8Nt(filePathPntr));
+					newDroppedFilePaths[fIndex] = AllocStr8(stdHeap, MakeStr8Nt(filePathPntr));
 				}
 			}break;
 			

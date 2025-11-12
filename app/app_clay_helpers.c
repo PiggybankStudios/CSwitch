@@ -25,7 +25,7 @@ bool IsMouseOverClayInContainer(ClayId containerId, ClayId clayId)
 v2 ClayUiTextSize(PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 {
 	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, true, 0.0f, text);
-	return NewV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
+	return MakeV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
 }
 
 #define CLAY_ICON(texturePntr, size, color) CLAY({      \

@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
 		mz_zip_writer_end(&context.zip);
 		PrintLine("Found %u resource files, total %u bytes uncompressed, %u compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
 		
-		CreateAndWriteFile(StrLit("resources.zip"), NewStr8(context.archiveSize, context.archivePntr), false);
+		CreateAndWriteFile(StrLit("resources.zip"), MakeStr8(context.archiveSize, context.archivePntr), false);
 		
 		//Create resources_zip.h
 		{

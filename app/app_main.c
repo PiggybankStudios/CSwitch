@@ -111,7 +111,7 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 #if 0
 #define NO_KEY_IMAGE_SHEET_FRAME_X 7
 #define NO_KEY_IMAGE_SHEET_FRAME_Y 6
-#define NO_KEY_IMAGE_SHEET_FRAME NewV2i(NO_KEY_IMAGE_SHEET_FRAME_X, NO_KEY_IMAGE_SHEET_FRAME_Y)
+#define NO_KEY_IMAGE_SHEET_FRAME MakeV2i(NO_KEY_IMAGE_SHEET_FRAME_X, NO_KEY_IMAGE_SHEET_FRAME_Y)
 v2i GetSheetFrameForKey(Key key, bool isPressed, i32* imageWidth, bool* isWideKey)
 {
 	i32 yOffset = (isPressed ? 7 : 0);
@@ -120,90 +120,90 @@ v2i GetSheetFrameForKey(Key key, bool isPressed, i32* imageWidth, bool* isWideKe
 	SetOptionalOutPntr(imageWidth, 13);
 	switch (key)
 	{
-		case Key_Up:           return NewV2i(0, 0 + yOffset);
-		case Key_Down:         return NewV2i(1, 0 + yOffset);
-		case Key_Left:         return NewV2i(2, 0 + yOffset);
-		case Key_Right:        return NewV2i(3, 0 + yOffset);
-		case Key_F1:           return NewV2i(4, 0 + yOffset);
-		case Key_F2:           return NewV2i(5, 0 + yOffset);
-		case Key_F3:           return NewV2i(6, 0 + yOffset);
-		case Key_F4:           return NewV2i(7, 0 + yOffset);
+		case Key_Up:           return MakeV2i(0, 0 + yOffset);
+		case Key_Down:         return MakeV2i(1, 0 + yOffset);
+		case Key_Left:         return MakeV2i(2, 0 + yOffset);
+		case Key_Right:        return MakeV2i(3, 0 + yOffset);
+		case Key_F1:           return MakeV2i(4, 0 + yOffset);
+		case Key_F2:           return MakeV2i(5, 0 + yOffset);
+		case Key_F3:           return MakeV2i(6, 0 + yOffset);
+		case Key_F4:           return MakeV2i(7, 0 + yOffset);
 		
-		case Key_F5:           return NewV2i(0, 1 + yOffset);
-		case Key_F6:           return NewV2i(1, 1 + yOffset);
-		case Key_F7:           return NewV2i(2, 1 + yOffset);
-		case Key_F8:           return NewV2i(3, 1 + yOffset);
-		case Key_F9:           return NewV2i(4, 1 + yOffset);
-		case Key_F10:          return NewV2i(5, 1 + yOffset);
-		case Key_F11:          return NewV2i(6, 1 + yOffset);
-		case Key_F12:          return NewV2i(7, 1 + yOffset);
+		case Key_F5:           return MakeV2i(0, 1 + yOffset);
+		case Key_F6:           return MakeV2i(1, 1 + yOffset);
+		case Key_F7:           return MakeV2i(2, 1 + yOffset);
+		case Key_F8:           return MakeV2i(3, 1 + yOffset);
+		case Key_F9:           return MakeV2i(4, 1 + yOffset);
+		case Key_F10:          return MakeV2i(5, 1 + yOffset);
+		case Key_F11:          return MakeV2i(6, 1 + yOffset);
+		case Key_F12:          return MakeV2i(7, 1 + yOffset);
 		
-		case Key_A:            return NewV2i(0, 2 + yOffset);
-		case Key_B:            return NewV2i(1, 2 + yOffset);
-		case Key_C:            return NewV2i(2, 2 + yOffset);
-		case Key_D:            return NewV2i(3, 2 + yOffset);
-		case Key_E:            return NewV2i(4, 2 + yOffset);
-		case Key_F:            return NewV2i(5, 2 + yOffset);
-		case Key_G:            return NewV2i(6, 2 + yOffset);
-		case Key_H:            return NewV2i(7, 2 + yOffset);
+		case Key_A:            return MakeV2i(0, 2 + yOffset);
+		case Key_B:            return MakeV2i(1, 2 + yOffset);
+		case Key_C:            return MakeV2i(2, 2 + yOffset);
+		case Key_D:            return MakeV2i(3, 2 + yOffset);
+		case Key_E:            return MakeV2i(4, 2 + yOffset);
+		case Key_F:            return MakeV2i(5, 2 + yOffset);
+		case Key_G:            return MakeV2i(6, 2 + yOffset);
+		case Key_H:            return MakeV2i(7, 2 + yOffset);
 		
-		case Key_I:            return NewV2i(0, 3 + yOffset);
-		case Key_J:            return NewV2i(1, 3 + yOffset);
-		case Key_K:            return NewV2i(2, 3 + yOffset);
-		case Key_L:            return NewV2i(3, 3 + yOffset);
-		case Key_M:            return NewV2i(4, 3 + yOffset);
-		case Key_N:            return NewV2i(5, 3 + yOffset);
-		case Key_O:            return NewV2i(6, 3 + yOffset);
-		case Key_P:            return NewV2i(7, 3 + yOffset);
+		case Key_I:            return MakeV2i(0, 3 + yOffset);
+		case Key_J:            return MakeV2i(1, 3 + yOffset);
+		case Key_K:            return MakeV2i(2, 3 + yOffset);
+		case Key_L:            return MakeV2i(3, 3 + yOffset);
+		case Key_M:            return MakeV2i(4, 3 + yOffset);
+		case Key_N:            return MakeV2i(5, 3 + yOffset);
+		case Key_O:            return MakeV2i(6, 3 + yOffset);
+		case Key_P:            return MakeV2i(7, 3 + yOffset);
 		
-		case Key_Q:            return NewV2i(0, 4 + yOffset);
-		case Key_R:            return NewV2i(1, 4 + yOffset);
-		case Key_S:            return NewV2i(2, 4 + yOffset);
-		case Key_T:            return NewV2i(3, 4 + yOffset);
-		case Key_U:            return NewV2i(4, 4 + yOffset);
-		case Key_V:            return NewV2i(5, 4 + yOffset);
-		case Key_W:            return NewV2i(6, 4 + yOffset);
-		case Key_X:            return NewV2i(7, 4 + yOffset);
+		case Key_Q:            return MakeV2i(0, 4 + yOffset);
+		case Key_R:            return MakeV2i(1, 4 + yOffset);
+		case Key_S:            return MakeV2i(2, 4 + yOffset);
+		case Key_T:            return MakeV2i(3, 4 + yOffset);
+		case Key_U:            return MakeV2i(4, 4 + yOffset);
+		case Key_V:            return MakeV2i(5, 4 + yOffset);
+		case Key_W:            return MakeV2i(6, 4 + yOffset);
+		case Key_X:            return MakeV2i(7, 4 + yOffset);
 		
-		case Key_Y:            return NewV2i(0, 5 + yOffset);
-		case Key_Z:            return NewV2i(1, 5 + yOffset);
-		case Key_Period:       return NewV2i(2, 5 + yOffset);
-		case Key_Comma:        return NewV2i(3, 5 + yOffset);
-		// case Key_Question:  return NewV2i(4, 5 + yOffset);
-		case Key_ForwardSlash: return NewV2i(5, 5 + yOffset);
-		// case Key_BackSlash: return NewV2i(6, 5 + yOffset);
-		case Key_Pipe:         return NewV2i(7, 5 + yOffset);
+		case Key_Y:            return MakeV2i(0, 5 + yOffset);
+		case Key_Z:            return MakeV2i(1, 5 + yOffset);
+		case Key_Period:       return MakeV2i(2, 5 + yOffset);
+		case Key_Comma:        return MakeV2i(3, 5 + yOffset);
+		// case Key_Question:  return MakeV2i(4, 5 + yOffset);
+		case Key_ForwardSlash: return MakeV2i(5, 5 + yOffset);
+		// case Key_BackSlash: return MakeV2i(6, 5 + yOffset);
+		case Key_Pipe:         return MakeV2i(7, 5 + yOffset);
 		
-		case Key_Quote:        return NewV2i(0, 6 + yOffset);
-		case Key_OpenBracket:  return NewV2i(1, 6 + yOffset);
-		case Key_CloseBracket: return NewV2i(2, 6 + yOffset);
-		case Key_Plus:         return NewV2i(3, 6 + yOffset);
-		case Key_Minus:        return NewV2i(4, 6 + yOffset);
-		case Key_Tilde:        return NewV2i(5, 6 + yOffset);
-		// case Key_None:      return NewV2i(6, 6 + yOffset);
-		// case Key_None:      return NewV2i(7, 6 + yOffset);
+		case Key_Quote:        return MakeV2i(0, 6 + yOffset);
+		case Key_OpenBracket:  return MakeV2i(1, 6 + yOffset);
+		case Key_CloseBracket: return MakeV2i(2, 6 + yOffset);
+		case Key_Plus:         return MakeV2i(3, 6 + yOffset);
+		case Key_Minus:        return MakeV2i(4, 6 + yOffset);
+		case Key_Tilde:        return MakeV2i(5, 6 + yOffset);
+		// case Key_None:      return MakeV2i(6, 6 + yOffset);
+		// case Key_None:      return MakeV2i(7, 6 + yOffset);
 		
-		case Key_Tab:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 24); return NewV2i(0, 0 + yOffsetWide);
-		case Key_Escape:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(1, 0 + yOffsetWide);
-		case Key_PrintScreen: SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(2, 0 + yOffsetWide);
-		case Key_Backspace:   SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(3, 0 + yOffsetWide);
+		case Key_Tab:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 24); return MakeV2i(0, 0 + yOffsetWide);
+		case Key_Escape:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return MakeV2i(1, 0 + yOffsetWide);
+		case Key_PrintScreen: SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return MakeV2i(2, 0 + yOffsetWide);
+		case Key_Backspace:   SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return MakeV2i(3, 0 + yOffsetWide);
 		
-		case Key_Shift:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(0, 1 + yOffsetWide);
-		case Key_PageUp:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 20); return NewV2i(1, 1 + yOffsetWide);
-		case Key_PageDown:    SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 20); return NewV2i(2, 1 + yOffsetWide);
-		case Key_Enter:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(3, 1 + yOffsetWide);
+		case Key_Shift:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return MakeV2i(0, 1 + yOffsetWide);
+		case Key_PageUp:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 20); return MakeV2i(1, 1 + yOffsetWide);
+		case Key_PageDown:    SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 20); return MakeV2i(2, 1 + yOffsetWide);
+		case Key_Enter:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return MakeV2i(3, 1 + yOffsetWide);
 		
-		case Key_Control:     SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 24); return NewV2i(0, 2 + yOffsetWide);
-		case Key_Alt:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(1, 2 + yOffsetWide);
-		case Key_Space:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 30); return NewV2i(2, 2 + yOffsetWide);
-		case Key_Insert:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(3, 2 + yOffsetWide);
+		case Key_Control:     SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 24); return MakeV2i(0, 2 + yOffsetWide);
+		case Key_Alt:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return MakeV2i(1, 2 + yOffsetWide);
+		case Key_Space:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 30); return MakeV2i(2, 2 + yOffsetWide);
+		case Key_Insert:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return MakeV2i(3, 2 + yOffsetWide);
 		
-		case Key_Delete:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(0, 3 + yOffsetWide);
-		case Key_End:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(1, 3 + yOffsetWide);
-		case Key_Home:        SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return NewV2i(2, 3 + yOffsetWide);
-		case Key_Pause:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return NewV2i(3, 3 + yOffsetWide);
+		case Key_Delete:      SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return MakeV2i(0, 3 + yOffsetWide);
+		case Key_End:         SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return MakeV2i(1, 3 + yOffsetWide);
+		case Key_Home:        SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 18); return MakeV2i(2, 3 + yOffsetWide);
+		case Key_Pause:       SetOptionalOutPntr(isWideKey, true); SetOptionalOutPntr(imageWidth, 28); return MakeV2i(3, 3 + yOffsetWide);
 		
-		default: return NewV2i(NO_KEY_IMAGE_SHEET_FRAME_X, NO_KEY_IMAGE_SHEET_FRAME_Y + yOffset);
+		default: return MakeV2i(NO_KEY_IMAGE_SHEET_FRAME_X, NO_KEY_IMAGE_SHEET_FRAME_Y + yOffset);
 	}
 }
 #endif
@@ -239,7 +239,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 		if (iconPath != nullptr)
 		{
 			ImageData iconImageData = LoadImageData(scratch, iconPath);
-			app->icons[iIndex] = InitTexture(stdHeap, NewStr8Nt(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
+			app->icons[iIndex] = InitTexture(stdHeap, MakeStr8Nt(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
 			Assert(app->icons[iIndex].error == Result_Success);
 		}
 	}
@@ -698,7 +698,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		uiArena = scratch3;
 		FlagSet(uiArena->flags, ArenaFlag_DontPop);
 		uxx uiArenaMark = ArenaGetMark(uiArena);
-		UiWidgetContext uiContext = NewUiWidgetContext(
+		UiWidgetContext uiContext = MakeUiWidgetContext(
 			uiArena,
 			&app->clay,
 			&appIn->keyboard,
@@ -1220,11 +1220,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		#if 0
 		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 		BindFontEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
-		rec textRec = NewRec(50, screenSize.Height/2, mousePos.X - 50, fontAtlas->lineHeight);
+		rec textRec = MakeRec(50, screenSize.Height/2, mousePos.X - 50, fontAtlas->lineHeight);
 		if (textRec.Width < 5) { textRec.Width = 5; }
 		DrawRectangleOutline(textRec, 2, MonokaiRed);
 		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
-		DrawText(shortenedPath, NewV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
+		DrawText(shortenedPath, MakeV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
 		#endif
 	}
 	EndFrame();

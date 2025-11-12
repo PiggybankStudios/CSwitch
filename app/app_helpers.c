@@ -12,7 +12,7 @@ ImageData LoadImageData(Arena* arena, const char* path)
 	Slice fileContents = Slice_Empty;
 	// bool readFileResult = OsReadFile(FilePathLit(path), scratch, false, &fileContents);
 	// Assert(readFileResult);
-	Result readFileResult = TryReadAppResource(&app->resources, scratch, NewFilePathNt(path), false, &fileContents);
+	Result readFileResult = TryReadAppResource(&app->resources, scratch, MakeFilePathNt(path), false, &fileContents);
 	Assert(readFileResult == Result_Success);
 	ImageData imageData = ZEROED;
 	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
@@ -49,7 +49,7 @@ void LoadNotificationIcons()
 	}
 	
 	const v2i sheetSize = { .X=2, .Y=2 };
-	v2 cellSize = NewV2(
+	v2 cellSize = MakeV2(
 		(r32)app->notificationIconsTexture.Width / (r32)sheetSize.Width,
 		(r32)app->notificationIconsTexture.Height / (r32)sheetSize.Height
 	);
@@ -57,20 +57,20 @@ void LoadNotificationIcons()
 	for (uxx lIndex = DbgLevel_Debug; lIndex < DbgLevel_Count; lIndex++)
 	{
 		DbgLevel dbgLevel = (DbgLevel)lIndex;
-		v2i cellPos = NewV2i(0, 0);
+		v2i cellPos = V2i_Zero;
 		switch (dbgLevel)
 		{
-			// case DbgLevel_Debug:   cellPos = NewV2i(1, 0); break;
-			case DbgLevel_Regular: cellPos = NewV2i(1, 0); break;
-			case DbgLevel_Info:    cellPos = NewV2i(1, 0); break;
-			case DbgLevel_Notify:  cellPos = NewV2i(1, 0); break;
-			case DbgLevel_Other:   cellPos = NewV2i(1, 0); break;
-			case DbgLevel_Warning: cellPos = NewV2i(0, 1); break;
-			case DbgLevel_Error:   cellPos = NewV2i(1, 1); break;
+			// case DbgLevel_Debug:   cellPos = MakeV2i(1, 0); break;
+			case DbgLevel_Regular: cellPos = MakeV2i(1, 0); break;
+			case DbgLevel_Info:    cellPos = MakeV2i(1, 0); break;
+			case DbgLevel_Notify:  cellPos = MakeV2i(1, 0); break;
+			case DbgLevel_Other:   cellPos = MakeV2i(1, 0); break;
+			case DbgLevel_Warning: cellPos = MakeV2i(0, 1); break;
+			case DbgLevel_Error:   cellPos = MakeV2i(1, 1); break;
 		}
 		if (cellPos.X != 0 || cellPos.Y != 0)
 		{
-			rec iconSourceRec = NewRec(
+			rec iconSourceRec = MakeRec(
 				cellSize.Width * cellPos.X,
 				cellSize.Height * cellPos.Y,
 				cellSize.Width, cellSize.Height
@@ -85,8 +85,8 @@ bool AppCreateFonts()
 	FontCharRange fontCharRanges[] = {
 		FontCharRange_ASCII,
 		FontCharRange_LatinExtA,
-		NewFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
-		NewFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
+		MakeFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
+		MakeFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
 	};
 	
 	// ImageData keysSheet = LoadImageData(scratch, "resources/image/keys16.png");
@@ -102,14 +102,14 @@ bool AppCreateFonts()
 			i32 keyGlyphWidth = 0;
 			bool useWideSheet = false;
 			v2i tilePos = GetSheetFrameForKey(GetKeyForCodepoint(codepoint), false, &keyGlyphWidth, &useWideSheet);
-			v2i sheetTileSize = useWideSheet ? NewV2i(32, 16) : FillV2i(16);
+			v2i sheetTileSize = useWideSheet ? MakeV2i(32, 16) : FillV2i(16);
 			i32 glyphOffset = (i32)(sheetTileSize.Width - keyGlyphWidth) / 2;
 			customGlyphs[numKeyCodepoints].codepoint = codepoint;
 			customGlyphs[numKeyCodepoints].imageData = useWideSheet ? keysWideSheet : keysSheet;
-			customGlyphs[numKeyCodepoints].sourceRec = NewReci(tilePos.X * sheetTileSize.Width + glyphOffset, tilePos.Y * sheetTileSize.Height, keyGlyphWidth, sheetTileSize.Height);
+			customGlyphs[numKeyCodepoints].sourceRec = MakeReci(tilePos.X * sheetTileSize.Width + glyphOffset, tilePos.Y * sheetTileSize.Height, keyGlyphWidth, sheetTileSize.Height);
 			numKeyCodepoints++;
 		}
-		CustomFontCharRange customGlyphsRange = NewCustomFontCharRange(numKeyCodepoints, &customGlyphs[0]);
+		CustomFontCharRange customGlyphsRange = MakeCustomFontCharRangeArray(numKeyCodepoints, &customGlyphs[0]);
 		#endif
 		newUiFont = InitFont(stdHeap, StrLit("uiFont"));
 		Result attachResult = TryAttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE);
@@ -214,7 +214,7 @@ void AppLoadRecentFilesList()
 		if (OsReadTextFile(savePath, scratch, &fileContent))
 		{
 			AppClearRecentFiles();
-			LineParser parser = NewLineParser(fileContent);
+			LineParser parser = MakeLineParser(fileContent);
 			Str8 fileLine = ZEROED;
 			while (LineParserGetLine(&parser, &fileLine))
 			{
