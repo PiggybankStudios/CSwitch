@@ -89,6 +89,9 @@ bool AppCreateFonts()
 		MakeFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
 	};
 	
+	Result attachResult = Result_None;
+	Result bakeResult = Result_None;
+	
 	// ImageData keysSheet = LoadImageData(scratch, "resources/image/keys16.png");
 	// ImageData keysWideSheet = LoadImageData(scratch, "resources/image/keys16_wide.png");
 	PigFont newUiFont = ZEROED;
@@ -112,36 +115,36 @@ bool AppCreateFonts()
 		CustomFontCharRange customGlyphsRange = MakeCustomFontCharRangeArray(numKeyCodepoints, &customGlyphs[0]);
 		#endif
 		newUiFont = InitFont(stdHeap, StrLit("uiFont"));
-		Result attachResult = TryAttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE);
-		Assert(attachResult == Result_Success);
-		Result bakeResult = TryBakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
-		if (bakeResult != Result_Success)
+		attachResult = TryAttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE); Assert(attachResult == Result_Success);
+		
+		bakeResult = TryBakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		if (bakeResult != Result_Success && bakeResult != Result_Partial)
 		{
-			RemoveAttachedFontFiles(&newUiFont);
+			Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
 			FreeFont(&newUiFont);
 			return false;
 		}
-		Assert(bakeResult == Result_Success);
 		FillFontKerningTable(&newUiFont);
-		RemoveAttachedFontFiles(&newUiFont);
+		
+		MakeFontActive(&newUiFont, 128, 1024, 16, 0, 0);
 	}
 	
 	PigFont newMainFont = ZEROED;
 	{
 		newMainFont = InitFont(stdHeap, StrLit("mainFont"));
-		Result attachResult = TryAttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE);
-		Assert(attachResult == Result_Success);
+		attachResult = TryAttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE); Assert(attachResult == Result_Success);
 		
-		Result bakeResult = TryBakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
-		if (bakeResult != Result_Success)
+		bakeResult = TryBakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
+		if (bakeResult != Result_Success && bakeResult != Result_Partial)
 		{
-			RemoveAttachedFontFiles(&newMainFont);
+			Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
 			FreeFont(&newMainFont);
 			FreeFont(&newUiFont);
 			return false;
 		}
 		FillFontKerningTable(&newMainFont);
-		RemoveAttachedFontFiles(&newMainFont);
+		
+		MakeFontActive(&newMainFont, 128, 1024, 16, 0, 0);
 	}
 	
 	if (app->uiFont.arena != nullptr) { FreeFont(&app->uiFont); }

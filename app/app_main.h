@@ -218,7 +218,7 @@ struct AppData
 	RandomSeries random;
 	AppResources resources;
 	VarArray fileWatches; //FileWatch
-	r32 prevRenderMs;
+	r32 prevUpdateMs;
 	PerfGraph perfGraph;
 	bool showPerfGraph;
 	

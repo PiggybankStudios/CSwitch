@@ -214,6 +214,7 @@ v2i GetSheetFrameForKey(Key key, bool isPressed, i32* imageWidth, bool* isWideKe
 // void* AppInit(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi)
 EXPORT_FUNC APP_INIT_DEF(AppInit)
 {
+	TracyCZoneN(_funcZone, "AppInit", true);
 	#if !BUILD_INTO_SINGLE_UNIT
 	InitScratchArenasVirtual(Gigabytes(4));
 	#endif
@@ -327,6 +328,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
+	TracyCZoneEnd(_funcZone);
 	return (void*)app;
 }
 
@@ -336,17 +338,21 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 // bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
 EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 {
+	OsTime beforeUpdateTime = OsGetTime();
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
+	TracyCZoneN(_funcZone, "AppUpdate", true);
 	
+	TracyCZoneN(Zone_Update, "Update", true);
 	UpdateFileWatches(&app->fileWatches);
 	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	UpdatePopupDialog(&app->popup);
 	if (appIn->frameIndex != 0 && app->renderedLastFrame)
 	{
-		UpdatePerfGraph(&app->perfGraph, ((r32)appIn->unclampedElapsedMsR64 - app->prevRenderMs), app->prevRenderMs);
+		r32 fullUpdateMs = platformInfo->updateMs + app->prevUpdateMs;
+		UpdatePerfGraph(&app->perfGraph, fullUpdateMs, ((r32)appIn->unclampedElapsedMsR64 - fullUpdateMs));
 	}
 	
 	// +====================================+
@@ -383,6 +389,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			ScratchEnd(scratch2);
 			ScratchEnd(scratch3);
 			app->renderedLastFrame = false;
+			TracyCZoneEnd(Zone_Update);
+			TracyCZoneEnd(_funcZone);
 			return false;
 		}
 	}
@@ -392,6 +400,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// v2 screenCenter = Div(screenSize, 2.0f);
 	// v2i mousePosi = RoundV2i(appIn->mouse.position);
 	v2 mousePos = appIn->mouse.position;
+	FontNewFrame(&app->uiFont, appIn->programTime);
+	FontNewFrame(&app->mainFont, appIn->programTime);
 	
 	VarArrayLoop(&appIn->droppedFilePaths, pIndex)
 	{
@@ -698,10 +708,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |          Rendering           |
 	// +==============================+
-	OsTime beforeBeginFrameTime = OsGetTime();
+	TracyCZoneEnd(Zone_Update);
+	OsTime afterUpdateTime = OsGetTime();
+	TracyCZoneN(Zone_BeginFrame, "BeginFrame", true);
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
-	OsTime afterBeginFrameTime = OsGetTime();
+	TracyCZoneEnd(Zone_BeginFrame);
+	OsTime beforeRenderTime = OsGetTime();
 	{
+		TracyCZoneN(Zone_Render, "Render", true);
 		BindShader(&app->mainShader);
 		ClearDepthBuffer(1.0f);
 		SetDepth(1.0f);
@@ -1251,14 +1265,19 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		{
 			RenderPerfGraph(&app->perfGraph, &gfx, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, MakeRec(10, 10, 400, 100));
 		}
+		
+		TracyCZoneEnd(Zone_Render);
 	}
-	OsTime beforeEndFrameTime = OsGetTime();
+	CommitAllFontTextureUpdates(&app->uiFont);
+	CommitAllFontTextureUpdates(&app->mainFont);
+	OsTime afterRenderTime = OsGetTime();
+	TracyCZoneN(Zone_EndFrame, "BeginFrame", true);
 	EndFrame();
-	OsTime afterEndFrameTime = OsGetTime();
+	TracyCZoneEnd(Zone_EndFrame);
 	app->renderedLastFrame = true;
-	app->prevRenderMs =
-		OsTimeDiffMsR32(beforeBeginFrameTime, afterBeginFrameTime) +
-		OsTimeDiffMsR32(beforeEndFrameTime, afterEndFrameTime);
+	app->prevUpdateMs =
+		OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime) +
+		OsTimeDiffMsR32(beforeRenderTime, afterRenderTime);
 	
 	// +==============================+
 	// |   Handle Open File Dialog    |
@@ -1280,6 +1299,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);
 	
+	TracyCZoneEnd(_funcZone);
 	return true;
 }
 

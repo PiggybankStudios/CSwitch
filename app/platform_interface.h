@@ -13,6 +13,7 @@ struct PlatformInfo
 	Arena* platformStdHeap;
 	Arena* platformStdHeapAllowFreeWithoutSize;
 	ProgramArgs* programArgs;
+	r32 updateMs;
 };
 
 typedef struct AppInput AppInput;

@@ -150,6 +150,9 @@ void PlatUpdateAppInputTimingInfo(AppInput* appInput)
 
 bool PlatDoUpdate(void)
 {
+	TracyCFrameMarkNamed("Game Loop");
+	TracyCZoneN(_funcZone, "PlatDoUpdate", true);
+	OsTime beforeUpdateTime = OsGetTime();
 	bool renderedFrame = true;
 	//TODO: Check for dll changes, reload it!
 	
@@ -193,9 +196,12 @@ bool PlatDoUpdate(void)
 	IncrementU64(newAppInput->frameIndex);
 	platformData->oldAppInput = oldAppInput;
 	platformData->currentAppInput = newAppInput;
+	OsTime afterUpdateTime = OsGetTime();
+	platformInfo->updateMs = OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime);
 	
 	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
 	
+	TracyCZoneEnd(_funcZone);
 	return renderedFrame;
 }
 
@@ -204,6 +210,7 @@ bool PlatDoUpdate(void)
 // +--------------------------------------------------------------+
 void PlatSappInit(void)
 {
+	TracyCZoneN(_funcZone, "PlatSappInit", true);
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
@@ -295,6 +302,8 @@ void PlatSappInit(void)
 	ScratchEnd(scratch3);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch);
+	OsMarkStartTime();
+	TracyCZoneEnd(_funcZone);
 }
 
 #if BUILD_WITH_SOKOL_APP
@@ -307,6 +316,7 @@ void PlatSappCleanup(void)
 
 void PlatSappEvent(const sapp_event* event)
 {
+	TracyCZoneN(_funcZone, "PlatSappEvent", true);
 	bool handledEvent = false;
 	
 	if (platformData->currentAppInput != nullptr)
@@ -393,10 +403,19 @@ void PlatSappEvent(const sapp_event* event)
 			default: PrintLine_D("Event: UNKNOWN(%d)", event->type); break;
 		}
 	}
+	TracyCZoneEnd(_funcZone);
 }
 
 sapp_desc sokol_main(int argc, char* argv[])
 {
+	#if PROFILING_ENABLED
+	TracyCSetThreadName("main");
+	Str8 projectName = StrLit(PROJECT_READABLE_NAME_STR);
+	TracyCAppInfo(projectName.chars, projectName.length);
+	#endif
+	
+	OsMarkStartTime(); //NOTE: We reset this at the end of PlatSappInit
+	
 	Arena stdHeapLocal = ZEROED;
 	InitArenaStdHeap(&stdHeapLocal);
 	// FlagSet(stdHeapLocal.flags, ArenaFlag_AddPaddingForDebug);

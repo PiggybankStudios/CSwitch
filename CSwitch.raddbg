@@ -26,15 +26,20 @@ debug_info:
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66198480715624
+  timestamp: 66198488307617
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66198480714771
+  timestamp: 66198488306888
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66198480716460
+  timestamp: 66198488190168
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/_build/tracy.pdb"
+  timestamp: 66198488028371
 }

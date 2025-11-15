@@ -24,6 +24,8 @@ Description:
 #define BUILD_INTO_SINGLE_UNIT  0
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
 #define USE_BUNDLED_RESOURCES   0
+// Enables linking with tracy.lib to enable profiling through Tracy
+#define PROFILING_ENABLED       1
 
 
 // Build .exe binaries for Windows platform
@@ -38,6 +40,9 @@ Description:
 #define BUILD_PIGGEN   0
 // Generates code using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
 #define RUN_PIGGEN    0
+
+// Builds third_party/tracy/TracyClient.cpp in C++ mode into tracy.obj which will be linked into pig_core.dll
+#define BUILD_TRACY_DLL 0
 
 // This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
 #define BUNDLE_RESOURCES_ZIP            0

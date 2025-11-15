@@ -308,6 +308,7 @@
 			"POPUP_MIN_WIDTH",
 			"POPUP_OPEN_ANIM_TIME",
 			"PREFER_OPENGL_OVER_D3D11",
+			"PROFILING_ENABLED",
 			"PopupDialogResult_Closed",
 			"PopupDialogResult_Count",
 			"PopupDialogResult_No",
