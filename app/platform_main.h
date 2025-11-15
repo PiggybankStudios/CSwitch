@@ -12,6 +12,7 @@ struct PlatformData
 {
 	Arena stdHeap;
 	Arena stdHeapAllowFreeWithoutSize;
+	OsTime prevFrameTime;
 	
 	AppApi appApi;
 	#if !BUILD_INTO_SINGLE_UNIT

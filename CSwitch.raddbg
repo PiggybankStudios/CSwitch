@@ -23,3 +23,18 @@ debug_info:
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
   timestamp: 66198140798122
 }
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/_build/cswitch.pdb"
+  timestamp: 66198480715624
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/_build/pig_core.pdb"
+  timestamp: 66198480714771
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
+  timestamp: 66198480716460
+}

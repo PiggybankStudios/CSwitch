@@ -218,6 +218,9 @@ struct AppData
 	RandomSeries random;
 	AppResources resources;
 	VarArray fileWatches; //FileWatch
+	r32 prevRenderMs;
+	PerfGraph perfGraph;
+	bool showPerfGraph;
 	
 	Shader mainShader;
 	PigFont uiFont;
@@ -228,6 +231,7 @@ struct AppData
 	Texture icons[AppIcon_Count];
 	
 	u64 numFramesConsecutivelyRendered;
+	bool renderedLastFrame;
 	
 	ClayUIRenderer clay;
 	u16 clayUiFontId;

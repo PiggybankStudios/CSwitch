@@ -247,6 +247,8 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitRandomSeriesDefault(&app->random);
 	SeedRandomSeriesU64(&app->random, OsGetCurrentTimestamp(false));
 	
+	InitPerfGraph(&app->perfGraph, 1000.0f/60.0f); //TODO: How do we know the target framerate?
+	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
 	
 	app->uiFontSize = DEFAULT_UI_FONT_SIZE;
@@ -376,8 +378,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			ScratchEnd(scratch);
 			ScratchEnd(scratch2);
 			ScratchEnd(scratch3);
+			app->renderedLastFrame = false;
 			return false;
 		}
+	}
+	
+	if (appIn->frameIndex != 0 && app->renderedLastFrame)
+	{
+		UpdatePerfGraph(&app->perfGraph, ((r32)appIn->unclampedElapsedMsR64 - app->prevRenderMs), app->prevRenderMs);
 	}
 	
 	v2i screenSizei = appIn->screenSize;
@@ -487,6 +495,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				AppCloseFileTab(app->currentTabIndex);
 			}
 		}
+	}
+	
+	// +==============================+
+	// | F6 Toggles Performance Graph |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F6, false))
+	{
+		app->showPerfGraph = !app->showPerfGraph;
 	}
 	
 	// +==============================+
@@ -683,7 +699,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |          Rendering           |
 	// +==============================+
+	OsTime beforeBeginFrameTime = OsGetTime();
 	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
+	OsTime afterBeginFrameTime = OsGetTime();
 	{
 		BindShader(&app->mainShader);
 		ClearDepthBuffer(1.0f);
@@ -1226,8 +1244,22 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
 		DrawText(shortenedPath, MakeV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
 		#endif
+		
+		// +==============================+
+		// |       Render Overlays        |
+		// +==============================+
+		if (app->showPerfGraph)
+		{
+			RenderPerfGraph(&app->perfGraph, &gfx, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, MakeRec(10, 10, 400, 100));
+		}
 	}
+	OsTime beforeEndFrameTime = OsGetTime();
 	EndFrame();
+	OsTime afterEndFrameTime = OsGetTime();
+	app->renderedLastFrame = true;
+	app->prevRenderMs =
+		OsTimeDiffMsR32(beforeBeginFrameTime, afterBeginFrameTime) +
+		OsTimeDiffMsR32(beforeEndFrameTime, afterEndFrameTime);
 	
 	// +==============================+
 	// |   Handle Open File Dialog    |

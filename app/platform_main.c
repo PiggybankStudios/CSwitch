@@ -46,6 +46,11 @@ Description:
 #define ENABLE_RAYLIB_LOGS_WARNING 1
 #define ENABLE_RAYLIB_LOGS_ERROR   1
 
+#define MIN_ELAPSED_MS 5  //ms
+#define MAX_ELAPSED_MS 67 //ms
+#define TIME_SCALE_TARGET_FRAMERATE 60 //fps
+#define TIME_SCALE_ROUND_TOLERANCE 0.1
+
 // +--------------------------------------------------------------+
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
@@ -119,6 +124,30 @@ void RaylibLogCallback(int logLevel, const char* text, va_list args)
 }
 #endif //BUILD_WITH_RAYLIB
 
+void PlatUpdateAppInputTimingInfo(AppInput* appInput)
+{
+	OsTime currentTime = OsGetTime();
+	OsTime prevTime = platformData->prevFrameTime;
+	if (appInput->frameIndex == 0) { prevTime = currentTime; } //ignore difference between 0 and first frame time
+	platformData->prevFrameTime = currentTime;
+	
+	appInput->programTime = currentTime.msSinceStart;
+	appInput->programTimeRemainder = currentTime.msSinceStartRemainder;
+	
+	r32 elapsedMsRemainder = 0.0f;
+	u64 elapsedMs = OsTimeDiffMsU64(prevTime, currentTime, &elapsedMsRemainder);
+	appInput->unclampedElapsedMsR64 = (r64)elapsedMs + (r64)elapsedMsRemainder;
+	if (elapsedMs < MIN_ELAPSED_MS) { elapsedMs = MIN_ELAPSED_MS; elapsedMsRemainder = 0.0f; }
+	else if (elapsedMs > MAX_ELAPSED_MS) { elapsedMs = MAX_ELAPSED_MS; elapsedMsRemainder = 0.0f; }
+	else if (elapsedMs == MAX_ELAPSED_MS && elapsedMsRemainder > 0.0f) { elapsedMsRemainder = 0.0f; }
+	appInput->elapsedMsR64 = (r64)elapsedMs + (r64)elapsedMsRemainder;
+	appInput->elapsedMs = (r32)appInput->elapsedMsR64;
+	
+	appInput->timeScaleR64 = appInput->elapsedMsR64 / (1000.0 / TIME_SCALE_TARGET_FRAMERATE);
+	if (AreSimilarR64(appInput->timeScaleR64, 1.0, TIME_SCALE_ROUND_TOLERANCE)) { appInput->timeScaleR64 = 1.0; }
+	appInput->timeScale = (r32)appInput->timeScaleR64;
+}
+
 bool PlatDoUpdate(void)
 {
 	bool renderedFrame = true;
@@ -141,6 +170,7 @@ bool PlatDoUpdate(void)
 	bool newIsFullScreen = false;
 	bool isMouseLocked = false;
 	#endif
+	PlatUpdateAppInputTimingInfo(oldAppInput);
 	
 	if (!AreEqual(newScreenSize, oldAppInput->screenSize)) { oldAppInput->screenSizeChanged = true; }
 	oldAppInput->screenSize = newScreenSize;
@@ -161,7 +191,6 @@ bool PlatDoUpdate(void)
 	RefreshKeyboardState(&newAppInput->keyboard);
 	RefreshMouseState(&newAppInput->mouse, isMouseLocked, MakeV2((r32)newScreenSize.Width/2.0f, (r32)newScreenSize.Height/2.0f));
 	IncrementU64(newAppInput->frameIndex);
-	IncrementU64By(newAppInput->programTime, 16); //TODO: Replace this hardcoded increment!
 	platformData->oldAppInput = oldAppInput;
 	platformData->currentAppInput = newAppInput;
 	

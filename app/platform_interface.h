@@ -18,8 +18,14 @@ struct PlatformInfo
 typedef struct AppInput AppInput;
 struct AppInput
 {
-	u64 programTime; //num ms since start of program
 	u64 frameIndex;
+	u64 programTime; //num ms since start of program
+	r32 programTimeRemainder;
+	r64 unclampedElapsedMsR64;
+	r64 elapsedMsR64; //clamped between [MIN_ELAPSED_MS, MAX_ELAPSED_MS]
+	r32 elapsedMs;
+	r64 timeScaleR64;
+	r32 timeScale;
 	
 	KeyboardState keyboard;
 	MouseState mouse;
