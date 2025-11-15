@@ -344,6 +344,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	UpdateFileWatches(&app->fileWatches);
 	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	UpdatePopupDialog(&app->popup);
+	if (appIn->frameIndex != 0 && app->renderedLastFrame)
+	{
+		UpdatePerfGraph(&app->perfGraph, ((r32)appIn->unclampedElapsedMsR64 - app->prevRenderMs), app->prevRenderMs);
+	}
 	
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
@@ -381,11 +385,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			app->renderedLastFrame = false;
 			return false;
 		}
-	}
-	
-	if (appIn->frameIndex != 0 && app->renderedLastFrame)
-	{
-		UpdatePerfGraph(&app->perfGraph, ((r32)appIn->unclampedElapsedMsR64 - app->prevRenderMs), app->prevRenderMs);
 	}
 	
 	v2i screenSizei = appIn->screenSize;
