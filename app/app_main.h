@@ -277,6 +277,8 @@ struct AppData
 	bool enableFrameUpdateIndicator;
 	#endif
 	bool minimalModeEnabled;
+	
+	SpriteSheet testSheet;
 };
 
 #endif //  _APP_MAIN_H

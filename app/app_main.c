@@ -324,6 +324,20 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	app->tooltipWindowHandle = NULL;
 	#endif
 	
+	app->testSheet = LoadSpriteSheet(stdHeap, StrLit("testSheet"), FilePathLit("resources/image/notifications_2x2.png"), true);
+	if (app->testSheet.error == Result_Success)
+	{
+		PrintLine_E("Loaded testSheet: grid=%dx%d cell=%dx%d texture=%dx%d",
+			app->testSheet.gridWidth, app->testSheet.gridHeight,
+			app->testSheet.cellWidth, app->testSheet.cellHeight,
+			app->testSheet.texture.Width, app->testSheet.texture.Height
+		);
+	}
+	else
+	{
+		PrintLine_E("Failed to parse SpriteSheet: %s", GetResultStr(app->testSheet.error));
+	}
+	
 	app->initialized = true;
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -1213,6 +1227,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (app->currentTab == nullptr)
 		{
 			DrawClayTextboxText(&app->testTextbox);
+			
+			DrawSheetCell(&app->testSheet, MakeV2i(1, 0), MakeRec(10, 300, 64, 64), White);
+			DrawSheetCell(&app->testSheet, MakeV2i(0, 1), MakeRec(10, 364, 64, 64), White);
+			for (u64 index = 0; index < 128; index++)
+			{
+				DrawNamedSheetCell(&app->testSheet, StrLit("error"), MakeRec(10 + 2.0f*index, 428, 64, 64), ((index%2) == 0) ? MonokaiBlue : White);
+			}
 		}
 		
 		// +==============================+
