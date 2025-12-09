@@ -263,6 +263,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
 	
 	InitTooltipState(stdHeap, &app->tooltip);
+	InitTooltipRegistry(stdHeap, &app->tooltips);
 	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
 	app->nextTooltipId = 1;
 	
@@ -377,6 +378,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (AppCheckForFileChanges()) { refreshScreen = true; }
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
 		if (app->tooltip.isOpen) { refreshScreen = true; }
+		if (app->tooltips.openTooltipId != TOOLTIP_ID_INVALID || app->tooltips.hoverTooltipId != TOOLTIP_ID_INVALID) { refreshScreen = true; }
 		if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 		{
 			ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
@@ -752,7 +754,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			nullptr, //TODO: Fill focusedElementPntr
 			CursorShape_Default,
 			OsWindowHandleEmpty,
-			appIn->programTime
+			appIn->programTime,
+			&app->tooltips
 		);
 		
 		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
@@ -861,6 +864,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Clay__CloseElement();
 						} Clay__CloseElement();
 						
+						if (app->fileMenuTooltipId == TOOLTIP_ID_INVALID)
+						{
+							app->fileMenuTooltipId = RegisterTooltip(&app->tooltips, StrLit("File_TopBtn"), Rec_Zero, StrLit("File related actions"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
+						}
+						else
+						{
+							UpdateTooltipDisplayStr(&app->tooltips, app->fileMenuTooltipId, StrLit("File related actions"));
+						}
+						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
 							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), true, &app->icons[AppIcon_SmallBtn]))
@@ -923,6 +935,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						
 						if (app->currentTab != nullptr)
 						{
+							if (app->filePathTooltipId2 == TOOLTIP_ID_INVALID)
+							{
+								app->filePathTooltipId2 = RegisterTooltip(&app->tooltips, StrLit("FilePathDisplay"), Rec_Zero, app->currentTab->filePath, &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
+							}
+							else
+							{
+								UpdateTooltipDisplayStr(&app->tooltips, app->filePathTooltipId2, app->currentTab->filePath);
+							}
+							
 							Str8 filePathScratch = AllocStr8(uiArena, app->currentTab->filePath);
 							CLAY({ .id = CLAY_ID("FilePathDisplay") })
 							{
@@ -939,6 +960,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								);
 							}
 							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)) } } }) {}
+						}
+						else if (app->filePathTooltipId2 != TOOLTIP_ID_INVALID)
+						{
+							UnregisterTooltip(&app->tooltips, app->filePathTooltipId2);
+							app->filePathTooltipId2 = TOOLTIP_ID_INVALID;
 						}
 						
 						#if DEBUG_BUILD
@@ -1215,6 +1241,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				
 				RenderPopupDialog(&app->popup);
 				DoUiNotificationQueue(&uiContext, &app->notificationQueue, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, appIn->screenSize);
+				DoUiTooltips(&uiContext, &app->tooltips, screenSize);
 			}
 		}
 		
@@ -1224,17 +1251,45 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		ArenaResetToMark(uiArena, uiArenaMark);
 		uiArena = nullptr;
 		
+		// +==============================+
+		// |  Closed File Debug Displays  |
+		// +==============================+
+		#if DEBUG_BUILD
 		if (app->currentTab == nullptr)
 		{
 			DrawClayTextboxText(&app->testTextbox);
 			
+			#if 0
 			DrawSheetCell(&app->testSheet, MakeV2i(1, 0), MakeRec(10, 300, 64, 64), White);
 			DrawSheetCell(&app->testSheet, MakeV2i(0, 1), MakeRec(10, 364, 64, 64), White);
 			for (u64 index = 0; index < 128; index++)
 			{
 				DrawNamedSheetCell(&app->testSheet, StrLit("error"), MakeRec(10 + 2.0f*index, 428, 64, 64), ((index%2) == 0) ? MonokaiBlue : White);
 			}
+			#endif
+			
+			if (app->testTooltipId == TOOLTIP_ID_INVALID)
+			{
+				app->testTooltipId = RegisterTooltip(&app->tooltips, Str8_Empty, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
+			}
+			else
+			{
+				UpdateTooltipDisplayStr(&app->tooltips, app->testTooltipId, StrLit("This is a test!"));
+			}
+			
+			RegisteredTooltip* hoverTooltip = TryFindRegisteredTooltip(&app->tooltips, app->tooltips.hoverTooltipId);
+			Str8 hoverTooltipStr = (hoverTooltip != nullptr) ? hoverTooltip->displayStr : Str8_Empty;
+			RegisteredTooltip* openTooltip = TryFindRegisteredTooltip(&app->tooltips, app->tooltips.openTooltipId);
+			Str8 openTooltipStr = (openTooltip != nullptr) ? openTooltip->displayStr : Str8_Empty;
+			BindFont(&app->uiFont);
+			v2 textPos = MakeV2(10, 200);
+			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
 		}
+		#endif
 		
 		// +==============================+
 		// |    Update TooltipRegions     |
@@ -1267,7 +1322,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			}
 		}
 		
-		RenderTooltip(&app->tooltip);
+		// RenderTooltip(&app->tooltip);
 		
 		#if 0
 		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);

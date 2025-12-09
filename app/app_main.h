@@ -247,6 +247,7 @@ struct AppData
 	PopupDialog popup;
 	NotificationQueue notificationQueue;
 	Texture notificationIconsTexture;
+	TooltipRegistry tooltips;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
@@ -255,7 +256,11 @@ struct AppData
 	uxx currentTabIndex;
 	FileTab* currentTab;
 	
+	u64 filePathTooltipId2;
+	u64 fileMenuTooltipId;
+	
 	ClayTextbox testTextbox;
+	u64 testTooltipId;
 	
 	#if 0
 	TOOLINFO tooltipInfo;
