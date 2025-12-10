@@ -60,7 +60,6 @@ static Arena* stdHeap = nullptr;
 #include "app_file_watch.c"
 #include "app_clay_helpers.c"
 #include "app_textbox.c"
-#include "app_tooltips.c"
 #include "app_popup_dialog.c"
 #include "app_helpers.c"
 #include "app_tab.c"
@@ -259,13 +258,11 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	Assert(fontBakeSuccess);
 	
 	InitClayUIRenderer(stdHeap, V2_Zero, &app->clay);
+	AttachTooltipRegistryToUIRenderer(&app->clay, &app->tooltips);
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
 	
-	InitTooltipState(stdHeap, &app->tooltip);
 	InitTooltipRegistry(stdHeap, &app->tooltips);
-	InitVarArray(TooltipRegion, &app->tooltipRegions, stdHeap);
-	app->nextTooltipId = 1;
 	
 	// InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
 	
@@ -310,11 +307,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 		RecentFile* mostRecentFile = VarArrayGetLast(RecentFile, &app->recentFiles);
 		AppOpenFileTab(mostRecentFile->path);
 	}
-	
-	TooltipRegion* filePathTooltip = AddTooltipClay(&app->tooltipRegions, CLAY_ID("FilePathDisplay"), app->currentTab != nullptr ? app->currentTab->filePath : Str8_Empty, DEFAULT_TOOLTIP_DELAY, 1);
-	NotNull(filePathTooltip);
-	filePathTooltip->enabled = (app->currentTab != nullptr);
-	app->filePathTooltipId = filePathTooltip->id;
 	
 	#if 0
 	INITCOMMONCONTROLSEX commonControls = ZEROED;
@@ -362,7 +354,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	
 	TracyCZoneN(Zone_Update, "Update", true);
 	UpdateFileWatches(&app->fileWatches);
-	UpdateTooltipState(&app->tooltipRegions, &app->tooltip);
 	UpdatePopupDialog(&app->popup);
 	if (appIn->frameIndex != 0 && app->renderedLastFrame)
 	{
@@ -377,7 +368,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		bool refreshScreen = app->sleepingDisabled;
 		if (AppCheckForFileChanges()) { refreshScreen = true; }
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
-		if (app->tooltip.isOpen) { refreshScreen = true; }
 		if (app->tooltips.openTooltipId != TOOLTIP_ID_INVALID || app->tooltips.hoverTooltipId != TOOLTIP_ID_INVALID) { refreshScreen = true; }
 		if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 		{
@@ -425,19 +415,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		VarArrayLoopGet(Str8, droppedFilePath, &appIn->droppedFilePaths, pIndex);
 		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(*droppedFilePath));
 		AppOpenFileTab(*droppedFilePath);
-	}
-	
-	VarArrayLoop(&app->recentFiles, rIndex)
-	{
-		VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex);
-		if (recentFile->tooltipId != 0)
-		{
-			TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, recentFile->tooltipId);
-			if (tooltip != nullptr)
-			{
-				tooltip->enabled = app->isOpenRecentSubmenuOpen;
-			}
-		}
 	}
 	
 	VarArrayLoop(&app->tabs, tIndex)
@@ -799,7 +776,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
-							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", true, &app->icons[AppIcon_OpenFile]))
+							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
 							{
 								shouldOpenFile = true;
 								app->isFileMenuOpen = false;
@@ -814,7 +791,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
 										Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
 										bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
-										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), !isOpenFile && recentFile->fileExists, nullptr))
+										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), recentFile->path, !isOpenFile && recentFile->fileExists, nullptr))
 										{
 											FileTab* newTab = AppOpenFileTab(recentFile->path);
 											if (newTab != nullptr)
@@ -825,7 +802,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										} Clay__CloseElement();
 									}
 									
-									if (ClayBtn("Clear Recent Files", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
+									if (ClayBtn("Clear Recent Files", "", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
 									{
 										OpenPopupDialog(stdHeap, &app->popup,
 											ScratchPrintStr("Are you sure you want to clear all %llu recent file entr%s", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
@@ -843,10 +820,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							}
 							else
 							{
-								if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
+								if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
 							}
 							
-							if (ClayBtn("Reset File", "", (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), &app->icons[AppIcon_ResetFile]))
+							if (ClayBtn("Reset File", "", "Reset file to how it was when first opened", (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), &app->icons[AppIcon_ResetFile]))
 							{
 								OpenPopupDialog(stdHeap, &app->popup,
 									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
@@ -856,7 +833,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, ERROR_RED);
 							} Clay__CloseElement();
 							
-							if (ClayBtn("Close File", "Ctrl+W", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
+							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
 							{
 								AppCloseFileTab(app->currentTabIndex);
 							} Clay__CloseElement();
@@ -864,50 +841,49 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Clay__CloseElement();
 							Clay__CloseElement();
 						} Clay__CloseElement();
-						app->fileMenuTooltipId = SoftRegisterTooltip(&app->tooltips, app->fileMenuTooltipId, StrLit("File_TopBtn"), Rec_Zero, StrLit("File related actions"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
-							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), true, &app->icons[AppIcon_SmallBtn]))
+							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
 							{
 								app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
+							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 							{
 								platform->SetWindowTopmost(!appIn->isWindowTopmost);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), Str8_Empty, true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
 							{
 								app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_SmoothScroll]))
+							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"), true, &app->icons[AppIcon_SmoothScroll]))
 							{
 								app->smoothScrollingEnabled = !app->smoothScrollingEnabled;
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), Str8_Empty, true, &app->icons[AppIcon_Tooltip]))
+							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"), true, &app->icons[AppIcon_Tooltip]))
 							{
 								app->optionTooltipsEnabled = !app->optionTooltipsEnabled;
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), true, &app->icons[AppIcon_Topbar]))
+							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"), true, &app->icons[AppIcon_Topbar]))
 							{
 								app->minimalModeEnabled = !app->minimalModeEnabled;
 							} Clay__CloseElement();
 							
 							#if DEBUG_BUILD
-							if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("~"), true, &app->icons[AppIcon_Debug]))
+							if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("~"), StrLit("Toggles the debug sidebar for Clay"), true, &app->icons[AppIcon_Debug]))
 							{
 								Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 							} Clay__CloseElement();
-							if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, true, nullptr))
+							if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing"), true, nullptr))
 							{
 								app->sleepingDisabled = !app->sleepingDisabled;
 							} Clay__CloseElement();
-							if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, true, nullptr))
+							if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate"), true, nullptr))
 							{
 								app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
 							} Clay__CloseElement();
@@ -922,16 +898,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Clay__CloseElement();
 							Clay__CloseElement();
 						} Clay__CloseElement();
-						app->viewMenuTooltipId = SoftRegisterTooltip(&app->tooltips, app->viewMenuTooltipId, StrLit("View_TopBtn"), Rec_Zero, StrLit("Options related to visuals"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 						
 						CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
 						
 						if (app->currentTab != nullptr)
 						{
-							app->filePathTooltipId2 = SoftRegisterTooltip(&app->tooltips, app->filePathTooltipId2, StrLit("FilePathDisplay"), Rec_Zero, app->currentTab->filePath, &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
+							// app->filePathTooltipId2 = SoftRegisterTooltip(&app->tooltips, app->filePathTooltipId2, StrLit("FilePathDisplay"), Rec_Zero, app->currentTab->filePath, &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 							
 							Str8 filePathScratch = AllocStr8(uiArena, app->currentTab->filePath);
-							CLAY({ .id = CLAY_ID("FilePathDisplay") })
+							CLAY({ .id = CLAY_ID("FilePathDisplay"),
+								.tooltip = {
+									.text = filePathScratch,
+									.fontId = app->clayUiFontId,
+									.fontSize = (u16)app->uiFontSize,
+								},
+							})
 							{
 								CLAY_TEXT(
 									filePathScratch,
@@ -1264,39 +1245,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
 		}
 		#endif
-		
-		// +==============================+
-		// |    Update TooltipRegions     |
-		// +==============================+
-		{
-			Assert(app->filePathTooltipId != 0);
-			TooltipRegion* region = FindTooltipRegionById(&app->tooltipRegions, app->filePathTooltipId);
-			NotNull(region);
-			Str8 displayStr = (app->currentTab != nullptr) ? app->currentTab->filePath : Str8_Empty;
-			if (!StrExactEquals(region->displayStr, displayStr))
-			{
-				FreeStr8(region->arena, &region->displayStr);
-				region->displayStr = AllocStr8(region->arena, displayStr);
-			}
-			region->enabled = (app->currentTab != nullptr);
-		}
-		VarArrayLoop(&app->tabs, tIndex)
-		{
-			VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
-			bool isCurrentTab = (tIndex == app->currentTabIndex);
-			VarArrayLoop(&tab->fileOptions, oIndex)
-			{
-				VarArrayLoopGet(FileOption, option, &tab->fileOptions, oIndex);
-				if (option->tooltipId != 0)
-				{
-					TooltipRegion* tooltip = FindTooltipRegionById(&app->tooltipRegions, option->tooltipId);
-					NotNull(tooltip);
-					tooltip->enabled = (app->optionTooltipsEnabled && isCurrentTab);
-				}
-			}
-		}
-		
-		// RenderTooltip(&app->tooltip);
 		
 		#if 0
 		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);

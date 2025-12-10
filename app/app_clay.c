@@ -186,7 +186,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Texture* icon)
+bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* icon)
 {
 	ScratchBegin(scratch);
 	Str8 fullIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(idStr));
@@ -208,6 +208,11 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=borderColor },
+		.tooltip = {
+			.text = tooltipStr,
+			.fontId = app->clayUiFontId,
+			.fontSize = (u16)app->uiFontSize,
+		},
 	});
 	CLAY({
 		.layout = {
@@ -263,13 +268,13 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, bool isEnabled, Text
 	ScratchEnd(scratch);
 	return (isHovered && isEnabled && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
-bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, bool isEnabled, Texture* icon)
+bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStrEx(btnText, btnText, hotkeyStr, isEnabled, icon);
+	return ClayBtnStrEx(btnText, btnText, hotkeyStr, tooltipStr, isEnabled, icon);
 }
-bool ClayBtn(const char* btnText, const char* hotkeyStr, bool isEnabled, Texture* icon)
+bool ClayBtn(const char* btnText, const char* hotkeyStr, const char* tooltipStr, bool isEnabled, Texture* icon)
 {
-	return ClayBtnStr(MakeStr8Nt(btnText), MakeStr8Nt(hotkeyStr), isEnabled, icon);
+	return ClayBtnStr(MakeStr8Nt(btnText), MakeStr8Nt(hotkeyStr), MakeStr8Nt(tooltipStr), isEnabled, icon);
 }
 
 //Call Clay__CloseElement once after if statement
@@ -297,6 +302,13 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 		.border = {
 			.color = outlineColor,
 			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
+		},
+		.tooltip = {
+			.text = nameStr,
+			.fontId = app->clayUiFontId,
+			.fontSize = (u16)app->uiFontSize,
+			.inactive = !app->optionTooltipsEnabled,
+			.containerId = containerId,
 		},
 	})
 	{
@@ -355,6 +367,13 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 		.border = {
 			.color = outlineColor,
 			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
+		},
+		.tooltip = {
+			.text = idStr,
+			.fontId = app->clayUiFontId,
+			.fontSize = (u16)app->uiFontSize,
+			.inactive = !app->optionTooltipsEnabled,
+			.containerId = containerId,
 		},
 	})
 	{

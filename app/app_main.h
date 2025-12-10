@@ -51,7 +51,6 @@ struct RecentFile
 {
 	Str8 path;
 	bool fileExists;
-	u64 tooltipId;
 };
 
 typedef struct FileWatch FileWatch;
@@ -68,36 +67,6 @@ struct FileWatch
 	bool fileExists;
 	bool gotWriteTime;
 	OsFileWriteTime writeTime;
-};
-
-typedef struct TooltipRegion TooltipRegion;
-struct TooltipRegion
-{
-	u64 id;
-	u64 delay;
-	bool enabled;
-	u64 layer; //higher numbers have higher priority when disambiguating overlapping regions
-	Str8 displayStr;
-	Arena* arena;
-	
-	rec fixedRec;
-	ClayId clayId;
-	ClayId clayContainerId;
-};
-
-typedef struct TooltipState TooltipState;
-struct TooltipState
-{
-	Arena* arena;
-	u64 lastMouseMoveTime;
-	v2 lastMouseMovePos;
-	u64 lastMouseMoveRegionId;
-	bool isOpen;
-	u64 regionId;
-	rec mainRec;
-	v2 focusPos;
-	Str8 displayStr;
-	TextMeasure displayStrMeasure;
 };
 
 typedef struct ScrollbarInteractionState ScrollbarInteractionState;
@@ -256,10 +225,6 @@ struct AppData
 	uxx currentTabIndex;
 	FileTab* currentTab;
 	
-	u64 filePathTooltipId2;
-	u64 fileMenuTooltipId;
-	u64 viewMenuTooltipId;
-	
 	ClayTextbox testTextbox;
 	u64 testTooltipId;
 	
@@ -267,11 +232,6 @@ struct AppData
 	TOOLINFO tooltipInfo;
 	HWND tooltipWindowHandle;
 	#endif
-	
-	u64 nextTooltipId;
-	VarArray tooltipRegions;
-	TooltipState tooltip;
-	u64 filePathTooltipId;
 	
 	//User Options
 	bool smallBtnModeEnabled;

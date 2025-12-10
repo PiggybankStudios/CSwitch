@@ -12,7 +12,6 @@ void FreeFileOption(FileOption* option)
 	FreeStr8(stdHeap, &option->name);
 	FreeStr8(stdHeap, &option->abbreviation);
 	FreeStr8(stdHeap, &option->valueStr);
-	RemoveTooltipRegionById(&app->tooltipRegions, option->tooltipId);
 	ClearPointer(option);
 }
 
@@ -93,18 +92,6 @@ void AppChangeTab(uxx newTabIndex)
 	app->currentTabIndex = newTabIndex;
 	app->currentTab = VarArrayGetHard(FileTab, &app->tabs, app->currentTabIndex);
 	platform->SetWindowTitle(ScratchPrintStr("%.*s - %s", StrPrint(app->currentTab->filePath), PROJECT_READABLE_NAME_STR));
-}
-
-void AddTooltipForFileOption(FileOption* option, uxx lineIndex)
-{
-	ScratchBegin(scratch);
-	Str8 tooltipStr = PrintInArenaStr(scratch, "%llu: %.*s", lineIndex, StrPrint(option->name));
-	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(option->name));
-	ClayId btnId = ToClayId(btnIdStr);
-	TooltipRegion* tooltip = AddTooltipClay(&app->tooltipRegions, btnId, tooltipStr, OPTION_NAME_TOOLTIP_DELAY, 0);
-	tooltip->clayContainerId = CLAY_ID("OptionsList");
-	option->tooltipId = tooltip->id;
-	ScratchEnd(scratch);
 }
 
 Str8 GetOptionNameAbbreviation(Arena* arena, Str8 fullName)
@@ -214,7 +201,6 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = commentStartIndex;
 					newOption->fileContentsEndIndex = defineStartIndex;
 					newOption->valueStr = AllocStr8(stdHeap, commentStartStr);
-					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 				}
@@ -243,7 +229,6 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = lineEndIndex - boolValueStr.length;
 					newOption->fileContentsEndIndex = lineEndIndex;
 					newOption->valueStr = AllocStr8(stdHeap, StrSlice(tab->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
-					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 					break;
@@ -269,7 +254,6 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = lineStartIndex;
 					newOption->fileContentsEndIndex = lineStartIndex;
 					newOption->valueStr = Str8_Empty;
-					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 				}
@@ -307,7 +291,6 @@ void UpdateFileTabOptions(FileTab* tab)
 					newOption->fileContentsStartIndex = lineStartIndex + (uxx)(valuePart.chars - line.chars);
 					newOption->fileContentsEndIndex = newOption->fileContentsStartIndex + valuePart.length;
 					newOption->valueStr = AllocStr8(stdHeap, StrSlice(tab->fileContents, newOption->fileContentsStartIndex, newOption->fileContentsEndIndex));
-					AddTooltipForFileOption(newOption, lineParser.lineIndex);
 					prevOption = newOption;
 					isOption = true;
 				}
