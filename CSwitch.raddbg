@@ -1,5 +1,6 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "app/app_main.c"
 recent_file: path: "core/gfx/gfx_system.h"
 recent_file: path: "core/misc/misc_printing.h"
 recent_file: path: "app/app_textbox.c"
@@ -28,20 +29,25 @@ debug_info:
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66200763463874
+  timestamp: 66200772538079
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66200763463076
+  timestamp: 66200772537389
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66200762701658
+  timestamp: 66200772538868
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/tracy.pdb"
   timestamp: 66198488028371
+}
+type_view:
+{
+  type: Color32
+  expr: "rows($, hex(valueU32), (int)r, (int)g, (int)b, (int)a)"
 }

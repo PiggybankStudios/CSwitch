@@ -35,6 +35,7 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_theme.h"
 #include "app_icons.h"
 #include "app_resources.h"
 #include "app_main.h"
@@ -58,6 +59,7 @@ static Arena* stdHeap = nullptr;
 #include "main2d_shader.glsl.h"
 #include "app_resources.c"
 #include "app_file_watch.c"
+#include "app_theme.c"
 #include "app_clay_helpers.c"
 #include "app_textbox.c"
 #include "app_popup_dialog.c"
@@ -226,6 +228,13 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
+	
+	InitDarkThemePreset(&app->themePresets[PresetTheme_Dark]);
+	InitLightThemePreset(&app->themePresets[PresetTheme_Light]);
+	InitDebugThemePreset(&app->themePresets[PresetTheme_Debug]);
+	ClearStruct(app->themeOverrides);
+	app->currentThemePreset = DEFAULT_THEME_PRESET;
+	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
 	
@@ -705,7 +714,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	TracyCZoneEnd(Zone_Update);
 	OsTime afterUpdateTime = OsGetTime();
 	TracyCZoneN(Zone_BeginFrame, "BeginFrame", true);
-	BeginFrame(platform->GetSokolSwapchain(), screenSizei, BACKGROUND_BLACK, 1.0f);
+	BeginFrame(platform->GetSokolSwapchain(), screenSizei, GetThemeColor(BackgroundBlack), 1.0f);
 	TracyCZoneEnd(Zone_BeginFrame);
 	OsTime beforeRenderTime = OsGetTime();
 	{
@@ -748,7 +757,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 					.padding = CLAY_PADDING_ALL(fullscreenBorderThickness)
 				},
 				.border = {
-					.color=SELECTED_BLUE,
+					.color=GetThemeColor(Selected),
 					.width=CLAY_BORDER_OUTSIDE(UI_BORDER(fullscreenBorderThickness)),
 				},
 			})
@@ -769,8 +778,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							.childGap = 2,
 							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 						},
-						.backgroundColor = BACKGROUND_GRAY,
-						.border = { .color=OUTLINE_GRAY, .width={ .bottom=UI_BORDER(1) } },
+						.backgroundColor = GetThemeColor(BackgroundGray),
+						.border = { .color=GetThemeColor(Outline), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
 						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
@@ -808,8 +817,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 											ScratchPrintStr("Are you sure you want to clear all %llu recent file entr%s", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
 											AppClearRecentFilesPopupCallback, nullptr
 										);
-										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, TEXT_GRAY);
-										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, ERROR_RED);
+										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(TextGray));
+										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, GetThemeColor(Error));
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
@@ -829,8 +838,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
 									AppResetCurrentFilePopupCallback, nullptr
 								);
-								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, TEXT_GRAY);
-								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, ERROR_RED);
+								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(TextGray));
+								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(Error));
 							} Clay__CloseElement();
 							
 							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
@@ -844,6 +853,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
+							Str8 tooltipStr = PrintInArenaStr(uiArena, "Theme Background: 0x%08X%s", GetThemeColor(BackgroundBlack).valueU32, app->themeOverrides.overridden[ThemeColor_BackgroundBlack] ? " (Overridden)" : " (Default)");
+							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetPresetThemeStr(app->currentThemePreset)), Str8_Empty, tooltipStr, true, nullptr)) //StrLit("Toggle between dark and light theme")
+							{
+								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
+							} Clay__CloseElement();
+							
 							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
 							{
 								app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
@@ -919,7 +934,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
-										.textColor = TEXT_LIGHT_GRAY,
+										.textColor = GetThemeColor(TextLightGray),
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.userData = { .contraction = TextContraction_EllipseFilePath },
@@ -965,7 +980,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
 							.padding = { .top = UI_U16(4) },
 						},
-						.backgroundColor = BACKGROUND_GRAY,
+						.backgroundColor = GetThemeColor(BackgroundGray),
 					})
 					{
 						bool wasPrevHovered = false;
@@ -985,7 +1000,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									.layout = {
 										.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(1)), .height = CLAY_SIZING_GROW(0) },
 									},
-									.backgroundColor = (shouldShowDivider ? TEXT_GRAY : Transparent),
+									.backgroundColor = (shouldShowDivider ? GetThemeColor(TextGray) : Transparent),
 								}) {}
 							}
 							
@@ -996,9 +1011,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									.padding = CLAY_PADDING_ALL(UI_U16(4)),
 								},
 								.cornerRadius = { .topLeft=UI_U16(4), .topRight=UI_U16(4), .bottomLeft=0, .bottomRight=0 },
-								.backgroundColor = isCurrentTab ? BACKGROUND_BLACK : (isHovered ? HOVERED_BLUE : BACKGROUND_GRAY),
+								.backgroundColor = isCurrentTab ? GetThemeColor(BackgroundBlack) : (isHovered ? GetThemeColor(Hovered) : GetThemeColor(BackgroundGray)),
 								.border = {
-									.color = SELECTED_BLUE,
+									.color = GetThemeColor(Selected),
 									.width = { .left=UI_BORDER(borderThickness), .top=UI_BORDER(borderThickness), .right=UI_BORDER(borderThickness), .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
 								},
 							})
@@ -1011,7 +1026,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
-										.textColor = (isCurrentTab || isHovered) ? TEXT_WHITE : TEXT_LIGHT_GRAY,
+										.textColor = (isCurrentTab || isHovered) ? GetThemeColor(TextWhite) : GetThemeColor(TextLightGray),
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.userData = { .contraction = TextContraction_EllipseRight },
@@ -1171,7 +1186,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						{
 							CLAY({
 								.layout = { .padding = CLAY_PADDING_ALL(UI_BORDER(1)), .layoutDirection = CLAY_LEFT_TO_RIGHT, },
-								.border = { .color = TEXT_LIGHT_GRAY, .width=CLAY_BORDER_ALL(UI_BORDER(1)) },
+								.border = { .color = GetThemeColor(TextLightGray), .width=CLAY_BORDER_ALL(UI_BORDER(1)) },
 							})
 							{
 								FontAtlas* uiAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
@@ -1238,11 +1253,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			Str8 openTooltipStr = (openTooltip != nullptr) ? openTooltip->displayStr : Str8_Empty;
 			BindFont(&app->uiFont);
 			v2 textPos = MakeV2(10, 200);
-			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, TEXT_LIGHT_GRAY); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
 		}
 		#endif
 		

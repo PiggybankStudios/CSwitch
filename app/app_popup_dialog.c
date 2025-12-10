@@ -153,7 +153,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 		.backgroundColor = ColorWithAlpha(Black, POPUP_DARKEN_AMOUNT * dialogAlpha),
 	})
 	{
-		Color32 dialogColor = ColorWithAlpha(BACKGROUND_GRAY, dialogAlpha);
+		Color32 dialogColor = ColorWithAlpha(GetThemeColor(BackgroundGray), dialogAlpha);
 		CLAY({ .id = CLAY_ID("PopupDialog"),
 			.layout = {
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -165,7 +165,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 			},
 			.backgroundColor = dialogColor,
 			.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(8)),
-			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = TEXT_LIGHT_GRAY },
+			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = GetThemeColor(TextLightGray) },
 		})
 		{
 			CLAY({ .layout={ .sizing={ .height=CLAY_SIZING_GROW(UI_U16(10), 0) } } }) {}
@@ -175,7 +175,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 				CLAY_TEXT_CONFIG({
 					.fontId = app->clayUiFontId,
 					.fontSize = (u16)app->uiFontSize,
-					.textColor = ColorWithAlpha(TEXT_WHITE, textAlpha),
+					.textColor = ColorWithAlpha(GetThemeColor(TextWhite), textAlpha),
 				})
 			);
 			
@@ -225,7 +225,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 							CLAY_TEXT_CONFIG({
 								.fontId = app->clayUiFontId,
 								.fontSize = (u16)app->uiFontSize,
-								.textColor = ColorWithAlpha(TEXT_WHITE, textAlpha),
+								.textColor = ColorWithAlpha(GetThemeColor(TextWhite), textAlpha),
 							})
 						);
 					}

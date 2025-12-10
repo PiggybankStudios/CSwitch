@@ -199,6 +199,10 @@ struct AppData
 	PigFont mainFont;
 	Texture icons[AppIcon_Count];
 	
+	Theme themePresets[PresetTheme_Count];
+	PresetTheme currentThemePreset;
+	Theme themeOverrides;
+	
 	u64 numFramesConsecutivelyRendered;
 	bool renderedLastFrame;
 	

@@ -42,16 +42,7 @@ Date:   02\25\2025
 #define CHECK_FILE_WRITE_TIME_PERIOD 300 //ms
 #define FILE_RELOAD_DELAY            100 //ms
 
-#define TEXT_WHITE           MakeColor(221, 222, 224, 255) //FFDDDEE0
-#define TEXT_LIGHT_GRAY      MakeColor(175, 177, 179, 255) //FFAFB1B3
-#define TEXT_GRAY            MakeColor(107, 112, 120, 255) //FF6B7078
-#define BACKGROUND_BLACK     MakeColor(25, 27, 28, 255)    //FF191B1C
-#define BACKGROUND_DARK_GRAY MakeColor(31, 34, 35, 255)    //FF1F2223
-#define BACKGROUND_GRAY      MakeColor(39, 42, 43, 255)    //FF272A2B
-#define OUTLINE_GRAY         MakeColor(52, 58, 59, 255)    //FF343A3B
-#define HOVERED_BLUE         MakeColor(16, 60, 76, 255)    //FF103C4C
-#define SELECTED_BLUE        MakeColor(0, 121, 166, 255)   //FF0079A6
-#define ERROR_RED            MakeColor(255, 102, 102, 255) //FFFF6666
+#define DEFAULT_THEME_PRESET PresetTheme_Dark
 
 #define SMALL_BTN_PADDING_X  8 //px
 #define SMALL_BTN_PADDING_Y  8 //px

@@ -26,8 +26,8 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	bool isBtnHovered = IsMouseOverClay(btnId);
 	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
-	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
-	Color32 borderColor = SELECTED_BLUE;
+	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? GetThemeColor(Hovered) : Transparent;
+	Color32 borderColor = GetThemeColor(Selected);
 	u16 borderWidth = isHovered ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
@@ -49,7 +49,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
-				.textColor = TEXT_WHITE,
+				.textColor = GetThemeColor(TextWhite),
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
 			})
@@ -89,8 +89,8 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 				},
 				.childGap = 2,
 			},
-			.backgroundColor = BACKGROUND_GRAY,
-			.border = { .color=OUTLINE_GRAY, .width={ .bottom=1 } },
+			.backgroundColor = GetThemeColor(BackgroundGray),
+			.border = { .color=GetThemeColor(Outline), .width={ .bottom=1 } },
 			.cornerRadius = { 0, 0, 4, 4 },
 		});
 	}
@@ -112,8 +112,8 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
 	bool isHovered = (isBtnHovered || isMenuHovered);
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
-	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? HOVERED_BLUE : Transparent;
-	Color32 borderColor = SELECTED_BLUE;
+	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? GetThemeColor(Hovered) : Transparent;
+	Color32 borderColor = GetThemeColor(Selected);
 	u16 borderWidth = isHovered ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
@@ -127,14 +127,14 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	{
 		if (icon != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), TEXT_WHITE);
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), GetThemeColor(TextWhite));
 		}
 		CLAY_TEXT(
 			MakeStr8Nt(btnText),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
-				.textColor = TEXT_WHITE,
+				.textColor = GetThemeColor(TextWhite),
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = { .contraction = TextContraction_ClipRight },
@@ -176,8 +176,8 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 				.padding = CLAY_PADDING_ALL(UI_U16(2)),
 				.childGap = 2, //TOOD: Convert this to use UI_ macros!
 			},
-			.backgroundColor = BACKGROUND_GRAY,
-			.border = { .color=OUTLINE_GRAY, .width={ .bottom=1 } }, //TOOD: Convert this to use UI_ macros!
+			.backgroundColor = GetThemeColor(BackgroundGray),
+			.border = { .color=GetThemeColor(Outline), .width={ .bottom=1 } }, //TOOD: Convert this to use UI_ macros!
 			.cornerRadius = { 0, 0, 4, 4 }, //TOOD: Convert this to use UI_ macros!
 		});
 	}
@@ -195,8 +195,8 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	ClayId hotkeyId = ToClayId(hotkeyIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	Color32 backgroundColor = !isEnabled ? BACKGROUND_BLACK : (isPressed ? SELECTED_BLUE : (isHovered ? HOVERED_BLUE : Transparent));
-	Color32 borderColor = SELECTED_BLUE;
+	Color32 backgroundColor = !isEnabled ? GetThemeColor(BackgroundBlack) : (isPressed ? GetThemeColor(Selected) : (isHovered ? GetThemeColor(Hovered) : Transparent));
+	Color32 borderColor = GetThemeColor(Selected);
 	u16 borderWidth = (isHovered && isEnabled) ? 1 : 0;
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
@@ -225,14 +225,14 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	{
 		if (icon != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), TEXT_WHITE);
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), GetThemeColor(TextWhite));
 		}
 		CLAY_TEXT(
 			btnText,
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
-				.textColor = TEXT_WHITE,
+				.textColor = GetThemeColor(TextWhite),
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = { .contraction = TextContraction_ClipRight },
@@ -247,7 +247,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 					.layoutDirection = CLAY_LEFT_TO_RIGHT,
 					.padding = CLAY_PADDING_ALL(UI_U16(2)),
 				},
-				.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color = TEXT_GRAY },
+				.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color = GetThemeColor(TextGray) },
 				.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(5)),
 			})
 			{
@@ -256,7 +256,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 					CLAY_TEXT_CONFIG({
 						.fontId = app->clayUiFontId,
 						.fontSize = (u16)app->uiFontSize,
-						.textColor = TEXT_GRAY,
+						.textColor = GetThemeColor(TextGray),
 						.wrapMode = CLAY_TEXT_WRAP_NONE,
 						.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 						.userData = { .contraction = TextContraction_ClipRight },
@@ -285,12 +285,12 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;
-	Color32 hoverColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, enabled ? 0.75f : 0.0f);
-	Color32 pressColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f);
-	Color32 textColor = TEXT_WHITE;
-	Color32 valueColor = enabled ? TEXT_WHITE : TEXT_GRAY;
-	Color32 outlineColor = enabled ? SELECTED_BLUE : (isHovered ? ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f) : OUTLINE_GRAY);
+	Color32 backColor = enabled ? GetThemeColor(Selected) : Transparent;
+	Color32 hoverColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), enabled ? 0.75f : 0.0f);
+	Color32 pressColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f);
+	Color32 textColor = GetThemeColor(TextWhite);
+	Color32 valueColor = enabled ? GetThemeColor(TextWhite) : GetThemeColor(TextGray);
+	Color32 outlineColor = enabled ? GetThemeColor(Selected) : (isHovered ? ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f) : GetThemeColor(Outline));
 	CLAY({ .id = btnId,
 		.layout = {
 			.layoutDirection = CLAY_LEFT_TO_RIGHT,
@@ -348,11 +348,11 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	Color32 backColor = enabled ? SELECTED_BLUE : Transparent;
-	Color32 hoverColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, enabled ? 0.75f : 0.0f);
-	Color32 pressColor = ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f);
-	Color32 textColor = TEXT_WHITE;
-	Color32 outlineColor = enabled ? SELECTED_BLUE : (isHovered ? ColorLerpSimple(HOVERED_BLUE, SELECTED_BLUE, 0.5f) : OUTLINE_GRAY);
+	Color32 backColor = enabled ? GetThemeColor(Selected) : Transparent;
+	Color32 hoverColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), enabled ? 0.75f : 0.0f);
+	Color32 pressColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f);
+	Color32 textColor = GetThemeColor(TextWhite);
+	Color32 outlineColor = enabled ? GetThemeColor(Selected) : (isHovered ? ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f) : GetThemeColor(Outline));
 	u16 buttonPaddingX = UI_U16(SMALL_BTN_PADDING_X);
 	u16 buttonPaddingY = UI_U16(SMALL_BTN_PADDING_Y);
 	CLAY({ .id = btnId,
@@ -424,7 +424,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 					.height = CLAY_SIZING_GROW(0)
 				},
 			},
-			.backgroundColor = BACKGROUND_BLACK,
+			.backgroundColor = GetThemeColor(BackgroundBlack),
 		})
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
@@ -445,7 +445,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 						.height = CLAY_SIZING_FIXED(scrollBarSize.Y),
 					},
 				},
-				.backgroundColor = (isHovered || state->isDragging) ? TEXT_GRAY : OUTLINE_GRAY,
+				.backgroundColor = (isHovered || state->isDragging) ? GetThemeColor(TextGray) : GetThemeColor(Outline),
 				.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2),
 			}) {}
 		}
