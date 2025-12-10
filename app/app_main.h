@@ -258,6 +258,7 @@ struct AppData
 	
 	u64 filePathTooltipId2;
 	u64 fileMenuTooltipId;
+	u64 viewMenuTooltipId;
 	
 	ClayTextbox testTextbox;
 	u64 testTooltipId;

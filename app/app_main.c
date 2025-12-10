@@ -418,6 +418,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	v2 mousePos = appIn->mouse.position;
 	FontNewFrame(&app->uiFont, appIn->programTime);
 	FontNewFrame(&app->mainFont, appIn->programTime);
+	UpdateTooltipRegistry(&app->tooltips);
 	
 	VarArrayLoop(&appIn->droppedFilePaths, pIndex)
 	{
@@ -863,15 +864,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Clay__CloseElement();
 							Clay__CloseElement();
 						} Clay__CloseElement();
-						
-						if (app->fileMenuTooltipId == TOOLTIP_ID_INVALID)
-						{
-							app->fileMenuTooltipId = RegisterTooltip(&app->tooltips, StrLit("File_TopBtn"), Rec_Zero, StrLit("File related actions"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
-						}
-						else
-						{
-							UpdateTooltipDisplayStr(&app->tooltips, app->fileMenuTooltipId, StrLit("File related actions"));
-						}
+						app->fileMenuTooltipId = SoftRegisterTooltip(&app->tooltips, app->fileMenuTooltipId, StrLit("File_TopBtn"), Rec_Zero, StrLit("File related actions"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
@@ -929,20 +922,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Clay__CloseElement();
 							Clay__CloseElement();
 						} Clay__CloseElement();
-						
+						app->viewMenuTooltipId = SoftRegisterTooltip(&app->tooltips, app->viewMenuTooltipId, StrLit("View_TopBtn"), Rec_Zero, StrLit("Options related to visuals"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 						
 						CLAY({ .layout = { .sizing = { .width=CLAY_SIZING_GROW(0) } } }) {}
 						
 						if (app->currentTab != nullptr)
 						{
-							if (app->filePathTooltipId2 == TOOLTIP_ID_INVALID)
-							{
-								app->filePathTooltipId2 = RegisterTooltip(&app->tooltips, StrLit("FilePathDisplay"), Rec_Zero, app->currentTab->filePath, &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
-							}
-							else
-							{
-								UpdateTooltipDisplayStr(&app->tooltips, app->filePathTooltipId2, app->currentTab->filePath);
-							}
+							app->filePathTooltipId2 = SoftRegisterTooltip(&app->tooltips, app->filePathTooltipId2, StrLit("FilePathDisplay"), Rec_Zero, app->currentTab->filePath, &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 							
 							Str8 filePathScratch = AllocStr8(uiArena, app->currentTab->filePath);
 							CLAY({ .id = CLAY_ID("FilePathDisplay") })
@@ -960,11 +946,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								);
 							}
 							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)) } } }) {}
-						}
-						else if (app->filePathTooltipId2 != TOOLTIP_ID_INVALID)
-						{
-							UnregisterTooltip(&app->tooltips, app->filePathTooltipId2);
-							app->filePathTooltipId2 = TOOLTIP_ID_INVALID;
 						}
 						
 						#if DEBUG_BUILD
@@ -1268,14 +1249,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			}
 			#endif
 			
-			if (app->testTooltipId == TOOLTIP_ID_INVALID)
-			{
-				app->testTooltipId = RegisterTooltip(&app->tooltips, Str8_Empty, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
-			}
-			else
-			{
-				UpdateTooltipDisplayStr(&app->tooltips, app->testTooltipId, StrLit("This is a test!"));
-			}
+			app->testTooltipId = SoftRegisterTooltip(&app->tooltips, app->testTooltipId, Str8_Empty, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 			
 			RegisteredTooltip* hoverTooltip = TryFindRegisteredTooltip(&app->tooltips, app->tooltips.hoverTooltipId);
 			Str8 hoverTooltipStr = (hoverTooltip != nullptr) ? hoverTooltip->displayStr : Str8_Empty;
