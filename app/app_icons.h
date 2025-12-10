@@ -26,6 +26,7 @@ enum AppIcon
 	AppIcon_Topbar,
 	AppIcon_Debug,
 	AppIcon_CloseWindow,
+	AppIcon_LightDark,
 	AppIcon_Count,
 };
 const char* GetAppIconStr(AppIcon enumValue)
@@ -48,6 +49,7 @@ const char* GetAppIconStr(AppIcon enumValue)
 		case AppIcon_Topbar:              return "Topbar";
 		case AppIcon_Debug:               return "Debug";
 		case AppIcon_CloseWindow:         return "CloseWindow";
+		case AppIcon_LightDark:           return "LightDark";
 		default: return "Unknown";
 	}
 }
@@ -70,6 +72,7 @@ const char* GetAppIconPath(AppIcon enumValue)
 		case AppIcon_Topbar:              return "resources/image/topbar.png";
 		case AppIcon_Debug:               return "resources/image/debug.png";
 		case AppIcon_CloseWindow:         return "resources/image/close_window.png";
+		case AppIcon_LightDark:           return "resources/image/light_dark.png";
 		default: return nullptr;
 	}
 }

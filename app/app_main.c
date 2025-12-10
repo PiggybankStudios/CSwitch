@@ -853,8 +853,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
-							Str8 tooltipStr = PrintInArenaStr(uiArena, "Theme Background: 0x%08X%s", GetThemeColor(BackgroundBlack).valueU32, app->themeOverrides.overridden[ThemeColor_BackgroundBlack] ? " (Overridden)" : " (Default)");
-							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetPresetThemeStr(app->currentThemePreset)), Str8_Empty, tooltipStr, true, nullptr)) //StrLit("Toggle between dark and light theme")
+							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetPresetThemeStr(app->currentThemePreset)), Str8_Empty, StrLit("Toggle between dark and light theme"), true, &app->icons[AppIcon_LightDark]))
 							{
 								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
 							} Clay__CloseElement();

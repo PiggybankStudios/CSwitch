@@ -288,7 +288,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	Color32 backColor = enabled ? GetThemeColor(Selected) : Transparent;
 	Color32 hoverColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), enabled ? 0.75f : 0.0f);
 	Color32 pressColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f);
-	Color32 textColor = GetThemeColor(TextWhite);
+	Color32 textColor = enabled ? GetThemeColor(TextWhite) : GetThemeColor(TextGray);
 	Color32 valueColor = enabled ? GetThemeColor(TextWhite) : GetThemeColor(TextGray);
 	Color32 outlineColor = enabled ? GetThemeColor(Selected) : (isHovered ? ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f) : GetThemeColor(Outline));
 	CLAY({ .id = btnId,
