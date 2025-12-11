@@ -245,9 +245,13 @@ void FreeAppSettings(AppSettings* settings)
 	NotNull(settings);
 	if (settings->arena != nullptr)
 	{
-		#define X(type, cType, nameNt, cName, defaultValue) if (AppSettingType_##type == AppSettingType_String) { FreeStr8(settings->arena, (Str8*)&settings->cName); }
-		Settings_XList(X)
-		#undef X
+		for (uxx sIndex= 0; sIndex < settings->count; sIndex++)
+		{
+			if (GetAppSettingTypeAtIndex(sIndex) == AppSettingType_String)
+			{
+				FreeStr8(settings->arena, GetAppSettingPntrStr8(settings, sIndex));
+			}
+		}
 	}
 	ClearPointer(settings);
 }

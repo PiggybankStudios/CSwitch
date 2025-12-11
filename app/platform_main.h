@@ -17,6 +17,9 @@ struct PlatformData
 	AppApi appApi;
 	#if !BUILD_INTO_SINGLE_UNIT
 	OsDll appDll;
+	FilePath appDllPath;
+	FilePath appDllTempPath;
+	OsFileWatch appDllWatch;
 	#endif
 	void* appMemoryPntr;
 	

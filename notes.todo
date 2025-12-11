@@ -4,8 +4,6 @@
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
-	[!] Add support for custom theme(s)
-	[!] Get app hot-reloading working
 	[!] Vertically center text!
 	[!] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[!] Add a search bar that can be used to filter the buttons
@@ -44,6 +42,8 @@
 	[ ] 
 
 # Finished List:
+	[X] Get app hot-reloading working
+	[X] Add support for custom theme(s)
 	[X] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them
 	[X] When moving from "Open Recent" to the dropdown on the right, we often move diagonally and the dropdown closes because we stop hovering over the button before we reach the dropdown. Can we somehow handle this better? Maybe don't close until the mouse is outside the file dropdown? Or maybe add some extra invisible regions around the dropdown the help keep it open when the mouse is moving over common areas that are technically outside the dropdown?
 	[X] Add tooltips that show full path when hovering over the recent file buttons

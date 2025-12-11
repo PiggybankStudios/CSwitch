@@ -99,12 +99,20 @@ typedef APP_UPDATE_DEF(AppUpdate_f);
 #define APP_CLOSING_DEF(functionName) void functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
 typedef APP_CLOSING_DEF(AppClosing_f);
 
+#define APP_BEFORE_RELOAD_DEF(functionName) bool functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
+typedef APP_BEFORE_RELOAD_DEF(AppBeforeReload_f);
+
+#define APP_AFTER_RELOAD_DEF(functionName) void functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
+typedef APP_AFTER_RELOAD_DEF(AppAfterReload_f);
+
 typedef struct AppApi AppApi;
 struct AppApi
 {
 	AppInit_f* AppInit;
 	AppUpdate_f* AppUpdate;
 	AppClosing_f* AppClosing;
+	AppBeforeReload_f* AppBeforeReload;
+	AppAfterReload_f* AppAfterReload;
 };
 
 #define APP_GET_API_DEF(functionName) AppApi functionName()

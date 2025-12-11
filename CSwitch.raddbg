@@ -1,7 +1,8 @@
 // raddbg 0.9.24 project file
 
-recent_file: path: "app/app_settings.h"
-recent_file: path: "core/misc/misc_two_pass.h"
+recent_file: path: "app/platform_main.c"
+recent_file: path: "core/mem/mem_arena.h"
+recent_file: path: "core/third_party/sokol/sokol_app.h"
 recent_file: path: "app/app_main.c"
 recent_file: path: "core/gfx/gfx_system.h"
 recent_file: path: "core/misc/misc_printing.h"
@@ -16,32 +17,32 @@ theme: "VS (Dark)"
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66200776497309
+  timestamp: 66200875282668
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66200776258909
+  timestamp: 66200875281714
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66200776445384
+  timestamp: 66200875308951
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66200840194790
+  timestamp: 66200772538079
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66200840193841
+  timestamp: 66200772537389
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66200851751843
+  timestamp: 66200772538868
 }
 debug_info:
 {

@@ -208,6 +208,7 @@ struct AppData
 	
 	u64 numFramesConsecutivelyRendered;
 	bool renderedLastFrame;
+	bool shouldRenderAfterReload;
 	
 	ClayUIRenderer clay;
 	u16 clayUiFontId;

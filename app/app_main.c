@@ -362,6 +362,46 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 }
 
 // +==============================+
+// |       AppBeforeReload        |
+// +==============================+
+// bool AppBeforeReload(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
+EXPORT_FUNC APP_BEFORE_RELOAD_DEF(AppBeforeReload)
+{
+	bool shouldReload = true;
+	ScratchBegin(scratch);
+	ScratchBegin1(scratch2, scratch);
+	ScratchBegin2(scratch3, scratch, scratch2);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	
+	WriteLine_W("App is preparing for DLL reload...");
+	//TODO: Anything that needs to be saved before the DLL reload should be done here
+	
+	ScratchEnd(scratch);
+	ScratchEnd(scratch2);
+	ScratchEnd(scratch3);
+	return shouldReload;
+}
+
+// +==============================+
+// |        AppAfterReload        |
+// +==============================+
+// void AppAfterReload(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)
+EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
+{
+	ScratchBegin(scratch);
+	ScratchBegin1(scratch2, scratch);
+	ScratchBegin2(scratch3, scratch, scratch2);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	
+	WriteLine_I("New app DLL was loaded!");
+	app->shouldRenderAfterReload = true;
+	
+	ScratchEnd(scratch);
+	ScratchEnd(scratch2);
+	ScratchEnd(scratch3);
+}
+
+// +==============================+
 // |          AppUpdate           |
 // +==============================+
 // bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
@@ -407,6 +447,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyboardKeyDown(&appIn->keyboard, (Key)keyIndex) || IsKeyboardKeyReleased(&appIn->keyboard, (Key)keyIndex)) { refreshScreen = true; break; } }
 		if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
 		if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
+		if (app->shouldRenderAfterReload) { refreshScreen = true; app->shouldRenderAfterReload = false; }
 		
 		if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
 		else { app->numFramesConsecutivelyRendered++; }
@@ -1402,5 +1443,7 @@ EXPORT_FUNC APP_GET_API_DEF(AppGetApi)
 	result.AppInit = AppInit;
 	result.AppUpdate = AppUpdate;
 	result.AppClosing = AppClosing;
+	result.AppBeforeReload = AppBeforeReload;
+	result.AppAfterReload = AppAfterReload;
 	return result;
 }

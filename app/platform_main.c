@@ -46,6 +46,8 @@ Description:
 #define ENABLE_RAYLIB_LOGS_WARNING 1
 #define ENABLE_RAYLIB_LOGS_ERROR   1
 
+#define APP_DLL_RELOAD_DELAY       500 //ms
+
 #define MIN_ELAPSED_MS 5  //ms
 #define MAX_ELAPSED_MS 67 //ms
 #define TIME_SCALE_TARGET_FRAMERATE 60 //fps
@@ -154,7 +156,53 @@ bool PlatDoUpdate(void)
 	TracyCZoneN(_funcZone, "PlatDoUpdate", true);
 	OsTime beforeUpdateTime = OsGetTime();
 	bool renderedFrame = true;
-	//TODO: Check for dll changes, reload it!
+	
+	#if !BUILD_INTO_SINGLE_UNIT
+	u64 programTime = platformData->currentAppInput->programTime; //TODO: Should we source this from somewhere else?
+	OsUpdateFileWatch(&platformData->appDllWatch, programTime);
+	if (platformData->appDllWatch.change != OsFileWatchChange_None)
+	{
+		if (!platformData->appDllWatch.fileExists) //ignore when the file gets deleted
+		{
+			PrintLine_W("The application DLL at \"%.*s\" has been deleted!", StrPrint(platformData->appDllPath));
+			OsResetFileWatch(&platformData->appDllWatch, programTime);
+		}
+		else if (TimeSinceBy(programTime, platformData->appDllWatch.lastChangeTime) >= APP_DLL_RELOAD_DELAY)
+		{
+			OsResetFileWatch(&platformData->appDllWatch, programTime);
+			
+			if (platformData->appApi.AppBeforeReload(platformInfo, platform, platformData->appMemoryPntr))
+			{
+				OsUnloadDll(&platformData->appDll);
+				ClearStruct(platformData->appApi);
+				
+				bool copyResult = OsCopyFile(platformData->appDllPath, platformData->appDllTempPath);
+				Assert(copyResult == true);
+				
+				OsDll newDll;
+				Result loadDllResult = OsLoadDll(platformData->appDllTempPath, &newDll);
+				if (loadDllResult != Result_Success)
+				{
+					NotifyPrint_E("Failed to load \"%.*s\": %s", StrPrint(platformData->appDllPath), GetResultStr(loadDllResult));
+					AssertMsg(loadDllResult == Result_Success, "App DLL reload failed!");
+				}
+				
+				platformData->appDll = newDll;
+				AppGetApi_f* appGetApi = (AppGetApi_f*)OsFindDllFunc(&newDll, StrLit("AppGetApi"));
+				NotNull(appGetApi);
+				platformData->appApi = appGetApi();
+				NotNull(platformData->appApi.AppInit);
+				NotNull(platformData->appApi.AppUpdate);
+				NotNull(platformData->appApi.AppClosing);
+				NotNull(platformData->appApi.AppBeforeReload);
+				NotNull(platformData->appApi.AppAfterReload);
+				
+				platformData->appApi.AppAfterReload(platformInfo, platform, platformData->appMemoryPntr);
+			}
+			else { WriteLine_W("Ignoring application DLL change because current App blocked the reload"); }
+		}
+	}
+	#endif
 	
 	//Swap which appInput is being written to and pass the static version to the application
 	AppInput* oldAppInput = platformData->currentAppInput;
@@ -247,21 +295,29 @@ void PlatSappInit(void)
 	#else
 	{
 		#if TARGET_IS_WINDOWS
-		FilePath dllPath = StrLit(PROJECT_DLL_NAME_STR ".dll");
+		platformData->appDllPath = StrLit(PROJECT_DLL_NAME_STR ".dll");
+		platformData->appDllTempPath = StrLit(PROJECT_DLL_NAME_STR "_TEMP.dll");
 		#elif TARGET_IS_LINUX
-		FilePath dllPath = StrLit("./" PROJECT_DLL_NAME_STR ".so");
+		platformData->appDllPath = StrLit("./" PROJECT_DLL_NAME_STR ".so");
+		platformData->appDllTempPath = StrLit("./" PROJECT_DLL_NAME_STR "_TEMP.so");
 		#else
 		#error Current TARGET doesn't have an implementation for shared library suffix!
 		#endif
-		Result loadDllResult = OsLoadDll(dllPath, &platformData->appDll);
-		if (loadDllResult != Result_Success) { PrintLine_E("Failed to load \"%.*s\": %s", StrPrint(dllPath), GetResultStr(loadDllResult)); }
+		bool copyResult = OsCopyFile(platformData->appDllPath, platformData->appDllTempPath);
+		Assert(copyResult == true);
+		Result loadDllResult = OsLoadDll(platformData->appDllTempPath, &platformData->appDll);
+		if (loadDllResult != Result_Success) { PrintLine_E("Failed to load \"%.*s\": %s", StrPrint(platformData->appDllPath), GetResultStr(loadDllResult)); }
 		Assert(loadDllResult == Result_Success);
+		OsInitFileWatch(stdHeap, platformData->appDllPath, 0, 0, &platformData->appDllWatch);
 		
 		AppGetApi_f* appGetApi = (AppGetApi_f*)OsFindDllFunc(&platformData->appDll, StrLit("AppGetApi"));
 		NotNull(appGetApi);
 		platformData->appApi = appGetApi();
 		NotNull(platformData->appApi.AppInit);
 		NotNull(platformData->appApi.AppUpdate);
+		NotNull(platformData->appApi.AppClosing);
+		NotNull(platformData->appApi.AppBeforeReload);
+		NotNull(platformData->appApi.AppAfterReload);
 	}
 	#endif
 	
