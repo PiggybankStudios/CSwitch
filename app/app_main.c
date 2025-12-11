@@ -611,6 +611,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |     Handle Ctrl+O Hotkey     |
 	// +==============================+
 	bool shouldOpenFile = false;
+	bool shouldOpenThemeFile = false;
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
 	{
 		shouldOpenFile = true;
@@ -856,6 +857,26 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetPresetThemeStr(app->currentThemePreset)), Str8_Empty, StrLit("Toggle between dark and light theme"), true, &app->icons[AppIcon_LightDark]))
 							{
 								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
+								if (!IsEmptyStr(app->userThemePath))
+								{
+									Theme parsedTheme;
+									Result parseResult = TryLoadThemeFile(app->userThemePath, app->currentThemePreset, &parsedTheme);
+									if (parseResult == Result_Success)
+									{
+										MyMemCopy(&app->themeOverrides, &parsedTheme, sizeof(Theme));
+									}
+									else
+									{
+										NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
+										FreeStr8(stdHeap, &app->userThemePath);
+									}
+								}
+							} Clay__CloseElement();
+							
+							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, StrLit("Browse to theme file to use"), true, nullptr))
+							{
+								shouldOpenThemeFile = true;
+								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
@@ -1294,14 +1315,29 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |   Handle Open File Dialog    |
 	// +==============================+
-	if (shouldOpenFile)
+	if (shouldOpenFile || shouldOpenThemeFile)
 	{
 		Str8 selectedPath = Str8_Empty;
 		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
 		if (openResult == Result_Success)
 		{
 			PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
-			AppOpenFileTab(selectedPath);
+			if (shouldOpenFile) { AppOpenFileTab(selectedPath); }
+			else if (shouldOpenThemeFile)
+			{
+				Theme parsedTheme;
+				Result parseResult = TryLoadThemeFile(selectedPath, app->currentThemePreset, &parsedTheme);
+				if (parseResult == Result_Success)
+				{
+					MyMemCopy(&app->themeOverrides, &parsedTheme, sizeof(Theme));
+					if (!IsEmptyStr(app->userThemePath)) { FreeStr8(stdHeap, &app->userThemePath); }
+					app->userThemePath = AllocStr8(stdHeap, selectedPath);
+				}
+				else
+				{
+					NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
+				}
+			}
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
 		else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }

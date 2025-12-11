@@ -74,6 +74,21 @@ const char* GetThemeColorStr(ThemeColor enumValue)
 		default: return UNKNOWN_STR;
 	}
 }
+bool TryParseThemeColor(Str8 themeColorStr, ThemeColor* colorOut)
+{
+	if      (StrAnyCaseEquals(themeColorStr, StrLit("None")))               { SetOptionalOutPntr(colorOut, ThemeColor_None);               return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("BackgroundBlack")))    { SetOptionalOutPntr(colorOut, ThemeColor_BackgroundBlack);    return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("BackgroundDarkGray"))) { SetOptionalOutPntr(colorOut, ThemeColor_BackgroundDarkGray); return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("BackgroundGray")))     { SetOptionalOutPntr(colorOut, ThemeColor_BackgroundGray);     return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("TextWhite")))          { SetOptionalOutPntr(colorOut, ThemeColor_TextWhite);          return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("TextLightGray")))      { SetOptionalOutPntr(colorOut, ThemeColor_TextLightGray);      return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("TextGray")))           { SetOptionalOutPntr(colorOut, ThemeColor_TextGray);           return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("Outline")))            { SetOptionalOutPntr(colorOut, ThemeColor_Outline);            return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("Hovered")))            { SetOptionalOutPntr(colorOut, ThemeColor_Hovered);            return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("Selected")))           { SetOptionalOutPntr(colorOut, ThemeColor_Selected);           return true; }
+	else if (StrAnyCaseEquals(themeColorStr, StrLit("Error")))              { SetOptionalOutPntr(colorOut, ThemeColor_Error);              return true; }
+	else                                                                    { return false; }
+}
 
 typedef plex Theme Theme;
 plex Theme
@@ -113,6 +128,14 @@ const char* GetPresetThemeStr(PresetTheme enumValue)
 		case PresetTheme_Debug: return "Debug";
 		default: return UNKNOWN_STR;
 	}
+}
+bool TryParsePresetTheme(Str8 presetThemeStr, PresetTheme* presetThemeOut)
+{
+	if      (StrAnyCaseEquals(presetThemeStr, StrLit("None")))  { SetOptionalOutPntr(presetThemeOut, PresetTheme_None);  return true; }
+	else if (StrAnyCaseEquals(presetThemeStr, StrLit("Dark")))  { SetOptionalOutPntr(presetThemeOut, PresetTheme_Dark);  return true; }
+	else if (StrAnyCaseEquals(presetThemeStr, StrLit("Light"))) { SetOptionalOutPntr(presetThemeOut, PresetTheme_Light); return true; }
+	else if (StrAnyCaseEquals(presetThemeStr, StrLit("Debug"))) { SetOptionalOutPntr(presetThemeOut, PresetTheme_Debug); return true; }
+	else                                                      { return false; }
 }
 
 #define InitDarkThemePreset(themePntr) do                                                         \

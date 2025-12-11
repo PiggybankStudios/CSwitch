@@ -202,6 +202,7 @@ struct AppData
 	Theme themePresets[PresetTheme_Count];
 	PresetTheme currentThemePreset;
 	Theme themeOverrides;
+	Str8 userThemePath;
 	
 	u64 numFramesConsecutivelyRendered;
 	bool renderedLastFrame;
