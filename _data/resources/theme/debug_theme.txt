@@ -1,0 +1,11 @@
+
+BackgroundBlack:    F92672 //Red    (249, 38, 114)
+BackgroundDarkGray: ED4E95 //Pink   (237, 78, 149)
+BackgroundGray:     FD971F //Orange (253, 151, 31)
+TextWhite:          FDC459 //Honey  (253, 196, 89)
+TextLightGray:      EEE64F //Banana (238, 230, 79)
+TextGray:           A6E22E //Green  (166, 226, 46)
+Outline:            92BB41 //Grass  (146, 187, 65)
+Hovered:            669BEF //Blue   (102, 155, 239)
+Selected:           66D9EF //Sky    (102, 217, 239)
+Error:              AE81FF //Purple (174, 129, 255)

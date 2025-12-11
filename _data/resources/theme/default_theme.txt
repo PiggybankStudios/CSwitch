@@ -1,0 +1,24 @@
+
+@Dark
+BackgroundBlack:    191B1C //(25, 27, 28, 255)
+BackgroundDarkGray: 1F2223 //(31, 34, 35, 255)
+BackgroundGray:     272A2B //(39, 42, 43, 255)
+TextWhite:          DDDEE0 //(221, 222, 224, 255)
+TextLightGray:      AFB1B3 //(175, 177, 179, 255)
+TextGray:           6B7078 //(107, 112, 120, 255)
+Outline:            343A3B //(52, 58, 59, 255)
+Hovered:            103C4C //(16, 60, 76, 255)
+Selected:           0079A6 //(0, 121, 166, 255)
+Error:              FF6666 //(255, 102, 102, 255)
+
+@Light
+BackgroundBlack:    FFFFFF //(255, 255, 255, 255)
+BackgroundDarkGray: F8F8F8 //(248, 248, 248, 255)
+BackgroundGray:     EBEBEB //(235, 235, 235, 255)
+TextWhite:          3E3F40 //(62, 63, 64, 255)
+TextLightGray:      606263 //(96, 98, 99, 255)
+TextGray:           909293 //(144, 146, 147, 255)
+Outline:            DADADB //(218, 218, 219, 255)
+Hovered:            99DEF8 //(153, 222, 248, 255)
+Selected:           00ADEE //(0, 173, 238, 255)
+Error:              FF6666 //(255, 102, 102, 255)

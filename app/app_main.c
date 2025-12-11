@@ -239,11 +239,16 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ClearStruct(app->themeOverrides);
 	if (!TryParsePresetTheme(app->settings.theme, &app->currentThemePreset))
 	{
+		NotifyPrint_W("Unknown theme name in settings file: \"%.*s\"\nDefaulting to Dark Theme", StrPrint(app->settings.theme));
 		app->currentThemePreset = PresetTheme_Dark;
 		SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
 		SaveAppSettings();
 	}
-	app->needToReloadUserTheme = !IsEmptyStr(app->settings.userThemePath);
+	if (!IsEmptyStr(app->settings.userThemePath))
+	{
+		PrintLine_I("Loading user theme from \"%.*s\"", StrPrint(app->settings.userThemePath));
+		app->needToReloadUserTheme = true;
+	}
 	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
@@ -732,6 +737,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			else
 			{
 				NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
+				MyMemSet(&app->themeOverrides, 0x00, sizeof(Theme));
 				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
 				SaveAppSettings();
 			}
