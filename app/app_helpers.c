@@ -6,6 +6,52 @@ Description:
 	** None
 */
 
+FilePath GetAppSettingsSavePath(Arena* arena, bool addNullTerm)
+{
+	ScratchBegin1(scratch, arena);
+	FilePath folderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
+	Assert(!IsEmptyStr(folderPath));
+	FilePath result = JoinStringsInArenaWithChar(arena, folderPath, '/', StrLit(SETTINGS_FILENAME), addNullTerm);
+	ScratchEnd(scratch);
+	return result;
+}
+void SaveAppSettings()
+{
+	ScratchBegin(scratch);
+	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
+	WriteLine_D("Saving settings...");
+	bool saveSuccess = TrySaveAppSettingsTo(&app->settings, settingsFilePath);
+	if (!saveSuccess)
+	{
+		DebugAssert(saveSuccess);
+		NotifyPrint_E("Failed to save settings file! Make sure the folder has write permissions for the current user!\nPath: \"%.*s\"", StrPrint(settingsFilePath));
+	}
+	ScratchEnd(scratch);
+}
+void LoadAppSettings()
+{
+	ScratchBegin(scratch);
+	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
+	if (OsDoesFileExist(settingsFilePath))
+	{
+		Result loadSettingsResult = TryLoadAppSettingsFrom(settingsFilePath, &app->settings);
+		if (loadSettingsResult == Result_Success)
+		{
+			PrintLine_I("Loaded settings from \"%.*s\"", StrPrint(settingsFilePath));
+		}
+		else
+		{
+			NotifyPrint_W("Failed to load settings!\nError: %s\nPath: \"%.*s\"", GetResultStr(loadSettingsResult), StrPrint(settingsFilePath));
+		}
+	}
+	else
+	{
+		PrintLine_N("No settings file found at \"%.*s\"! Saving settings", StrPrint(settingsFilePath));
+		SaveAppSettings();
+	}
+	ScratchEnd(scratch);
+}
+
 ImageData LoadImageData(Arena* arena, const char* path)
 {
 	ScratchBegin1(scratch, arena);

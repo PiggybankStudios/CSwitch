@@ -190,6 +190,8 @@ struct AppData
 	r32 prevUpdateMs;
 	PerfGraph perfGraph;
 	bool showPerfGraph;
+	AppSettings settings;
+	FilePath settingsPath;
 	
 	Shader mainShader;
 	PigFont uiFont;
@@ -202,7 +204,7 @@ struct AppData
 	Theme themePresets[PresetTheme_Count];
 	PresetTheme currentThemePreset;
 	Theme themeOverrides;
-	Str8 userThemePath;
+	bool needToReloadUserTheme;
 	
 	u64 numFramesConsecutivelyRendered;
 	bool renderedLastFrame;
@@ -239,10 +241,10 @@ struct AppData
 	#endif
 	
 	//User Options
-	bool smallBtnModeEnabled;
-	bool clipNamesOnLeftSide;
-	bool smoothScrollingEnabled;
-	bool optionTooltipsEnabled;
+	// bool smallBtnModeEnabled;
+	// bool clipNamesOnLeftSide;
+	// bool smoothScrollingEnabled;
+	// bool optionTooltipsEnabled;
 	bool sleepingDisabled;
 	#if DEBUG_BUILD
 	bool enableFrameUpdateIndicator;

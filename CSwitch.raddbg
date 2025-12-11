@@ -1,5 +1,7 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "app/app_settings.h"
+recent_file: path: "core/misc/misc_two_pass.h"
 recent_file: path: "app/app_main.c"
 recent_file: path: "core/gfx/gfx_system.h"
 recent_file: path: "core/misc/misc_printing.h"
@@ -39,7 +41,7 @@ debug_info:
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66200843191805
+  timestamp: 66200851156839
 }
 debug_info:
 {

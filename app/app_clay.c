@@ -307,7 +307,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 			.text = nameStr,
 			.fontId = app->clayUiFontId,
 			.fontSize = (u16)app->uiFontSize,
-			.inactive = !app->optionTooltipsEnabled,
+			.inactive = app->settings.optionTooltipsDisabled,
 			.containerId = containerId,
 		},
 	})
@@ -320,7 +320,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 				.textColor = textColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
-				.userData = { .contraction = app->clipNamesOnLeftSide ? TextContraction_EllipseLeft : TextContraction_EllipseRight },
+				.userData = { .contraction = app->settings.clipNamesLeft ? TextContraction_EllipseLeft : TextContraction_EllipseRight },
 			})
 		);
 		CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
@@ -372,7 +372,7 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 			.text = idStr,
 			.fontId = app->clayUiFontId,
 			.fontSize = (u16)app->uiFontSize,
-			.inactive = !app->optionTooltipsEnabled,
+			.inactive = app->settings.optionTooltipsDisabled,
 			.containerId = containerId,
 		},
 	})

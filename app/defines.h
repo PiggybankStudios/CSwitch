@@ -13,6 +13,7 @@ Date:   02\25\2025
 
 #define RECENT_FILES_SAVE_FILEPATH "recent_files.txt"
 #define RECENT_FILES_MAX_LENGTH    16 //files
+#define SETTINGS_FILENAME          "settings.txt"
 
 #define UI_FONT_NAME  "Consolas"
 #define UI_FONT_STYLE FontStyleFlag_None

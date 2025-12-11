@@ -37,6 +37,7 @@ Description:
 #include "platform_interface.h"
 #include "app_theme.h"
 #include "app_icons.h"
+#include "app_settings.h"
 #include "app_resources.h"
 #include "app_main.h"
 
@@ -229,11 +230,20 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	
+	InitAppSettings(stdHeap, &app->settings);
+	LoadAppSettings();
+	
 	InitDarkThemePreset(&app->themePresets[PresetTheme_Dark]);
 	InitLightThemePreset(&app->themePresets[PresetTheme_Light]);
 	InitDebugThemePreset(&app->themePresets[PresetTheme_Debug]);
 	ClearStruct(app->themeOverrides);
-	app->currentThemePreset = DEFAULT_THEME_PRESET;
+	if (!TryParsePresetTheme(app->settings.theme, &app->currentThemePreset))
+	{
+		app->currentThemePreset = PresetTheme_Dark;
+		SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
+		SaveAppSettings();
+	}
+	app->needToReloadUserTheme = !IsEmptyStr(app->settings.userThemePath);
 	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
@@ -275,8 +285,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	// InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
 	
-	app->smoothScrollingEnabled = true;
-	app->optionTooltipsEnabled = true;
 	#if DEBUG_BUILD
 	app->enableFrameUpdateIndicator = false;
 	#endif
@@ -522,7 +530,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10, false))
 	{
-		app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
+		app->settings.smallButtons = !app->settings.smallButtons;
+		SaveAppSettings();
 	}
 	
 	// +==============================+
@@ -709,6 +718,26 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// 	UpdateClayTextbox(&app->testTextbox);
 	// }
 	
+	if (app->needToReloadUserTheme)
+	{
+		app->needToReloadUserTheme = false;
+		if (!IsEmptyStr(app->settings.userThemePath))
+		{
+			Theme parsedTheme;
+			Result parseResult = TryLoadThemeFile(app->settings.userThemePath, app->currentThemePreset, &parsedTheme);
+			if (parseResult == Result_Success)
+			{
+				MyMemCopy(&app->themeOverrides, &parsedTheme, sizeof(Theme));
+			}
+			else
+			{
+				NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
+				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
+				SaveAppSettings();
+			}
+		}
+	}
+	
 	// +==============================+
 	// |          Rendering           |
 	// +==============================+
@@ -857,20 +886,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetPresetThemeStr(app->currentThemePreset)), Str8_Empty, StrLit("Toggle between dark and light theme"), true, &app->icons[AppIcon_LightDark]))
 							{
 								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
-								if (!IsEmptyStr(app->userThemePath))
-								{
-									Theme parsedTheme;
-									Result parseResult = TryLoadThemeFile(app->userThemePath, app->currentThemePreset, &parsedTheme);
-									if (parseResult == Result_Success)
-									{
-										MyMemCopy(&app->themeOverrides, &parsedTheme, sizeof(Theme));
-									}
-									else
-									{
-										NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
-										FreeStr8(stdHeap, &app->userThemePath);
-									}
-								}
+								SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
+								SaveAppSettings();
+								app->needToReloadUserTheme = true;
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, StrLit("Browse to theme file to use"), true, nullptr))
@@ -879,9 +897,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->smallBtnModeEnabled ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
+							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
 							{
-								app->smallBtnModeEnabled = !app->smallBtnModeEnabled;
+								app->settings.smallButtons = !app->settings.smallButtons;
+								SaveAppSettings();
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
@@ -889,19 +908,22 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								platform->SetWindowTopmost(!appIn->isWindowTopmost);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->clipNamesOnLeftSide ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->clipNamesOnLeftSide ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight]))
 							{
-								app->clipNamesOnLeftSide = !app->clipNamesOnLeftSide;
+								app->settings.clipNamesLeft = !app->settings.clipNamesLeft;
+								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->smoothScrollingEnabled ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"), true, &app->icons[AppIcon_SmoothScroll]))
+							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"), true, &app->icons[AppIcon_SmoothScroll]))
 							{
-								app->smoothScrollingEnabled = !app->smoothScrollingEnabled;
+								app->settings.smoothScrollingDisabled = !app->settings.smoothScrollingDisabled;
+								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->optionTooltipsEnabled ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"), true, &app->icons[AppIcon_Tooltip]))
+							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"), true, &app->icons[AppIcon_Tooltip]))
 							{
-								app->optionTooltipsEnabled = !app->optionTooltipsEnabled;
+								app->settings.optionTooltipsDisabled = !app->settings.optionTooltipsDisabled;
+								SaveAppSettings();
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"), true, &app->icons[AppIcon_Topbar]))
@@ -1091,12 +1113,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								.width = CLAY_SIZING_GROW(0)
 							},
 						},
-						.scroll = { .vertical=true, .scrollLag = app->smoothScrollingEnabled ? (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR : 0.0f },
+						.scroll = { .vertical=true, .scrollLag = app->settings.smoothScrollingDisabled ? 0.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR },
 					})
 					{
 						if (app->currentTab != nullptr)
 						{
-							if (app->smallBtnModeEnabled)
+							if (app->settings.smallButtons)
 							{
 								// rec optionsDrawRec = GetClayElementDrawRec(optionsContainerId);
 								r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
@@ -1325,18 +1347,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			if (shouldOpenFile) { AppOpenFileTab(selectedPath); }
 			else if (shouldOpenThemeFile)
 			{
-				Theme parsedTheme;
-				Result parseResult = TryLoadThemeFile(selectedPath, app->currentThemePreset, &parsedTheme);
-				if (parseResult == Result_Success)
-				{
-					MyMemCopy(&app->themeOverrides, &parsedTheme, sizeof(Theme));
-					if (!IsEmptyStr(app->userThemePath)) { FreeStr8(stdHeap, &app->userThemePath); }
-					app->userThemePath = AllocStr8(stdHeap, selectedPath);
-				}
-				else
-				{
-					NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
-				}
+				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, selectedPath);
+				SaveAppSettings();
+				app->needToReloadUserTheme = true;
 			}
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
