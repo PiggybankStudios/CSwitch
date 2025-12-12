@@ -126,11 +126,28 @@ void LoadNotificationIcons()
 	}
 }
 
+Slice TryLoadFontFileFromResources(Arena* arena, Str8 filePath)
+{
+	Slice fileContents = Slice_Empty;
+	Result result = TryReadAppResource(&app->resources, arena, filePath, false, &fileContents);
+	Assert(result == Result_Success);
+	return fileContents;
+}
+Result TryAttachFontFileFromResources(PigFont* font, Str8 filePath, u8 fontStyle)
+{
+	ScratchBegin1(scratch, font->arena);
+	Slice fontFileContents = TryLoadFontFileFromResources(scratch, filePath);
+	Assert(fontFileContents.length > 0);
+	Result attachResult = TryAttachFontFile(font, filePath, fontFileContents, fontStyle, true);
+	ScratchEnd(scratch);
+	return attachResult;
+}
+
 bool AppCreateFonts()
 {
 	FontCharRange fontCharRanges[] = {
 		FontCharRange_ASCII,
-		FontCharRange_LatinExtA,
+		// FontCharRange_LatinExtA,
 		MakeFontCharRangeSingle(UNICODE_ELLIPSIS_CODEPOINT),
 		MakeFontCharRangeSingle(UNICODE_RIGHT_ARROW_CODEPOINT),
 	};
@@ -160,8 +177,14 @@ bool AppCreateFonts()
 		}
 		CustomFontCharRange customGlyphsRange = MakeCustomFontCharRangeArray(numKeyCodepoints, &customGlyphs[0]);
 		#endif
+		
 		newUiFont = InitFont(stdHeap, StrLit("uiFont"));
+		#if defined(UI_FONT_PATH)
+		attachResult = TryAttachFontFileFromResources(&newUiFont, StrLit(UI_FONT_PATH), UI_FONT_STYLE);
+		Assert(attachResult == Result_Success);
+		#else //defined(UI_FONT_NAME)
 		attachResult = TryAttachOsTtfFileToFont(&newUiFont, StrLit(UI_FONT_NAME), app->uiFontSize, UI_FONT_STYLE); Assert(attachResult == Result_Success);
+		#endif
 		
 		bakeResult = TryBakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
 		if (bakeResult != Result_Success && bakeResult != Result_Partial)
@@ -172,13 +195,43 @@ bool AppCreateFonts()
 		}
 		FillFontKerningTable(&newUiFont);
 		
+		FontAtlas* uiAtlas = GetDefaultFontAtlas(&newUiFont);
+		NotNull(uiAtlas);
+		PrintLine_D("UI Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
+			uiAtlas->texture.Width, uiAtlas->texture.Height,
+			uiAtlas->glyphs.length,
+			uiAtlas->metrics.lineHeight,
+			uiAtlas->metrics.maxAscend,
+			uiAtlas->metrics.maxDescend,
+			uiAtlas->metrics.centerOffset,
+			uiAtlas->metrics.fontScale
+		);
+		VarArrayLoop(&uiAtlas->glyphs, gIndex)
+		{
+			VarArrayLoopGet(FontGlyph, glyph, &uiAtlas->glyphs, gIndex);
+			if (glyph->codepoint == 'W')
+			{
+				PrintLine_D("W Glyph: AtlasRec=(%d, %d, %d, %d) renderOffset=(%g, %g) advanceX=%g logicalRec=(%g, %g, %g, %g)",
+					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
+					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
+					glyph->metrics.advanceX,
+					glyph->metrics.logicalRec.X, glyph->metrics.logicalRec.Y, glyph->metrics.logicalRec.Width, glyph->metrics.logicalRec.Height
+				);
+			}
+		}
+		
 		MakeFontActive(&newUiFont, 128, 1024, 16, 0, 0);
 	}
 	
 	PigFont newMainFont = ZEROED;
 	{
 		newMainFont = InitFont(stdHeap, StrLit("mainFont"));
+		#if defined(MAIN_FONT_PATH)
+		attachResult = TryAttachFontFileFromResources(&newMainFont, StrLit(MAIN_FONT_PATH), MAIN_FONT_STYLE);
+		Assert(attachResult == Result_Success);
+		#else //defined(MAIN_FONT_NAME)
 		attachResult = TryAttachOsTtfFileToFont(&newMainFont, StrLit(MAIN_FONT_NAME), app->mainFontSize, MAIN_FONT_STYLE); Assert(attachResult == Result_Success);
+		#endif
 		
 		bakeResult = TryBakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
 		if (bakeResult != Result_Success && bakeResult != Result_Partial)
@@ -189,6 +242,31 @@ bool AppCreateFonts()
 			return false;
 		}
 		FillFontKerningTable(&newMainFont);
+		
+		FontAtlas* mainAtlas = GetDefaultFontAtlas(&newMainFont);
+		NotNull(mainAtlas);
+		PrintLine_D("Main Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
+			mainAtlas->texture.Width, mainAtlas->texture.Height,
+			mainAtlas->glyphs.length,
+			mainAtlas->metrics.lineHeight,
+			mainAtlas->metrics.maxAscend,
+			mainAtlas->metrics.maxDescend,
+			mainAtlas->metrics.centerOffset,
+			mainAtlas->metrics.fontScale
+		);
+		VarArrayLoop(&mainAtlas->glyphs, gIndex)
+		{
+			VarArrayLoopGet(FontGlyph, glyph, &mainAtlas->glyphs, gIndex);
+			if (glyph->codepoint == 'W')
+			{
+				PrintLine_D("W Glyph: AtlasRec=(%d, %d, %d, %d) renderOffset=(%g, %g) advanceX=%g logicalRec=(%g, %g, %g, %g)",
+					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
+					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
+					glyph->metrics.advanceX,
+					glyph->metrics.logicalRec.X, glyph->metrics.logicalRec.Y, glyph->metrics.logicalRec.Width, glyph->metrics.logicalRec.Height
+				);
+			}
+		}
 		
 		MakeFontActive(&newMainFont, 128, 1024, 16, 0, 0);
 	}

@@ -118,7 +118,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
-		.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), }, .padding = { UI_U16(4), UI_U16(4), UI_U16(16), UI_U16(16) } },
+		.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), }, .padding = { UI_U16(4), UI_U16(4), UI_U16(8), UI_U16(8) } },
 		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=borderColor },
@@ -202,7 +202,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = {
-			.padding = { .top = UI_U16(8), .bottom = UI_U16(8), .left = UI_U16(4), .right = UI_U16(4), },
+			.padding = { .top = UI_U16(3), .bottom = UI_U16(3), .left = UI_U16(4), .right = UI_U16(4), },
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
 		.backgroundColor = backgroundColor,
@@ -245,7 +245,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 			CLAY({ .id=hotkeyId,
 				.layout = {
 					.layoutDirection = CLAY_LEFT_TO_RIGHT,
-					.padding = CLAY_PADDING_ALL(UI_U16(2)),
+					.padding = { .left=UI_U16(2), .right=UI_U16(2), .top=UI_U16(1), .bottom=UI_U16(1) },
 				},
 				.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color = GetThemeColor(TextGray) },
 				.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(5)),

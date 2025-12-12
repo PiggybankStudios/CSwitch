@@ -15,10 +15,18 @@ Date:   02\25\2025
 #define RECENT_FILES_MAX_LENGTH    16 //files
 #define SETTINGS_FILENAME          "settings.txt"
 
+#if 1
+#define UI_FONT_PATH  "resources/font/Geologica-Regular.ttf"
+#else
 #define UI_FONT_NAME  "Consolas"
+#endif
 #define UI_FONT_STYLE FontStyleFlag_None
 
+#if 1
+#define MAIN_FONT_PATH  "resources/font/Geologica-Bold.ttf"
+#else
 #define MAIN_FONT_NAME  "Consolas"
+#endif
 #define MAIN_FONT_STYLE FontStyleFlag_Bold
 
 #define MIN_UI_FONT_SIZE       9

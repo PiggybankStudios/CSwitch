@@ -4,7 +4,7 @@
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
-	[!] Vertically center text!
+	[!] Choose colors in theme carefully to maximize theme flexibility
 	[!] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[!] Add a search bar that can be used to filter the buttons
 	[!] Re-open all tabs that were open in the last session of CSwitch
@@ -42,6 +42,7 @@
 	[ ] 
 
 # Finished List:
+	[X] Vertically center text!
 	[X] Get app hot-reloading working
 	[X] Add support for custom theme(s)
 	[X] Add a 2D grid display mode where each define gets a little icon rather than a full name. This would drastically reduce the display area needed to show all the options. Also tooltips to display the name when you hover over them

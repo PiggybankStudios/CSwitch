@@ -25,7 +25,7 @@ Description:
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
 #define USE_BUNDLED_RESOURCES   0
 // Enables linking with tracy.lib to enable profiling through Tracy
-#define PROFILING_ENABLED       1
+#define PROFILING_ENABLED       0
 
 
 // Build .exe binaries for Windows platform
