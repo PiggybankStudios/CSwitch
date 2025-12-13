@@ -135,6 +135,10 @@ void RenderPopupDialog(PopupDialog* dialog)
 	r32 dialogAlpha = openAnimAmount * (1.0f - closeAnimAmount);
 	r32 dialogMaxWidth = (r32)appIn->screenSize.Width * EaseQuadraticOut(dialogAlpha);
 	r32 textAlpha = InverseLerpR32(0.75f, 1.0f, dialogAlpha);
+	Color32 darkenColor = GetThemeColor(ConfirmDialogDarken);
+	darkenColor = ColorWithAlpha(darkenColor, (darkenColor.alpha/255.0f) * dialogAlpha);
+	Color32 dialogColor = ColorWithAlpha(GetThemeColor(ConfirmDialogBack), dialogAlpha);
+	Color32 textColor = ColorWithAlpha(GetThemeColor(ConfirmDialogText), textAlpha);
 	
 	CLAY({ .id = CLAY_ID("PopupDialogScreenOverlay"),
 		.layout = {
@@ -150,10 +154,9 @@ void RenderPopupDialog(PopupDialog* dialog)
 				.element = CLAY_ATTACH_POINT_LEFT_TOP,
 			},
 		},
-		.backgroundColor = ColorWithAlpha(Black, POPUP_DARKEN_AMOUNT * dialogAlpha),
+		.backgroundColor = darkenColor,
 	})
 	{
-		Color32 dialogColor = ColorWithAlpha(GetThemeColor(BackgroundGray), dialogAlpha);
 		CLAY({ .id = CLAY_ID("PopupDialog"),
 			.layout = {
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -165,7 +168,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 			},
 			.backgroundColor = dialogColor,
 			.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(8)),
-			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = GetThemeColor(TextLightGray) },
+			.border = { .width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)), .color = GetThemeColor(ConfirmDialogBorder) },
 		})
 		{
 			CLAY({ .layout={ .sizing={ .height=CLAY_SIZING_GROW(UI_U16(10), 0) } } }) {}
@@ -175,7 +178,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 				CLAY_TEXT_CONFIG({
 					.fontId = app->clayUiFontId,
 					.fontSize = (u16)app->uiFontSize,
-					.textColor = ColorWithAlpha(GetThemeColor(TextWhite), textAlpha),
+					.textColor = textColor,
 				})
 			);
 			
@@ -225,7 +228,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 							CLAY_TEXT_CONFIG({
 								.fontId = app->clayUiFontId,
 								.fontSize = (u16)app->uiFontSize,
-								.textColor = ColorWithAlpha(GetThemeColor(TextWhite), textAlpha),
+								.textColor = ColorWithAlpha(GetThemeColor(ConfirmDialogText), textAlpha), //TODO: $THEME Update to use color for the type of button (defined by the theme)
 							})
 						);
 					}

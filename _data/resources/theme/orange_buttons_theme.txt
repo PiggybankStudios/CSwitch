@@ -1,7 +1,17 @@
 
 @Dark
-Hovered:   4C3710 //(76, 55, 16)
-Selected:  A66400 //(166, 100, 0)
-@Light
-Hovered:   F8E299 //(248, 226, 153)
-Selected:  EEA900 //(238, 169, 0)
+OptionBackOn:           A66400
+OptionBackOnHovered:    8E5000
+OptionBackOffHovered:   4C3710
+OptionBackTurningOff:   794E08
+OptionBackTurningOn:    794E08
+OptionBorderOff:        3B3834
+OptionBorderOn:         A66400
+OptionBorderOffHovered: 794E08
+OptionBorderOnHovered:  A66400
+OptionBorderTurningOff: 794E08
+OptionBorderTurningOn:  A66400
+
+// @Light
+// Hovered:   F8E299 //(248, 226, 153)
+// Selected:  EEA900 //(238, 169, 0)

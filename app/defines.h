@@ -61,7 +61,6 @@ Date:   02\25\2025
 
 #define POPUP_OPEN_ANIM_TIME  75 //ms
 #define POPUP_CLOSE_ANIM_TIME 50 //ms
-#define POPUP_DARKEN_AMOUNT   0.25f //percent (opacity)
 #define POPUP_MIN_WIDTH       300 //px
 #define POPUP_MIN_HEIGHT      100 //px
 

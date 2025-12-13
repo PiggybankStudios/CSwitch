@@ -26,16 +26,16 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	bool isBtnHovered = IsMouseOverClay(btnId);
 	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
-	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? GetThemeColor(Hovered) : Transparent;
-	Color32 borderColor = GetThemeColor(Selected);
-	u16 borderWidth = isHovered ? 1 : 0;
+	Color32 backgroundColor = *isOpenPntr ? GetThemeColor(TopbarBtnBackOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnBackHover) : GetThemeColor(TopbarBtnBack));
+	Color32 borderColor = *isOpenPntr ? GetThemeColor(TopbarBtnBorderOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnBorderHover) : GetThemeColor(TopbarBtnBorder));
+	Color32 textColor = *isOpenPntr ? GetThemeColor(TopbarBtnTextOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnTextHover) : GetThemeColor(TopbarBtnText));
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = { .padding = { UI_U16(4), UI_U16(4), UI_U16(2), UI_U16(2) } },
 		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
-		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=borderColor },
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color=borderColor },
 	});
 	CLAY({
 		.layout = {
@@ -49,7 +49,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
-				.textColor = GetThemeColor(TextWhite),
+				.textColor = textColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
 			})
@@ -89,8 +89,8 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 				},
 				.childGap = 2,
 			},
-			.backgroundColor = GetThemeColor(BackgroundGray),
-			.border = { .color=GetThemeColor(Outline), .width={ .bottom=1 } },
+			.backgroundColor = GetThemeColor(DropdownBack),
+			.border = { .color=GetThemeColor(DropdownBorder), .width={ .bottom=1 } }, //TODO: $THEME Should we have a border on all 3 sides?
 			.cornerRadius = { 0, 0, 4, 4 },
 		});
 	}
@@ -109,32 +109,50 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	ClayId menuId = ToClayId(menuIdStr);
 	ClayId menuListId = ToClayId(menuListIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
+	bool isBtnPressed = (isBtnHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
 	bool isHovered = (isBtnHovered || isMenuHovered);
 	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
-	Color32 backgroundColor = isBtnHoveredOrMenuOpen ? GetThemeColor(Hovered) : Transparent;
-	Color32 borderColor = GetThemeColor(Selected);
-	u16 borderWidth = isHovered ? 1 : 0;
+	Color32 backgroundColor =
+		  isBtnPressed ? GetThemeColor(DropdownBtnBackPressed)
+		: isBtnHovered ? GetThemeColor(DropdownBtnBackHover)
+		:  *isOpenPntr ? GetThemeColor(DropdownBtnBackOpen)
+		:                GetThemeColor(DropdownBtnBack);
+	Color32 borderColor =
+		  isBtnPressed ? GetThemeColor(DropdownBtnBorderPressed)
+		: isBtnHovered ? GetThemeColor(DropdownBtnBorderHover)
+		:  *isOpenPntr ? GetThemeColor(DropdownBtnBorderOpen)
+		:                GetThemeColor(DropdownBtnBorder);
+	Color32 textColor =
+		  isBtnPressed ? GetThemeColor(DropdownBtnTextPressed)
+		: isBtnHovered ? GetThemeColor(DropdownBtnTextHover)
+		:  *isOpenPntr ? GetThemeColor(DropdownBtnTextOpen)
+		:                GetThemeColor(DropdownBtnText);
+	Color32 iconColor =
+		  isBtnPressed ? GetThemeColor(DropdownBtnIconPressed)
+		: isBtnHovered ? GetThemeColor(DropdownBtnIconHover)
+		:  *isOpenPntr ? GetThemeColor(DropdownBtnIconOpen)
+		:                GetThemeColor(DropdownBtnIcon);
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
 		.layout = { .sizing = { .width=CLAY_SIZING_GROW(0), }, .padding = { UI_U16(4), UI_U16(4), UI_U16(8), UI_U16(8) } },
 		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
-		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=borderColor },
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color=borderColor },
 	});
 	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = UI_U16(8) }, } })
 	{
 		if (icon != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), GetThemeColor(TextWhite));
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), iconColor);
 		}
 		CLAY_TEXT(
 			MakeStr8Nt(btnText),
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
-				.textColor = GetThemeColor(TextWhite),
+				.textColor = textColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = { .contraction = TextContraction_ClipRight },
@@ -176,8 +194,8 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 				.padding = CLAY_PADDING_ALL(UI_U16(2)),
 				.childGap = 2, //TOOD: Convert this to use UI_ macros!
 			},
-			.backgroundColor = GetThemeColor(BackgroundGray),
-			.border = { .color=GetThemeColor(Outline), .width={ .bottom=1 } }, //TOOD: Convert this to use UI_ macros!
+			.backgroundColor = GetThemeColor(DropdownBack),
+			.border = { .color=GetThemeColor(DropdownBorder), .width={ .bottom=1 } }, //TODO: $THEME Should we have a border on all 3 sides? TODO: Convert this to use UI_ macros!
 			.cornerRadius = { 0, 0, 4, 4 }, //TOOD: Convert this to use UI_ macros!
 		});
 	}
@@ -195,9 +213,43 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	ClayId hotkeyId = ToClayId(hotkeyIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	Color32 backgroundColor = !isEnabled ? GetThemeColor(BackgroundBlack) : (isPressed ? GetThemeColor(Selected) : (isHovered ? GetThemeColor(Hovered) : Transparent));
-	Color32 borderColor = GetThemeColor(Selected);
-	u16 borderWidth = (isHovered && isEnabled) ? 1 : 0;
+	
+	Color32 backgroundColor =
+		  !isEnabled  ? GetThemeColor(DropdownBtnBackDisabled)
+		: isPressed   ? GetThemeColor(DropdownBtnBackPressed)
+		: isHovered   ? GetThemeColor(DropdownBtnBackHover)
+		:               GetThemeColor(DropdownBtnBack);
+	Color32 borderColor =
+		  !isEnabled  ? GetThemeColor(DropdownBtnBorderDisabled)
+		: isPressed   ? GetThemeColor(DropdownBtnBorderPressed)
+		: isHovered   ? GetThemeColor(DropdownBtnBorderHover)
+		:               GetThemeColor(DropdownBtnBorder);
+	Color32 textColor =
+		  !isEnabled  ? GetThemeColor(DropdownBtnTextDisabled)
+		: isPressed   ? GetThemeColor(DropdownBtnTextPressed)
+		: isHovered   ? GetThemeColor(DropdownBtnTextHover)
+		:               GetThemeColor(DropdownBtnText);
+	Color32 iconColor =
+		  !isEnabled  ? GetThemeColor(DropdownBtnIconDisabled)
+		: isPressed   ? GetThemeColor(DropdownBtnIconPressed)
+		: isHovered   ? GetThemeColor(DropdownBtnIconHover)
+		:               GetThemeColor(DropdownBtnIcon);
+	Color32 hotkeyBackColor =
+		  !isEnabled  ? GetThemeColor(HotkeyBackDisabled)
+		: isPressed   ? GetThemeColor(HotkeyBackPressed)
+		: isHovered   ? GetThemeColor(HotkeyBackHover)
+		:               GetThemeColor(HotkeyBack);
+	Color32 hotkeyBorderColor =
+		  !isEnabled  ? GetThemeColor(HotkeyBorderDisabled)
+		: isPressed   ? GetThemeColor(HotkeyBorderPressed)
+		: isHovered   ? GetThemeColor(HotkeyBorderHover)
+		:               GetThemeColor(HotkeyBorder);
+	Color32 hotkeyTextColor =
+		  !isEnabled  ? GetThemeColor(HotkeyTextDisabled)
+		: isPressed   ? GetThemeColor(HotkeyTextPressed)
+		: isHovered   ? GetThemeColor(HotkeyTextHover)
+		:               GetThemeColor(HotkeyText);
+	
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -207,7 +259,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 		},
 		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
-		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=borderColor },
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color=borderColor },
 		.tooltip = {
 			.text = tooltipStr,
 			.fontId = app->clayUiFontId,
@@ -225,14 +277,14 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	{
 		if (icon != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), GetThemeColor(TextWhite));
+			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), iconColor);
 		}
 		CLAY_TEXT(
 			btnText,
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayUiFontId,
 				.fontSize = (u16)app->uiFontSize,
-				.textColor = GetThemeColor(TextWhite),
+				.textColor = textColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = { .contraction = TextContraction_ClipRight },
@@ -247,7 +299,8 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 					.layoutDirection = CLAY_LEFT_TO_RIGHT,
 					.padding = { .left=UI_U16(2), .right=UI_U16(2), .top=UI_U16(1), .bottom=UI_U16(1) },
 				},
-				.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color = GetThemeColor(TextGray) },
+				.backgroundColor = hotkeyBackColor,
+				.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(1)), .color = hotkeyBorderColor },
 				.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(5)),
 			})
 			{
@@ -256,7 +309,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 					CLAY_TEXT_CONFIG({
 						.fontId = app->clayUiFontId,
 						.fontSize = (u16)app->uiFontSize,
-						.textColor = GetThemeColor(TextGray),
+						.textColor = hotkeyTextColor,
 						.wrapMode = CLAY_TEXT_WRAP_NONE,
 						.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 						.userData = { .contraction = TextContraction_ClipRight },
@@ -285,22 +338,62 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	Color32 backColor = enabled ? GetThemeColor(Selected) : Transparent;
-	Color32 hoverColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), enabled ? 0.75f : 0.0f);
-	Color32 pressColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f);
-	Color32 textColor = enabled ? GetThemeColor(TextWhite) : GetThemeColor(TextGray);
-	Color32 valueColor = enabled ? GetThemeColor(TextWhite) : GetThemeColor(TextGray);
-	Color32 outlineColor = enabled ? GetThemeColor(Selected) : (isHovered ? ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f) : GetThemeColor(Outline));
+	
+	Color32 backgroundColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionBackTurningOn)
+			: isHovered ? GetThemeColor(OptionBackOnHovered)
+			:             GetThemeColor(OptionBackOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionBackTurningOff)
+			: isHovered ? GetThemeColor(OptionBackOffHovered)
+			:             GetThemeColor(OptionBackOff)
+		)
+	);
+	Color32 borderColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionBorderTurningOn)
+			: isHovered ? GetThemeColor(OptionBorderOnHovered)
+			:             GetThemeColor(OptionBorderOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionBorderTurningOff)
+			: isHovered ? GetThemeColor(OptionBorderOffHovered)
+			:             GetThemeColor(OptionBorderOff)
+		)
+	);
+	Color32 nameTextColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionNameTextTurningOn)
+			: isHovered ? GetThemeColor(OptionNameTextOnHovered)
+			:             GetThemeColor(OptionNameTextOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionNameTextTurningOff)
+			: isHovered ? GetThemeColor(OptionNameTextOffHovered)
+			:             GetThemeColor(OptionNameTextOff)
+		)
+	);
+	Color32 valueTextColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionValueTextTurningOn)
+			: isHovered ? GetThemeColor(OptionValueTextOnHovered)
+			:             GetThemeColor(OptionValueTextOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionValueTextTurningOff)
+			: isHovered ? GetThemeColor(OptionValueTextOffHovered)
+			:             GetThemeColor(OptionValueTextOff)
+		)
+	);
+	
 	CLAY({ .id = btnId,
 		.layout = {
 			.layoutDirection = CLAY_LEFT_TO_RIGHT,
 			.padding = CLAY_PADDING_ALL(UI_U16(4)),
 			.sizing = { .width = CLAY_SIZING_GROW(0), },
 		},
-		.backgroundColor = (isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
+		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 		.border = {
-			.color = outlineColor,
+			.color = borderColor,
 			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
 		},
 		.tooltip = {
@@ -317,7 +410,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayMainFontId,
 				.fontSize = (u16)app->mainFontSize,
-				.textColor = textColor,
+				.textColor = nameTextColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 				.userData = { .contraction = app->settings.clipNamesLeft ? TextContraction_EllipseLeft : TextContraction_EllipseRight },
@@ -332,7 +425,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 				CLAY_TEXT_CONFIG({
 					.fontId = app->clayMainFontId,
 					.fontSize = (u16)app->mainFontSize,
-					.textColor = valueColor,
+					.textColor = valueTextColor,
 				})
 			);
 		}
@@ -348,11 +441,41 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	Color32 backColor = enabled ? GetThemeColor(Selected) : Transparent;
-	Color32 hoverColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), enabled ? 0.75f : 0.0f);
-	Color32 pressColor = ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f);
-	Color32 textColor = GetThemeColor(TextWhite);
-	Color32 outlineColor = enabled ? GetThemeColor(Selected) : (isHovered ? ColorLerpSimple(GetThemeColor(Hovered), GetThemeColor(Selected), 0.5f) : GetThemeColor(Outline));
+	
+	Color32 backgroundColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionBackTurningOn)
+			: isHovered ? GetThemeColor(OptionBackOnHovered)
+			:             GetThemeColor(OptionBackOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionBackTurningOff)
+			: isHovered ? GetThemeColor(OptionBackOffHovered)
+			:             GetThemeColor(OptionBackOff)
+		)
+	);
+	Color32 borderColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionBorderTurningOn)
+			: isHovered ? GetThemeColor(OptionBorderOnHovered)
+			:             GetThemeColor(OptionBorderOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionBorderTurningOff)
+			: isHovered ? GetThemeColor(OptionBorderOffHovered)
+			:             GetThemeColor(OptionBorderOff)
+		)
+	);
+	Color32 nameTextColor = (enabled
+		? (
+			  isPressed ? GetThemeColor(OptionNameTextTurningOn)
+			: isHovered ? GetThemeColor(OptionNameTextOnHovered)
+			:             GetThemeColor(OptionNameTextOn)
+		) : (
+			  isPressed ? GetThemeColor(OptionNameTextTurningOff)
+			: isHovered ? GetThemeColor(OptionNameTextOffHovered)
+			:             GetThemeColor(OptionNameTextOff)
+		)
+	);
+	
 	u16 buttonPaddingX = UI_U16(SMALL_BTN_PADDING_X);
 	u16 buttonPaddingY = UI_U16(SMALL_BTN_PADDING_Y);
 	CLAY({ .id = btnId,
@@ -362,10 +485,10 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 			.sizing = { .width = CLAY_SIZING_FIXED(buttonWidth) },
 			.childAlignment = { .x = CLAY_ALIGN_X_CENTER },
 		},
-		.backgroundColor = (isPressed ? pressColor : (isHovered ? hoverColor : backColor)),
+		.backgroundColor = backgroundColor,
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 		.border = {
-			.color = outlineColor,
+			.color = borderColor,
 			.width = CLAY_BORDER_OUTSIDE(UI_BORDER(2)),
 		},
 		.tooltip = {
@@ -382,7 +505,7 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 			CLAY_TEXT_CONFIG({
 				.fontId = app->clayMainFontId,
 				.fontSize = (u16)app->mainFontSize,
-				.textColor = textColor,
+				.textColor = nameTextColor,
 				.wrapMode = CLAY_TEXT_WRAP_NONE,
 				.textAlignment = CLAY_TEXT_ALIGN_CENTER,
 			})
@@ -424,7 +547,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 					.height = CLAY_SIZING_GROW(0)
 				},
 			},
-			.backgroundColor = GetThemeColor(BackgroundBlack),
+			.backgroundColor = GetThemeColor(ScrollGutter),
 		})
 		{
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
@@ -433,6 +556,11 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 				scrollGutterDrawRec.Height * scrollbarSizePercent
 			);
 			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+			Color32 scrollBarColor =
+				  state->isDragging ? GetThemeColor(ScrollBarGrab)
+				: isHovered ?         GetThemeColor(ScrollBarHover)
+				:                     GetThemeColor(ScrollBar);
+			
 			CLAY({ .id = scrollbarId,
 				.floating = {
 					.attachTo = CLAY_ATTACH_TO_PARENT,
@@ -445,7 +573,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 						.height = CLAY_SIZING_FIXED(scrollBarSize.Y),
 					},
 				},
-				.backgroundColor = (isHovered || state->isDragging) ? GetThemeColor(TextGray) : GetThemeColor(Outline),
+				.backgroundColor = scrollBarColor,
 				.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2),
 			}) {}
 		}

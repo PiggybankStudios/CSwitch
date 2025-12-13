@@ -791,7 +791,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	TracyCZoneEnd(Zone_Update);
 	OsTime afterUpdateTime = OsGetTime();
 	TracyCZoneN(Zone_BeginFrame, "BeginFrame", true);
-	BeginFrame(platform->GetSokolSwapchain(), screenSizei, GetThemeColor(BackgroundBlack), 1.0f);
+	BeginFrame(platform->GetSokolSwapchain(), screenSizei, GetThemeColor(OptionListBack), 1.0f);
 	TracyCZoneEnd(Zone_BeginFrame);
 	OsTime beforeRenderTime = OsGetTime();
 	{
@@ -834,7 +834,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 					.padding = CLAY_PADDING_ALL(fullscreenBorderThickness)
 				},
 				.border = {
-					.color=GetThemeColor(Selected),
+					.color=GetThemeColor(TopmostBorder),
 					.width=CLAY_BORDER_OUTSIDE(UI_BORDER(fullscreenBorderThickness)),
 				},
 			})
@@ -855,8 +855,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							.childGap = 2,
 							.childAlignment = { .y = CLAY_ALIGN_Y_CENTER },
 						},
-						.backgroundColor = GetThemeColor(BackgroundGray),
-						.border = { .color=GetThemeColor(Outline), .width={ .bottom=UI_BORDER(1) } },
+						.backgroundColor = GetThemeColor(TopbarBack),
+						.border = { .color=GetThemeColor(TopbarBorder), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
 						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
@@ -894,8 +894,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 											ScratchPrintStr("Are you sure you want to clear all %llu recent file entr%s", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
 											AppClearRecentFilesPopupCallback, nullptr
 										);
-										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(TextGray));
-										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, GetThemeColor(Error));
+										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorderHover));
+										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorderHover));
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
@@ -915,8 +915,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
 									AppResetCurrentFilePopupCallback, nullptr
 								);
-								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(TextGray));
-								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(Error));
+								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorderHover));
+								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorderHover));
 							} Clay__CloseElement();
 							
 							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
@@ -1023,7 +1023,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
-										.textColor = GetThemeColor(TextLightGray),
+										.textColor = GetThemeColor(TopbarPathText),
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.userData = { .contraction = TextContraction_EllipseFilePath },
@@ -1069,7 +1069,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							.sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_FIT(0) },
 							.padding = { .top = UI_U16(4) },
 						},
-						.backgroundColor = GetThemeColor(BackgroundGray),
+						.backgroundColor = GetThemeColor(TopbarBack),
 					})
 					{
 						bool wasPrevHovered = false;
@@ -1080,6 +1080,18 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							ClayId tabId = ToClayId(tab->filePath);
 							bool isHovered = IsMouseOverClay(tabId);
 							u16 borderThickness = (isHovered && !isCurrentTab) ? 2 : 0;
+							Color32 backgroundColor =
+								  isCurrentTab ? GetThemeColor(FileTabBackOpen)
+								: isHovered    ? GetThemeColor(FileTabBackHover)
+								:                GetThemeColor(FileTabBack);
+							Color32 borderColor =
+								  isCurrentTab ? GetThemeColor(FileTabBorderOpen)
+								: isHovered    ? GetThemeColor(FileTabBorderHover)
+								:                GetThemeColor(FileTabBorder);
+							Color32 textColor =
+								  isCurrentTab ? GetThemeColor(FileTabTextOpen)
+								: isHovered    ? GetThemeColor(FileTabTextHover)
+								:                GetThemeColor(FileTabText);
 							
 							// Dividers in-between not-selected and not-hovered tabs
 							if (tIndex > 0)
@@ -1089,7 +1101,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									.layout = {
 										.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(1)), .height = CLAY_SIZING_GROW(0) },
 									},
-									.backgroundColor = (shouldShowDivider ? GetThemeColor(TextGray) : Transparent),
+									.backgroundColor = (shouldShowDivider ? GetThemeColor(FileTabDivider) : Transparent),
 								}) {}
 							}
 							
@@ -1100,10 +1112,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									.padding = CLAY_PADDING_ALL(UI_U16(4)),
 								},
 								.cornerRadius = { .topLeft=UI_U16(4), .topRight=UI_U16(4), .bottomLeft=0, .bottomRight=0 },
-								.backgroundColor = isCurrentTab ? GetThemeColor(BackgroundBlack) : (isHovered ? GetThemeColor(Hovered) : GetThemeColor(BackgroundGray)),
+								.backgroundColor = backgroundColor,
 								.border = {
-									.color = GetThemeColor(Selected),
-									.width = { .left=UI_BORDER(borderThickness), .top=UI_BORDER(borderThickness), .right=UI_BORDER(borderThickness), .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
+									.color = borderColor,
+									.width = { .left=UI_BORDER(2), .top=UI_BORDER(2), .right=UI_BORDER(2), .bottom=0, }, //TODO: Add support to Clay Renderer for missing sides when both corners don't have a radius!
 								},
 							})
 							{
@@ -1115,7 +1127,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									CLAY_TEXT_CONFIG({
 										.fontId = app->clayUiFontId,
 										.fontSize = (u16)app->uiFontSize,
-										.textColor = (isCurrentTab || isHovered) ? GetThemeColor(TextWhite) : GetThemeColor(TextLightGray),
+										.textColor = textColor,
 										.wrapMode = CLAY_TEXT_WRAP_NONE,
 										.textAlignment = CLAY_TEXT_ALIGN_SHRINK,
 										.userData = { .contraction = TextContraction_EllipseRight },
@@ -1342,11 +1354,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			Str8 openTooltipStr = (openTooltip != nullptr) ? openTooltip->displayStr : Str8_Empty;
 			BindFont(&app->uiFont);
 			v2 textPos = MakeV2(10, 200);
-			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(TextLightGray)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
 		}
 		#endif
 		
