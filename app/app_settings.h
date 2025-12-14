@@ -23,7 +23,7 @@ Description:
 	X(Bool, bool, "ClipNamesLeft", clipNamesLeft, false)                     \
 	X(Bool, bool, "SmoothScrollingDisabled", smoothScrollingDisabled, false) \
 	X(Bool, bool, "OptionTooltipsDisabled", optionTooltipsDisabled, false)   \
-	X(String, Str8, "Theme", theme, StrLit("Dark"))                          \
+	X(String, Str8, "ThemeMode", themeMode, StrLit("Dark"))                  \
 	X(String, Str8, "UserThemePath", userThemePath, StrLit(""))
 
 typedef enum AppSettingType AppSettingType;

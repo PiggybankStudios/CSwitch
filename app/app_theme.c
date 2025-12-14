@@ -55,11 +55,11 @@ void CombineUserTheme(const UserTheme* baseTheme, const UserTheme* overrideTheme
 		const VarArrayLoopGet(UserThemeEntry, baseEntry, &baseTheme->entries, eIndex);
 		if (baseEntry->isStrValue)
 		{
-			AddUserThemeEntryStr(themeOut, baseEntry->presetTheme, baseEntry->key, baseEntry->valueStr);
+			AddUserThemeEntryStr(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueStr);
 		}
 		else
 		{
-			AddUserThemeEntryColor(themeOut, baseEntry->presetTheme, baseEntry->key, baseEntry->valueColor);
+			AddUserThemeEntryColor(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueColor);
 		}
 	}
 	VarArrayLoop(&overrideTheme->entries, eIndex)
@@ -67,16 +67,16 @@ void CombineUserTheme(const UserTheme* baseTheme, const UserTheme* overrideTheme
 		const VarArrayLoopGet(UserThemeEntry, overrideEntry, &overrideTheme->entries, eIndex);
 		if (overrideEntry->isStrValue)
 		{
-			AddUserThemeEntryStr(themeOut, overrideEntry->presetTheme, overrideEntry->key, overrideEntry->valueStr);
+			AddUserThemeEntryStr(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueStr);
 		}
 		else
 		{
-			AddUserThemeEntryColor(themeOut, overrideEntry->presetTheme, overrideEntry->key, overrideEntry->valueColor);
+			AddUserThemeEntryColor(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueColor);
 		}
 	}
 }
 
-Result BakeUserTheme(UserTheme* userTheme, PresetTheme presetTheme, BakedTheme* themeOut)
+Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 {
 	Result result = Result_None;
 	
@@ -106,7 +106,7 @@ Result BakeUserTheme(UserTheme* userTheme, PresetTheme presetTheme, BakedTheme* 
 				}
 				else
 				{
-					UserThemeEntry* referencedEntry = FindUserThemeEntry(userTheme, entry->presetTheme, entry->valueStr);
+					UserThemeEntry* referencedEntry = FindUserThemeEntry(userTheme, entry->mode, entry->valueStr);
 					if (referencedEntry != nullptr)
 					{
 						referencedEntry->isReferenced = true;
@@ -167,7 +167,7 @@ Result BakeUserTheme(UserTheme* userTheme, PresetTheme presetTheme, BakedTheme* 
 		for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
 		{
 			Str8 enumValueName = MakeStr8Nt(GetThemeColorStr((ThemeColor)cIndex));
-			UserThemeEntry* referencedEntry = FindUserThemeEntry(userTheme, presetTheme, enumValueName);
+			UserThemeEntry* referencedEntry = FindUserThemeEntry(userTheme, mode, enumValueName);
 			if (referencedEntry != nullptr)
 			{
 				themeOut->colors[cIndex] = referencedEntry->valueColor;
@@ -186,14 +186,13 @@ Result BakeUserTheme(UserTheme* userTheme, PresetTheme presetTheme, BakedTheme* 
 	return result;
 }
 
-//NOTE: This only really extracts some of the colors depending on targetPreset and @Light or @Dark labels in the file. Be careful when reserializing this theme since some colors might have been ommitted
 Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 {
 	NotNull(themeOut);
 	NotNull(themeOut->arena);
 	if (IsEmptyStr(fileContents)) { return Result_EmptyFile; }
 	
-	PresetTheme currentPreset = PresetTheme_None;
+	ThemeMode currentMode = ThemeMode_None;
 	
 	TextParser parser = MakeTextParser(fileContents);
 	ParsingToken token;
@@ -206,10 +205,14 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 			
 			case ParsingTokenType_Directive:
 			{
-				PresetTheme presetTheme = PresetTheme_None;
-				if (TryParsePresetTheme(token.value, &presetTheme) && presetTheme != PresetTheme_None)
+				ThemeMode themeMode = ThemeMode_None;
+				if (TryParseThemeMode(token.value, &themeMode) && themeMode != ThemeMode_None)
 				{
-					currentPreset = presetTheme;
+					currentMode = themeMode;
+				}
+				else if (StrAnyCaseEquals(token.value, StrLit("All")))
+				{
+					currentMode = ThemeMode_None;
 				}
 				else
 				{
@@ -220,16 +223,19 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 			
 			case ParsingTokenType_KeyValuePair:
 			{
-				//TODO: Check for duplicate keys and report them as warnings
+				bool isNewEntry = false;
+				
 				Color32 colorValue = Black;
 				if (TryParseColor(token.value, &colorValue, nullptr))
 				{
-					AddUserThemeEntryColor(themeOut, currentPreset, token.key, colorValue);
+					isNewEntry = AddUserThemeEntryColor(themeOut, currentMode, token.key, colorValue);
 				}
 				else
 				{
-					AddUserThemeEntryStr(themeOut, currentPreset, token.key, token.value);
+					isNewEntry = AddUserThemeEntryStr(themeOut, currentMode, token.key, token.value);
 				}
+				
+				if (!isNewEntry) { NotifyPrint_W("Duplicate entry in theme file for \"%.*s\" on line %llu", StrPrint(token.str), parser.lineParser.lineIndex); }
 			} break;
 			
 			default:

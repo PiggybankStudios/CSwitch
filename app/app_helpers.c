@@ -583,7 +583,7 @@ void AppBakeTheme()
 	}
 	
 	BakedTheme newBakedTheme = ZEROED;
-	Result bakeResult = BakeUserTheme(&combinedTheme, app->currentThemePreset, &newBakedTheme);
+	Result bakeResult = BakeUserTheme(&combinedTheme, app->currentThemeMode, &newBakedTheme);
 	if (bakeResult == Result_Success)
 	{
 		MyMemCopy(&app->theme, &newBakedTheme, sizeof(BakedTheme));

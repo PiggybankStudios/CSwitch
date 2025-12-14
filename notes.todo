@@ -7,11 +7,8 @@
 	[X] Choose colors in theme carefully to maximize theme flexibility
 		[ ] Unused warnings are unhelpful (or maybe buggy?)
 		[ ] Rename "UserTheme" to something else? The default theme being a "UserTheme" is confusing
-		[X] Reload theme file when it changes
-		[ ] Rename PresetTheme to ThemeMode
 		[ ] Rename light theme vars
 		[ ] Load embedded txt files for default theme rather than #defines
-		[X] Button for clearing custom theme?
 		[ ] Option for dumping default theme and/or custom theme template
 	[ ] Separate state from unique UI element names?
 	[ ] Update file watching to use PigCore file watch functions/type
@@ -53,6 +50,9 @@
 	[ ] 
 
 # Finished List:
+	[X] Reload theme file when it changes
+	[X] Rename PresetTheme to ThemeMode
+	[X] Button for clearing custom theme?
 	[X] Vertically center text!
 	[X] Get app hot-reloading working
 	[X] Add support for custom theme(s)

@@ -284,11 +284,11 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
 	InitDefaultTheme(&app->defaultTheme);
 	AppLoadUserTheme();
-	if (!TryParsePresetTheme(app->settings.theme, &app->currentThemePreset))
+	if (!TryParseThemeMode(app->settings.themeMode, &app->currentThemeMode))
 	{
-		NotifyPrint_W("Unknown theme name in settings file: \"%.*s\"\nDefaulting to Dark Theme", StrPrint(app->settings.theme));
-		app->currentThemePreset = PresetTheme_Dark;
-		SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
+		NotifyPrint_W("Unknown theme mode in settings file: \"%.*s\"\nDefaulting to Dark Mode", StrPrint(app->settings.themeMode));
+		app->currentThemeMode = ThemeMode_Dark;
+		SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
 		SaveAppSettings();
 	}
 	AppBakeTheme();
@@ -913,10 +913,17 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
-							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetPresetThemeStr(app->currentThemePreset)), Str8_Empty, StrLit("Toggle between dark and light theme"), true, &app->icons[AppIcon_LightDark]))
+							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+								? ThemeMode_Debug
+								: ((app->currentThemeMode == ThemeMode_Dark)
+									? ThemeMode_Light
+									: ThemeMode_Dark
+								)
+							);
+							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetThemeModeStr(otherThemeMode)), Str8_Empty, StrLit("Toggle between dark and light theme"), true, &app->icons[AppIcon_LightDark]))
 							{
-								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
-								SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
+								app->currentThemeMode = otherThemeMode;
+								SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
 								SaveAppSettings();
 								AppBakeTheme();
 							} Clay__CloseElement();
