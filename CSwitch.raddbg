@@ -1,9 +1,12 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "app/app_theme.c"
+recent_file: path: "app/app_theme.h"
+recent_file: path: "app/app_main.c"
 recent_file: path: "app/platform_main.c"
 recent_file: path: "core/mem/mem_arena.h"
+recent_file: path: "core/cross/cross_mem_arena_and_string.h"
 recent_file: path: "core/third_party/sokol/sokol_app.h"
-recent_file: path: "app/app_main.c"
 recent_file: path: "core/gfx/gfx_system.h"
 recent_file: path: "core/misc/misc_printing.h"
 recent_file: path: "app/app_textbox.c"
@@ -17,17 +20,17 @@ theme: "VS (Dark)"
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66200968965135
+  timestamp: 66200977592742
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66200968964006
+  timestamp: 66200977591530
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66200968966323
+  timestamp: 66200979130315
 }
 debug_info:
 {
@@ -53,4 +56,9 @@ type_view:
 {
   type: Color32
   expr: "rows($, hex(valueU32), (int)r, (int)g, (int)b, (int)a)"
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/CSwitch/_build/clang_rt.asan_dynamic-x86_64.pdb"
+  timestamp: 66188294109391
 }

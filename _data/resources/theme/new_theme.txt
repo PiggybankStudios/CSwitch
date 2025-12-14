@@ -1,0 +1,192 @@
+
+// Terms
+//    Back: Background of an element (aka the fill color)
+//    Border: An outline around the edge of the element (sometimes rounded)
+//    Text: The text inside an element (usually needs to contrast with Back color)
+//    Topbar: The bar at the top of the window that holds menu TopbarBtns like "File" and "View" and also the TopbarPath for the currently open file
+//    Dropdown: A panel that appears below a TopbarBtn when it is open. Contains a vertical list of DropdownBtns. Some of those buttons actually open Submenus to the right with their own DropdownBtns
+//    Scroll: A column to the right of a scrollable list which has a ScrollGutter (the background) and a ScrollBar (the moving/interactable element in the gutter)
+//    Tooltip: Box with explanatory text that shows up after hovering over an element for a little while
+//    Option: A single toggleable element in the primary list (represents a #define in the file that can be toggled on/off)
+
+Transparent     = 00000000 //0% black
+Darken25        = 40000000 //25% black
+Black           = 191B1C //BackgroundBlack
+DarkGray        = 1F2223 //BackgroundDarkGray
+Gray            = 272A2B //BackgroundGray
+White           = DDDEE0 //TextWhite
+LighterGray     = AFB1B3 //TextLightGray
+LightGray       = 6B7078 //TextGray
+DarkestBlue     = 343A3B //Outline
+DarkBlue        = 103C4C //Hovered
+Blue            = 0079A6 //Selected
+Red             = FF6666 //Error
+DarkBlueToBlue1 = Lerp(DarkBlue, Blue, 0.5)
+DarkBlueToBlue2 = Lerp(DarkBlue, Blue, 0.75)
+Blue50          = ColorWithAlpha(Blue, 0.5)
+LightGray50     = ColorWithAlpha(LightGray, 0.5)
+Red50           = ColorWithAlpha(Red, 0.5)
+
+MonokaiDarkGray:  212121
+MonokaiGray1:     AFAFA2
+MonokaiGreen:     A6E22E
+MonokaiLightBlue: A9FFFF
+MonokaiLightGray: BBBBBB
+MonokaiMagenta:   F92672
+MonokaiOrange:    FD971F
+MonokaiPurple:    AE81FF
+
+OptionListBack: Black
+ScrollGutter: Black
+ScrollBar: DarkestBlue
+ScrollBarHover: LightGray
+ScrollBarGrab: LightGray
+TooltipBack: White
+TooltipBorder: Transparent
+TooltipText: DarkGray
+TopmostBorder: Blue
+TopbarBack: Gray
+TopbarBorder: DarkestBlue
+TopbarPathText: LighterGray
+DropdownBack: Gray
+
+OptionBackOff: Transparent
+OptionBackOn: Blue
+OptionBackOnHovered: DarkBlueToBlue2
+OptionBackOffHovered: DarkBlue
+OptionBackTurningOff: DarkBlueToBlue1
+OptionBackTurningOn: DarkBlueToBlue1
+OptionBorderOff: DarkestBlue
+OptionBorderOn: Blue
+OptionBorderOffHovered: DarkBlueToBlue1
+OptionBorderOnHovered: Blue
+OptionBorderTurningOff: DarkBlueToBlue1
+OptionBorderTurningOn: Blue
+OptionNameTextOff: LightGray
+OptionNameTextOn: White
+OptionNameTextOffHovered: LightGray
+OptionNameTextOnHovered: White
+OptionNameTextTurningOff: LightGray
+OptionNameTextTurningOn: White
+OptionValueTextOff: LightGray
+OptionValueTextOn: White
+OptionValueTextOffHovered: LightGray
+OptionValueTextOnHovered: White
+OptionValueTextTurningOff: LightGray
+OptionValueTextTurningOn: White
+
+TopbarBtnBack: Transparent
+TopbarBtnBackHover: DarkBlue
+TopbarBtnBackOpen: DarkBlue
+TopbarBtnBorder: Transparent
+TopbarBtnBorderHover: Blue
+TopbarBtnBorderOpen: Transparent
+TopbarBtnText: White
+TopbarBtnTextHover: White
+TopbarBtnTextOpen: White
+
+DropdownBtnBack: Transparent
+DropdownBtnBackHover: DarkBlue
+DropdownBtnBackPressed: Blue
+DropdownBtnBackOpen: DarkBlue
+DropdownBtnBackDisabled: Black
+DropdownBtnBorder: Transparent
+DropdownBtnBorderHover: Blue
+DropdownBtnBorderPressed: Transparent
+DropdownBtnBorderOpen: Transparent
+DropdownBtnBorderDisabled: Transparent
+DropdownBtnText: White
+DropdownBtnTextHover: White
+DropdownBtnTextPressed: White
+DropdownBtnTextOpen: White
+DropdownBtnTextDisabled: White
+DropdownBtnIcon: White
+DropdownBtnIconHover: White
+DropdownBtnIconPressed: White
+DropdownBtnIconOpen: White
+DropdownBtnIconDisabled: White
+
+HotkeyBack: Transparent
+HotkeyBackHover: Transparent
+HotkeyBackPressed: Transparent
+HotkeyBackDisabled: Transparent
+HotkeyBorder: LightGray
+HotkeyBorderHover: LightGray
+HotkeyBorderPressed: LightGray
+HotkeyBorderDisabled: LightGray
+HotkeyText: LightGray
+HotkeyTextHover: LightGray
+HotkeyTextPressed: LightGray
+HotkeyTextDisabled: LightGray
+
+FileTabBack: Gray
+FileTabDivider: LightGray
+FileTabBackHover: DarkestBlue
+FileTabBackOpen: Black
+FileTabBorder: Transparent
+FileTabBorderHover: Blue
+FileTabBorderOpen: Transparent
+FileTabText: LighterGray
+FileTabTextHover: White
+FileTabTextOpen: White
+
+ConfirmDialogDarken: Darken25
+ConfirmDialogBack: Gray
+ConfirmDialogBorder: LighterGray
+ConfirmDialogText: White
+ConfirmDialogPositiveBtnBack: Transparent
+ConfirmDialogPositiveBtnBackHover: Blue50
+ConfirmDialogPositiveBtnBackPressed: Blue50
+ConfirmDialogPositiveBtnBorder: Blue50
+ConfirmDialogPositiveBtnBorderHover: Blue
+ConfirmDialogPositiveBtnBorderPressed: Blue
+ConfirmDialogPositiveBtnText: White
+ConfirmDialogPositiveBtnTextHover: White
+ConfirmDialogPositiveBtnTextPressed: White
+ConfirmDialogNegativeBtnBack: Transparent
+ConfirmDialogNegativeBtnBackHover: Red50
+ConfirmDialogNegativeBtnBackPressed: Red50
+ConfirmDialogNegativeBtnBorder: Red50
+ConfirmDialogNegativeBtnBorderHover: Red
+ConfirmDialogNegativeBtnBorderPressed: Red
+ConfirmDialogNegativeBtnText: White
+ConfirmDialogNegativeBtnTextHover: White
+ConfirmDialogNegativeBtnTextPressed: White
+ConfirmDialogNeutralBtnBack: Transparent
+ConfirmDialogNeutralBtnBackHover: LightGray50
+ConfirmDialogNeutralBtnBackPressed: LightGray50
+ConfirmDialogNeutralBtnBorder: LightGray50
+ConfirmDialogNeutralBtnBorderHover: LightGray
+ConfirmDialogNeutralBtnBorderPressed: LightGray
+ConfirmDialogNeutralBtnText: White
+ConfirmDialogNeutralBtnTextHover: White
+ConfirmDialogNeutralBtnTextPressed: White
+
+NotificationDebugBack: MonokaiDarkGray
+NotificationDebugBorder: MonokaiLightGray
+NotificationDebugText: White
+NotificationDebugIcon: MonokaiGray1
+NotificationRegularBack: MonokaiDarkGray
+NotificationRegularBorder: MonokaiLightGray
+NotificationRegularText: White
+NotificationRegularIcon: White
+NotificationInfoBack: MonokaiDarkGray
+NotificationInfoBorder: MonokaiLightGray
+NotificationInfoText: White
+NotificationInfoIcon: MonokaiGreen
+NotificationNotifyBack: MonokaiDarkGray
+NotificationNotifyBorder: MonokaiLightGray
+NotificationNotifyText: White
+NotificationNotifyIcon: MonokaiPurple
+NotificationOtherBack: MonokaiDarkGray
+NotificationOtherBorder: MonokaiLightGray
+NotificationOtherText: White
+NotificationOtherIcon: MonokaiLightBlue
+NotificationWarningBack: MonokaiDarkGray
+NotificationWarningBorder: MonokaiLightGray
+NotificationWarningText: White
+NotificationWarningIcon: MonokaiOrange
+NotificationErrorBack: MonokaiDarkGray
+NotificationErrorBorder: MonokaiLightGray
+NotificationErrorText: White
+NotificationErrorIcon: MonokaiMagenta

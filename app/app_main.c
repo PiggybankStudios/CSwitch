@@ -233,21 +233,15 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitAppSettings(stdHeap, &app->settings);
 	LoadAppSettings();
 	
-	InitDarkThemePreset(&app->themePresets[PresetTheme_Dark]);
-	InitLightThemePreset(&app->themePresets[PresetTheme_Light]);
-	InitDebugThemePreset(&app->themePresets[PresetTheme_Debug]);
-	ClearStruct(app->themeOverrides);
+	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
+	InitDefaultTheme(&app->defaultTheme);
+	app->needToBakeTheme = true;
 	if (!TryParsePresetTheme(app->settings.theme, &app->currentThemePreset))
 	{
 		NotifyPrint_W("Unknown theme name in settings file: \"%.*s\"\nDefaulting to Dark Theme", StrPrint(app->settings.theme));
 		app->currentThemePreset = PresetTheme_Dark;
 		SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
 		SaveAppSettings();
-	}
-	if (!IsEmptyStr(app->settings.userThemePath))
-	{
-		PrintLine_I("Loading user theme from \"%.*s\"", StrPrint(app->settings.userThemePath));
-		app->needToReloadUserTheme = true;
 	}
 	
 	InitAppResources(&app->resources);
@@ -764,24 +758,44 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// 	UpdateClayTextbox(&app->testTextbox);
 	// }
 	
-	if (app->needToReloadUserTheme)
+	if (app->needToBakeTheme)
 	{
-		app->needToReloadUserTheme = false;
+		app->needToBakeTheme = false;
+		
+		UserTheme combinedTheme = ZEROED;
 		if (!IsEmptyStr(app->settings.userThemePath))
 		{
-			Theme parsedTheme;
-			Result parseResult = TryLoadThemeFile(app->settings.userThemePath, app->currentThemePreset, &parsedTheme);
+			UserTheme newUserTheme;
+			InitUserTheme(scratch, &newUserTheme, ThemeColor_Count);
+			Result parseResult = TryLoadThemeFile(app->settings.userThemePath, &newUserTheme);
 			if (parseResult == Result_Success)
 			{
-				MyMemCopy(&app->themeOverrides, &parsedTheme, sizeof(Theme));
+				InitUserTheme(scratch, &combinedTheme, MaxUXX(app->defaultTheme.entries.length, newUserTheme.entries.length));
+				CombineUserTheme(&app->defaultTheme, &newUserTheme, &combinedTheme);
 			}
 			else
 			{
 				NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
-				MyMemSet(&app->themeOverrides, 0x00, sizeof(Theme));
+				FreeUserTheme(&app->userThemeOverrides);
 				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
 				SaveAppSettings();
 			}
+		}
+		
+		if (IsEmptyStr(app->settings.userThemePath))
+		{
+			MyMemCopy(&combinedTheme, &app->defaultTheme, sizeof(UserTheme));
+		}
+		
+		BakedTheme newBakedTheme = ZEROED;
+		Result bakeResult = BakeUserTheme(&combinedTheme, app->currentThemePreset, &newBakedTheme);
+		if (bakeResult == Result_Success)
+		{
+			MyMemCopy(&app->theme, &newBakedTheme, sizeof(BakedTheme));
+		}
+		else
+		{
+			Notify_E("Failed to update baked theme!");
 		}
 	}
 	
@@ -935,7 +949,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
 								SaveAppSettings();
-								app->needToReloadUserTheme = true;
+								app->needToBakeTheme = true;
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, StrLit("Browse to theme file to use"), true, nullptr))
@@ -1408,7 +1422,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			{
 				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, selectedPath);
 				SaveAppSettings();
-				app->needToReloadUserTheme = true;
+				app->needToBakeTheme = true;
 			}
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }

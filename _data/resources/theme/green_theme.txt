@@ -1,0 +1,24 @@
+
+BrightGreen: 32ff49
+FadedGreen: 00e42a
+DarkGreen: 2bbf38
+Orange: ffd132
+
+@Dark
+OptionBorder: FF00FF
+OptionBorderOff: OptionBorder
+OptionBorderOn: OptionBorder
+
+OptionBorderOff: DarkGreen
+OptionBorderOffHovered: FadedGreen
+OptionBorderTurningOff: Orange
+OptionBorderOn: BrightGreen
+OptionBorderOnHovered: BrightGreen
+OptionBorderTurningOn: Orange
+
+OptionBackOn: Transparent
+OptionBackOnHovered: Transparent
+OptionBackTurningOn: Transparent
+OptionBackOff: Transparent
+OptionBackOffHovered: Transparent
+OptionBackTurningOff: Transparent

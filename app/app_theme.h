@@ -53,307 +53,307 @@ Date:   12\10\2025
 // +--------------------------------------------------------------+
 // |                      Dark Theme Colors                       |
 // +--------------------------------------------------------------+
-	#define DarkThemeColor_OptionListBack                        DarkThemeVar_Black
-	#define DarkThemeColor_ScrollGutter                          DarkThemeVar_Black
-	#define DarkThemeColor_ScrollBar                             DarkThemeVar_DarkestBlue
-	#define DarkThemeColor_ScrollBarHover                        DarkThemeVar_LightGray
-	#define DarkThemeColor_ScrollBarGrab                         DarkThemeVar_LightGray
-	#define DarkThemeColor_TooltipBack                           DarkThemeVar_White
-	#define DarkThemeColor_TooltipBorder                         ThemeVar_Transparent
-	#define DarkThemeColor_TooltipText                           DarkThemeVar_DarkGray
-	#define DarkThemeColor_TopmostBorder                         DarkThemeVar_Blue
-	#define DarkThemeColor_TopbarBack                            DarkThemeVar_Gray
-	#define DarkThemeColor_TopbarBorder                          DarkThemeVar_DarkestBlue
-	#define DarkThemeColor_TopbarPathText                        DarkThemeVar_LighterGray
-	#define DarkThemeColor_DropdownBack                          DarkThemeVar_Gray
-	#define DarkThemeColor_DropdownBorder                        DarkThemeVar_DarkestBlue
-	#define DarkThemeColor_OptionBackOff                         ThemeVar_Transparent
-	#define DarkThemeColor_OptionBackOn                          DarkThemeVar_Blue
-	#define DarkThemeColor_OptionBackOnHovered                   DarkThemeVar_DarkBlueToBlue2
-	#define DarkThemeColor_OptionBackOffHovered                  DarkThemeVar_DarkBlue
-	#define DarkThemeColor_OptionBackTurningOff                  DarkThemeVar_DarkBlueToBlue1
-	#define DarkThemeColor_OptionBackTurningOn                   DarkThemeVar_DarkBlueToBlue1
-	#define DarkThemeColor_OptionBorderOff                       DarkThemeVar_DarkestBlue
-	#define DarkThemeColor_OptionBorderOn                        DarkThemeVar_Blue
-	#define DarkThemeColor_OptionBorderOffHovered                DarkThemeVar_DarkBlueToBlue1
-	#define DarkThemeColor_OptionBorderOnHovered                 DarkThemeVar_Blue
-	#define DarkThemeColor_OptionBorderTurningOff                DarkThemeVar_DarkBlueToBlue1
-	#define DarkThemeColor_OptionBorderTurningOn                 DarkThemeVar_Blue
-	#define DarkThemeColor_OptionNameTextOff                     DarkThemeVar_LightGray
-	#define DarkThemeColor_OptionNameTextOn                      DarkThemeVar_White
-	#define DarkThemeColor_OptionNameTextOffHovered              DarkThemeVar_LightGray
-	#define DarkThemeColor_OptionNameTextOnHovered               DarkThemeVar_White
-	#define DarkThemeColor_OptionNameTextTurningOff              DarkThemeVar_LightGray
-	#define DarkThemeColor_OptionNameTextTurningOn               DarkThemeVar_White
-	#define DarkThemeColor_OptionValueTextOff                    DarkThemeVar_LightGray
-	#define DarkThemeColor_OptionValueTextOn                     DarkThemeVar_White
-	#define DarkThemeColor_OptionValueTextOffHovered             DarkThemeVar_LightGray
-	#define DarkThemeColor_OptionValueTextOnHovered              DarkThemeVar_White
-	#define DarkThemeColor_OptionValueTextTurningOff             DarkThemeVar_LightGray
-	#define DarkThemeColor_OptionValueTextTurningOn              DarkThemeVar_White
-	#define DarkThemeColor_TopbarBtnBack                         ThemeVar_Transparent
-	#define DarkThemeColor_TopbarBtnBackHover                    DarkThemeVar_DarkBlue
-	#define DarkThemeColor_TopbarBtnBackOpen                     DarkThemeVar_DarkBlue
-	#define DarkThemeColor_TopbarBtnBorder                       ThemeVar_Transparent
-	#define DarkThemeColor_TopbarBtnBorderHover                  DarkThemeVar_Blue
-	#define DarkThemeColor_TopbarBtnBorderOpen                   ThemeVar_Transparent
-	#define DarkThemeColor_TopbarBtnText                         DarkThemeVar_White
-	#define DarkThemeColor_TopbarBtnTextHover                    DarkThemeVar_White
-	#define DarkThemeColor_TopbarBtnTextOpen                     DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnBack                       ThemeVar_Transparent
-	#define DarkThemeColor_DropdownBtnBackHover                  DarkThemeVar_DarkBlue
-	#define DarkThemeColor_DropdownBtnBackPressed                DarkThemeVar_Blue
-	#define DarkThemeColor_DropdownBtnBackOpen                   DarkThemeVar_DarkBlue
-	#define DarkThemeColor_DropdownBtnBackDisabled               DarkThemeVar_Black
-	#define DarkThemeColor_DropdownBtnBorder                     ThemeVar_Transparent
-	#define DarkThemeColor_DropdownBtnBorderHover                DarkThemeVar_Blue
-	#define DarkThemeColor_DropdownBtnBorderPressed              ThemeVar_Transparent
-	#define DarkThemeColor_DropdownBtnBorderOpen                 ThemeVar_Transparent
-	#define DarkThemeColor_DropdownBtnBorderDisabled             ThemeVar_Transparent
-	#define DarkThemeColor_DropdownBtnText                       DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnTextHover                  DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnTextPressed                DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnTextOpen                   DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnTextDisabled               DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnIcon                       DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnIconHover                  DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnIconPressed                DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnIconOpen                   DarkThemeVar_White
-	#define DarkThemeColor_DropdownBtnIconDisabled               DarkThemeVar_White
-	#define DarkThemeColor_HotkeyBack                            ThemeVar_Transparent
-	#define DarkThemeColor_HotkeyBackHover                       ThemeVar_Transparent
-	#define DarkThemeColor_HotkeyBackPressed                     ThemeVar_Transparent
-	#define DarkThemeColor_HotkeyBackDisabled                    ThemeVar_Transparent
-	#define DarkThemeColor_HotkeyBorder                          DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyBorderHover                     DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyBorderPressed                   DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyBorderDisabled                  DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyText                            DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyTextHover                       DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyTextPressed                     DarkThemeVar_LightGray
-	#define DarkThemeColor_HotkeyTextDisabled                    DarkThemeVar_LightGray
-	#define DarkThemeColor_FileTabDivider                        DarkThemeVar_LightGray
-	#define DarkThemeColor_FileTabBack                           DarkThemeVar_Gray
-	#define DarkThemeColor_FileTabBackHover                      DarkThemeVar_DarkestBlue
-	#define DarkThemeColor_FileTabBackOpen                       DarkThemeVar_Black
-	#define DarkThemeColor_FileTabBorder                         ThemeVar_Transparent
-	#define DarkThemeColor_FileTabBorderHover                    DarkThemeVar_Blue
-	#define DarkThemeColor_FileTabBorderOpen                     ThemeVar_Transparent
-	#define DarkThemeColor_FileTabText                           DarkThemeVar_LighterGray
-	#define DarkThemeColor_FileTabTextHover                      DarkThemeVar_White
-	#define DarkThemeColor_FileTabTextOpen                       DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogDarken                   ThemeVar_Darken25
-	#define DarkThemeColor_ConfirmDialogBack                     DarkThemeVar_Gray
-	#define DarkThemeColor_ConfirmDialogBorder                   DarkThemeVar_LighterGray
-	#define DarkThemeColor_ConfirmDialogText                     DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogPositiveBtnBack          ThemeVar_Transparent
-	#define DarkThemeColor_ConfirmDialogPositiveBtnBackHover     DarkThemeVar_Blue50
-	#define DarkThemeColor_ConfirmDialogPositiveBtnBackPressed   DarkThemeVar_Blue50
-	#define DarkThemeColor_ConfirmDialogPositiveBtnBorder        DarkThemeVar_Blue50
-	#define DarkThemeColor_ConfirmDialogPositiveBtnBorderHover   DarkThemeVar_Blue
-	#define DarkThemeColor_ConfirmDialogPositiveBtnBorderPressed DarkThemeVar_Blue
-	#define DarkThemeColor_ConfirmDialogPositiveBtnText          DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogPositiveBtnTextHover     DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogPositiveBtnTextPressed   DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogNegativeBtnBack          ThemeVar_Transparent
-	#define DarkThemeColor_ConfirmDialogNegativeBtnBackHover     DarkThemeVar_Red50
-	#define DarkThemeColor_ConfirmDialogNegativeBtnBackPressed   DarkThemeVar_Red50
-	#define DarkThemeColor_ConfirmDialogNegativeBtnBorder        DarkThemeVar_Red50
-	#define DarkThemeColor_ConfirmDialogNegativeBtnBorderHover   DarkThemeVar_Red
-	#define DarkThemeColor_ConfirmDialogNegativeBtnBorderPressed DarkThemeVar_Red
-	#define DarkThemeColor_ConfirmDialogNegativeBtnText          DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogNegativeBtnTextHover     DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogNegativeBtnTextPressed   DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogNeutralBtnBack           ThemeVar_Transparent
-	#define DarkThemeColor_ConfirmDialogNeutralBtnBackHover      DarkThemeVar_LightGray50
-	#define DarkThemeColor_ConfirmDialogNeutralBtnBackPressed    DarkThemeVar_LightGray50
-	#define DarkThemeColor_ConfirmDialogNeutralBtnBorder         DarkThemeVar_LightGray50
-	#define DarkThemeColor_ConfirmDialogNeutralBtnBorderHover    DarkThemeVar_LightGray
-	#define DarkThemeColor_ConfirmDialogNeutralBtnBorderPressed  DarkThemeVar_LightGray
-	#define DarkThemeColor_ConfirmDialogNeutralBtnText           DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogNeutralBtnTextHover      DarkThemeVar_White
-	#define DarkThemeColor_ConfirmDialogNeutralBtnTextPressed    DarkThemeVar_White
-	#define DarkThemeColor_NotificationDebugBack                 ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationDebugBorder               ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationDebugText                 DarkThemeVar_White
-	#define DarkThemeColor_NotificationDebugIcon                 ThemeVar_MonokaiGray1
-	#define DarkThemeColor_NotificationRegularBack               ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationRegularBorder             ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationRegularText               DarkThemeVar_White
-	#define DarkThemeColor_NotificationRegularIcon               DarkThemeVar_White
-	#define DarkThemeColor_NotificationInfoBack                  ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationInfoBorder                ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationInfoText                  DarkThemeVar_White
-	#define DarkThemeColor_NotificationInfoIcon                  ThemeVar_MonokaiGreen
-	#define DarkThemeColor_NotificationNotifyBack                ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationNotifyBorder              ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationNotifyText                DarkThemeVar_White
-	#define DarkThemeColor_NotificationNotifyIcon                ThemeVar_MonokaiPurple
-	#define DarkThemeColor_NotificationOtherBack                 ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationOtherBorder               ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationOtherText                 DarkThemeVar_White
-	#define DarkThemeColor_NotificationOtherIcon                 ThemeVar_MonokaiLightBlue
-	#define DarkThemeColor_NotificationWarningBack               ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationWarningBorder             ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationWarningText               DarkThemeVar_White
-	#define DarkThemeColor_NotificationWarningIcon               ThemeVar_MonokaiOrange
-	#define DarkThemeColor_NotificationErrorBack                 ThemeVar_MonokaiDarkGray
-	#define DarkThemeColor_NotificationErrorBorder               ThemeVar_MonokaiLightGray
-	#define DarkThemeColor_NotificationErrorText                 DarkThemeVar_White
-	#define DarkThemeColor_NotificationErrorIcon                 ThemeVar_MonokaiMagenta
+	#define DarkThemeColor_OptionListBack                        "Black"
+	#define DarkThemeColor_ScrollGutter                          "Black"
+	#define DarkThemeColor_ScrollBar                             "DarkestBlue"
+	#define DarkThemeColor_ScrollBarHover                        "LightGray"
+	#define DarkThemeColor_ScrollBarGrab                         "LightGray"
+	#define DarkThemeColor_TooltipBack                           "White"
+	#define DarkThemeColor_TooltipBorder                         "Transparent"
+	#define DarkThemeColor_TooltipText                           "DarkGray"
+	#define DarkThemeColor_TopmostBorder                         "Blue"
+	#define DarkThemeColor_TopbarBack                            "Gray"
+	#define DarkThemeColor_TopbarBorder                          "DarkestBlue"
+	#define DarkThemeColor_TopbarPathText                        "LighterGray"
+	#define DarkThemeColor_DropdownBack                          "Gray"
+	#define DarkThemeColor_DropdownBorder                        "DarkestBlue"
+	#define DarkThemeColor_OptionBackOff                         "Transparent"
+	#define DarkThemeColor_OptionBackOn                          "Blue"
+	#define DarkThemeColor_OptionBackOnHovered                   "DarkBlueToBlue2"
+	#define DarkThemeColor_OptionBackOffHovered                  "DarkBlue"
+	#define DarkThemeColor_OptionBackTurningOff                  "DarkBlueToBlue1"
+	#define DarkThemeColor_OptionBackTurningOn                   "DarkBlueToBlue1"
+	#define DarkThemeColor_OptionBorderOff                       "DarkestBlue"
+	#define DarkThemeColor_OptionBorderOn                        "Blue"
+	#define DarkThemeColor_OptionBorderOffHovered                "DarkBlueToBlue1"
+	#define DarkThemeColor_OptionBorderOnHovered                 "Blue"
+	#define DarkThemeColor_OptionBorderTurningOff                "DarkBlueToBlue1"
+	#define DarkThemeColor_OptionBorderTurningOn                 "Blue"
+	#define DarkThemeColor_OptionNameTextOff                     "LightGray"
+	#define DarkThemeColor_OptionNameTextOn                      "White"
+	#define DarkThemeColor_OptionNameTextOffHovered              "LightGray"
+	#define DarkThemeColor_OptionNameTextOnHovered               "White"
+	#define DarkThemeColor_OptionNameTextTurningOff              "LightGray"
+	#define DarkThemeColor_OptionNameTextTurningOn               "White"
+	#define DarkThemeColor_OptionValueTextOff                    "LightGray"
+	#define DarkThemeColor_OptionValueTextOn                     "White"
+	#define DarkThemeColor_OptionValueTextOffHovered             "LightGray"
+	#define DarkThemeColor_OptionValueTextOnHovered              "White"
+	#define DarkThemeColor_OptionValueTextTurningOff             "LightGray"
+	#define DarkThemeColor_OptionValueTextTurningOn              "White"
+	#define DarkThemeColor_TopbarBtnBack                         "Transparent"
+	#define DarkThemeColor_TopbarBtnBackHover                    "DarkBlue"
+	#define DarkThemeColor_TopbarBtnBackOpen                     "DarkBlue"
+	#define DarkThemeColor_TopbarBtnBorder                       "Transparent"
+	#define DarkThemeColor_TopbarBtnBorderHover                  "Blue"
+	#define DarkThemeColor_TopbarBtnBorderOpen                   "Transparent"
+	#define DarkThemeColor_TopbarBtnText                         "White"
+	#define DarkThemeColor_TopbarBtnTextHover                    "White"
+	#define DarkThemeColor_TopbarBtnTextOpen                     "White"
+	#define DarkThemeColor_DropdownBtnBack                       "Transparent"
+	#define DarkThemeColor_DropdownBtnBackHover                  "DarkBlue"
+	#define DarkThemeColor_DropdownBtnBackPressed                "Blue"
+	#define DarkThemeColor_DropdownBtnBackOpen                   "DarkBlue"
+	#define DarkThemeColor_DropdownBtnBackDisabled               "Black"
+	#define DarkThemeColor_DropdownBtnBorder                     "Transparent"
+	#define DarkThemeColor_DropdownBtnBorderHover                "Blue"
+	#define DarkThemeColor_DropdownBtnBorderPressed              "Transparent"
+	#define DarkThemeColor_DropdownBtnBorderOpen                 "Transparent"
+	#define DarkThemeColor_DropdownBtnBorderDisabled             "Transparent"
+	#define DarkThemeColor_DropdownBtnText                       "White"
+	#define DarkThemeColor_DropdownBtnTextHover                  "White"
+	#define DarkThemeColor_DropdownBtnTextPressed                "White"
+	#define DarkThemeColor_DropdownBtnTextOpen                   "White"
+	#define DarkThemeColor_DropdownBtnTextDisabled               "White"
+	#define DarkThemeColor_DropdownBtnIcon                       "White"
+	#define DarkThemeColor_DropdownBtnIconHover                  "White"
+	#define DarkThemeColor_DropdownBtnIconPressed                "White"
+	#define DarkThemeColor_DropdownBtnIconOpen                   "White"
+	#define DarkThemeColor_DropdownBtnIconDisabled               "White"
+	#define DarkThemeColor_HotkeyBack                            "Transparent"
+	#define DarkThemeColor_HotkeyBackHover                       "Transparent"
+	#define DarkThemeColor_HotkeyBackPressed                     "Transparent"
+	#define DarkThemeColor_HotkeyBackDisabled                    "Transparent"
+	#define DarkThemeColor_HotkeyBorder                          "LightGray"
+	#define DarkThemeColor_HotkeyBorderHover                     "LightGray"
+	#define DarkThemeColor_HotkeyBorderPressed                   "LightGray"
+	#define DarkThemeColor_HotkeyBorderDisabled                  "LightGray"
+	#define DarkThemeColor_HotkeyText                            "LightGray"
+	#define DarkThemeColor_HotkeyTextHover                       "LightGray"
+	#define DarkThemeColor_HotkeyTextPressed                     "LightGray"
+	#define DarkThemeColor_HotkeyTextDisabled                    "LightGray"
+	#define DarkThemeColor_FileTabDivider                        "LightGray"
+	#define DarkThemeColor_FileTabBack                           "Gray"
+	#define DarkThemeColor_FileTabBackHover                      "DarkestBlue"
+	#define DarkThemeColor_FileTabBackOpen                       "Black"
+	#define DarkThemeColor_FileTabBorder                         "Transparent"
+	#define DarkThemeColor_FileTabBorderHover                    "Blue"
+	#define DarkThemeColor_FileTabBorderOpen                     "Transparent"
+	#define DarkThemeColor_FileTabText                           "LighterGray"
+	#define DarkThemeColor_FileTabTextHover                      "White"
+	#define DarkThemeColor_FileTabTextOpen                       "White"
+	#define DarkThemeColor_ConfirmDialogDarken                   "Darken25"
+	#define DarkThemeColor_ConfirmDialogBack                     "Gray"
+	#define DarkThemeColor_ConfirmDialogBorder                   "LighterGray"
+	#define DarkThemeColor_ConfirmDialogText                     "White"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnBack          "Transparent"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnBackHover     "Blue50"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnBackPressed   "Blue50"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnBorder        "Blue50"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnBorderHover   "Blue"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnBorderPressed "Blue"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnText          "White"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnTextHover     "White"
+	#define DarkThemeColor_ConfirmDialogPositiveBtnTextPressed   "White"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnBack          "Transparent"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnBackHover     "Red50"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnBackPressed   "Red50"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnBorder        "Red50"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnBorderHover   "Red"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnBorderPressed "Red"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnText          "White"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnTextHover     "White"
+	#define DarkThemeColor_ConfirmDialogNegativeBtnTextPressed   "White"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnBack           "Transparent"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnBackHover      "LightGray50"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnBackPressed    "LightGray50"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnBorder         "LightGray50"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnBorderHover    "LightGray"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnBorderPressed  "LightGray"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnText           "White"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnTextHover      "White"
+	#define DarkThemeColor_ConfirmDialogNeutralBtnTextPressed    "White"
+	#define DarkThemeColor_NotificationDebugBack                 "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationDebugBorder               "MonokaiLightGray"
+	#define DarkThemeColor_NotificationDebugText                 "White"
+	#define DarkThemeColor_NotificationDebugIcon                 "MonokaiGray1"
+	#define DarkThemeColor_NotificationRegularBack               "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationRegularBorder             "MonokaiLightGray"
+	#define DarkThemeColor_NotificationRegularText               "White"
+	#define DarkThemeColor_NotificationRegularIcon               "White"
+	#define DarkThemeColor_NotificationInfoBack                  "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationInfoBorder                "MonokaiLightGray"
+	#define DarkThemeColor_NotificationInfoText                  "White"
+	#define DarkThemeColor_NotificationInfoIcon                  "MonokaiGreen"
+	#define DarkThemeColor_NotificationNotifyBack                "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationNotifyBorder              "MonokaiLightGray"
+	#define DarkThemeColor_NotificationNotifyText                "White"
+	#define DarkThemeColor_NotificationNotifyIcon                "MonokaiPurple"
+	#define DarkThemeColor_NotificationOtherBack                 "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationOtherBorder               "MonokaiLightGray"
+	#define DarkThemeColor_NotificationOtherText                 "White"
+	#define DarkThemeColor_NotificationOtherIcon                 "MonokaiLightBlue"
+	#define DarkThemeColor_NotificationWarningBack               "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationWarningBorder             "MonokaiLightGray"
+	#define DarkThemeColor_NotificationWarningText               "White"
+	#define DarkThemeColor_NotificationWarningIcon               "MonokaiOrange"
+	#define DarkThemeColor_NotificationErrorBack                 "MonokaiDarkGray"
+	#define DarkThemeColor_NotificationErrorBorder               "MonokaiLightGray"
+	#define DarkThemeColor_NotificationErrorText                 "White"
+	#define DarkThemeColor_NotificationErrorIcon                 "MonokaiMagenta"
 // +--------------------------------------------------------------+
 
 // +--------------------------------------------------------------+
 // |                      Light Theme Colors                      |
 // +--------------------------------------------------------------+
-	#define LightThemeColor_OptionListBack                        LightThemeVar_Black
-	#define LightThemeColor_ScrollGutter                          LightThemeVar_Black
-	#define LightThemeColor_ScrollBar                             LightThemeVar_DarkestBlue
-	#define LightThemeColor_ScrollBarHover                        LightThemeVar_LightGray
-	#define LightThemeColor_ScrollBarGrab                         LightThemeVar_LightGray
-	#define LightThemeColor_TooltipBack                           LightThemeVar_White
-	#define LightThemeColor_TooltipBorder                         ThemeVar_Transparent
-	#define LightThemeColor_TooltipText                           LightThemeVar_DarkGray
-	#define LightThemeColor_TopmostBorder                         LightThemeVar_Blue
-	#define LightThemeColor_TopbarBack                            LightThemeVar_Gray
-	#define LightThemeColor_TopbarBorder                          LightThemeVar_DarkestBlue
-	#define LightThemeColor_TopbarPathText                        LightThemeVar_LighterGray
-	#define LightThemeColor_DropdownBack                          LightThemeVar_Gray
-	#define LightThemeColor_DropdownBorder                        LightThemeVar_DarkestBlue
-	#define LightThemeColor_OptionBackOff                         ThemeVar_Transparent
-	#define LightThemeColor_OptionBackOn                          LightThemeVar_Blue
-	#define LightThemeColor_OptionBackOnHovered                   LightThemeVar_DarkBlueToBlue2
-	#define LightThemeColor_OptionBackOffHovered                  LightThemeVar_DarkBlue
-	#define LightThemeColor_OptionBackTurningOff                  LightThemeVar_DarkBlueToBlue1
-	#define LightThemeColor_OptionBackTurningOn                   LightThemeVar_DarkBlueToBlue1
-	#define LightThemeColor_OptionBorderOff                       LightThemeVar_DarkestBlue
-	#define LightThemeColor_OptionBorderOn                        LightThemeVar_Blue
-	#define LightThemeColor_OptionBorderOffHovered                LightThemeVar_DarkBlueToBlue1
-	#define LightThemeColor_OptionBorderOnHovered                 LightThemeVar_Blue
-	#define LightThemeColor_OptionBorderTurningOff                LightThemeVar_DarkBlueToBlue1
-	#define LightThemeColor_OptionBorderTurningOn                 LightThemeVar_Blue
-	#define LightThemeColor_OptionNameTextOff                     LightThemeVar_LightGray
-	#define LightThemeColor_OptionNameTextOn                      LightThemeVar_White
-	#define LightThemeColor_OptionNameTextOffHovered              LightThemeVar_LightGray
-	#define LightThemeColor_OptionNameTextOnHovered               LightThemeVar_White
-	#define LightThemeColor_OptionNameTextTurningOff              LightThemeVar_LightGray
-	#define LightThemeColor_OptionNameTextTurningOn               LightThemeVar_White
-	#define LightThemeColor_OptionValueTextOff                    LightThemeVar_LightGray
-	#define LightThemeColor_OptionValueTextOn                     LightThemeVar_White
-	#define LightThemeColor_OptionValueTextOffHovered             LightThemeVar_LightGray
-	#define LightThemeColor_OptionValueTextOnHovered              LightThemeVar_White
-	#define LightThemeColor_OptionValueTextTurningOff             LightThemeVar_LightGray
-	#define LightThemeColor_OptionValueTextTurningOn              LightThemeVar_White
-	#define LightThemeColor_TopbarBtnBack                         ThemeVar_Transparent
-	#define LightThemeColor_TopbarBtnBackHover                    LightThemeVar_DarkBlue
-	#define LightThemeColor_TopbarBtnBackOpen                     LightThemeVar_DarkBlue
-	#define LightThemeColor_TopbarBtnBorder                       ThemeVar_Transparent
-	#define LightThemeColor_TopbarBtnBorderHover                  LightThemeVar_Blue
-	#define LightThemeColor_TopbarBtnBorderOpen                   ThemeVar_Transparent
-	#define LightThemeColor_TopbarBtnText                         LightThemeVar_White
-	#define LightThemeColor_TopbarBtnTextHover                    LightThemeVar_White
-	#define LightThemeColor_TopbarBtnTextOpen                     LightThemeVar_White
-	#define LightThemeColor_DropdownBtnBack                       ThemeVar_Transparent
-	#define LightThemeColor_DropdownBtnBackHover                  LightThemeVar_DarkBlue
-	#define LightThemeColor_DropdownBtnBackPressed                LightThemeVar_Blue
-	#define LightThemeColor_DropdownBtnBackOpen                   LightThemeVar_DarkBlue
-	#define LightThemeColor_DropdownBtnBackDisabled               LightThemeVar_Black
-	#define LightThemeColor_DropdownBtnBorder                     ThemeVar_Transparent
-	#define LightThemeColor_DropdownBtnBorderHover                LightThemeVar_Blue
-	#define LightThemeColor_DropdownBtnBorderPressed              ThemeVar_Transparent
-	#define LightThemeColor_DropdownBtnBorderOpen                 ThemeVar_Transparent
-	#define LightThemeColor_DropdownBtnBorderDisabled             ThemeVar_Transparent
-	#define LightThemeColor_DropdownBtnText                       LightThemeVar_White
-	#define LightThemeColor_DropdownBtnTextHover                  LightThemeVar_White
-	#define LightThemeColor_DropdownBtnTextPressed                LightThemeVar_White
-	#define LightThemeColor_DropdownBtnTextOpen                   LightThemeVar_White
-	#define LightThemeColor_DropdownBtnTextDisabled               LightThemeVar_White
-	#define LightThemeColor_DropdownBtnIcon                       LightThemeVar_White
-	#define LightThemeColor_DropdownBtnIconHover                  LightThemeVar_White
-	#define LightThemeColor_DropdownBtnIconPressed                LightThemeVar_White
-	#define LightThemeColor_DropdownBtnIconOpen                   LightThemeVar_White
-	#define LightThemeColor_DropdownBtnIconDisabled               LightThemeVar_White
-	#define LightThemeColor_HotkeyBack                            ThemeVar_Transparent
-	#define LightThemeColor_HotkeyBackHover                       ThemeVar_Transparent
-	#define LightThemeColor_HotkeyBackPressed                     ThemeVar_Transparent
-	#define LightThemeColor_HotkeyBackDisabled                    ThemeVar_Transparent
-	#define LightThemeColor_HotkeyBorder                          LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyBorderHover                     LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyBorderPressed                   LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyBorderDisabled                  LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyText                            LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyTextHover                       LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyTextPressed                     LightThemeVar_LightGray
-	#define LightThemeColor_HotkeyTextDisabled                    LightThemeVar_LightGray
-	#define LightThemeColor_FileTabDivider                        LightThemeVar_LightGray
-	#define LightThemeColor_FileTabBack                           LightThemeVar_Gray
-	#define LightThemeColor_FileTabBackHover                      LightThemeVar_DarkestBlue
-	#define LightThemeColor_FileTabBackOpen                       LightThemeVar_Black
-	#define LightThemeColor_FileTabBorder                         ThemeVar_Transparent
-	#define LightThemeColor_FileTabBorderHover                    LightThemeVar_Blue
-	#define LightThemeColor_FileTabBorderOpen                     ThemeVar_Transparent
-	#define LightThemeColor_FileTabText                           LightThemeVar_LighterGray
-	#define LightThemeColor_FileTabTextHover                      LightThemeVar_White
-	#define LightThemeColor_FileTabTextOpen                       LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogDarken                   ThemeVar_Darken25
-	#define LightThemeColor_ConfirmDialogBack                     LightThemeVar_Gray
-	#define LightThemeColor_ConfirmDialogBorder                   LightThemeVar_LighterGray
-	#define LightThemeColor_ConfirmDialogText                     LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogPositiveBtnBack          ThemeVar_Transparent
-	#define LightThemeColor_ConfirmDialogPositiveBtnBackHover     LightThemeVar_Blue50
-	#define LightThemeColor_ConfirmDialogPositiveBtnBackPressed   LightThemeVar_Blue50
-	#define LightThemeColor_ConfirmDialogPositiveBtnBorder        LightThemeVar_Blue50
-	#define LightThemeColor_ConfirmDialogPositiveBtnBorderHover   LightThemeVar_Blue
-	#define LightThemeColor_ConfirmDialogPositiveBtnBorderPressed LightThemeVar_Blue
-	#define LightThemeColor_ConfirmDialogPositiveBtnText          LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogPositiveBtnTextHover     LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogPositiveBtnTextPressed   LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogNegativeBtnBack          ThemeVar_Transparent
-	#define LightThemeColor_ConfirmDialogNegativeBtnBackHover     LightThemeVar_Red50
-	#define LightThemeColor_ConfirmDialogNegativeBtnBackPressed   LightThemeVar_Red50
-	#define LightThemeColor_ConfirmDialogNegativeBtnBorder        LightThemeVar_Red50
-	#define LightThemeColor_ConfirmDialogNegativeBtnBorderHover   LightThemeVar_Red
-	#define LightThemeColor_ConfirmDialogNegativeBtnBorderPressed LightThemeVar_Red
-	#define LightThemeColor_ConfirmDialogNegativeBtnText          LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogNegativeBtnTextHover     LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogNegativeBtnTextPressed   LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogNeutralBtnBack           ThemeVar_Transparent
-	#define LightThemeColor_ConfirmDialogNeutralBtnBackHover      LightThemeVar_LightGray50
-	#define LightThemeColor_ConfirmDialogNeutralBtnBackPressed    LightThemeVar_LightGray50
-	#define LightThemeColor_ConfirmDialogNeutralBtnBorder         LightThemeVar_LightGray50
-	#define LightThemeColor_ConfirmDialogNeutralBtnBorderHover    LightThemeVar_LightGray
-	#define LightThemeColor_ConfirmDialogNeutralBtnBorderPressed  LightThemeVar_LightGray
-	#define LightThemeColor_ConfirmDialogNeutralBtnText           LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogNeutralBtnTextHover      LightThemeVar_White
-	#define LightThemeColor_ConfirmDialogNeutralBtnTextPressed    LightThemeVar_White
-	#define LightThemeColor_NotificationDebugBack                 ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationDebugBorder               ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationDebugText                 LightThemeVar_White
-	#define LightThemeColor_NotificationDebugIcon                 ThemeVar_MonokaiGray1
-	#define LightThemeColor_NotificationRegularBack               ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationRegularBorder             ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationRegularText               LightThemeVar_White
-	#define LightThemeColor_NotificationRegularIcon               LightThemeVar_White
-	#define LightThemeColor_NotificationInfoBack                  ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationInfoBorder                ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationInfoText                  LightThemeVar_White
-	#define LightThemeColor_NotificationInfoIcon                  ThemeVar_MonokaiGreen
-	#define LightThemeColor_NotificationNotifyBack                ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationNotifyBorder              ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationNotifyText                LightThemeVar_White
-	#define LightThemeColor_NotificationNotifyIcon                ThemeVar_MonokaiPurple
-	#define LightThemeColor_NotificationOtherBack                 ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationOtherBorder               ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationOtherText                 LightThemeVar_White
-	#define LightThemeColor_NotificationOtherIcon                 ThemeVar_MonokaiLightBlue
-	#define LightThemeColor_NotificationWarningBack               ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationWarningBorder             ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationWarningText               LightThemeVar_White
-	#define LightThemeColor_NotificationWarningIcon               ThemeVar_MonokaiOrange
-	#define LightThemeColor_NotificationErrorBack                 ThemeVar_MonokaiDarkGray
-	#define LightThemeColor_NotificationErrorBorder               ThemeVar_MonokaiLightGray
-	#define LightThemeColor_NotificationErrorText                 LightThemeVar_White
-	#define LightThemeColor_NotificationErrorIcon                 ThemeVar_MonokaiMagenta
+	#define LightThemeColor_OptionListBack                        "Black"
+	#define LightThemeColor_ScrollGutter                          "Black"
+	#define LightThemeColor_ScrollBar                             "DarkestBlue"
+	#define LightThemeColor_ScrollBarHover                        "LightGray"
+	#define LightThemeColor_ScrollBarGrab                         "LightGray"
+	#define LightThemeColor_TooltipBack                           "White"
+	#define LightThemeColor_TooltipBorder                         "Transparent"
+	#define LightThemeColor_TooltipText                           "DarkGray"
+	#define LightThemeColor_TopmostBorder                         "Blue"
+	#define LightThemeColor_TopbarBack                            "Gray"
+	#define LightThemeColor_TopbarBorder                          "DarkestBlue"
+	#define LightThemeColor_TopbarPathText                        "LighterGray"
+	#define LightThemeColor_DropdownBack                          "Gray"
+	#define LightThemeColor_DropdownBorder                        "DarkestBlue"
+	#define LightThemeColor_OptionBackOff                         "Transparent"
+	#define LightThemeColor_OptionBackOn                          "Blue"
+	#define LightThemeColor_OptionBackOnHovered                   "DarkBlueToBlue2"
+	#define LightThemeColor_OptionBackOffHovered                  "DarkBlue"
+	#define LightThemeColor_OptionBackTurningOff                  "DarkBlueToBlue1"
+	#define LightThemeColor_OptionBackTurningOn                   "DarkBlueToBlue1"
+	#define LightThemeColor_OptionBorderOff                       "DarkestBlue"
+	#define LightThemeColor_OptionBorderOn                        "Blue"
+	#define LightThemeColor_OptionBorderOffHovered                "DarkBlueToBlue1"
+	#define LightThemeColor_OptionBorderOnHovered                 "Blue"
+	#define LightThemeColor_OptionBorderTurningOff                "DarkBlueToBlue1"
+	#define LightThemeColor_OptionBorderTurningOn                 "Blue"
+	#define LightThemeColor_OptionNameTextOff                     "LightGray"
+	#define LightThemeColor_OptionNameTextOn                      "White"
+	#define LightThemeColor_OptionNameTextOffHovered              "LightGray"
+	#define LightThemeColor_OptionNameTextOnHovered               "White"
+	#define LightThemeColor_OptionNameTextTurningOff              "LightGray"
+	#define LightThemeColor_OptionNameTextTurningOn               "White"
+	#define LightThemeColor_OptionValueTextOff                    "LightGray"
+	#define LightThemeColor_OptionValueTextOn                     "White"
+	#define LightThemeColor_OptionValueTextOffHovered             "LightGray"
+	#define LightThemeColor_OptionValueTextOnHovered              "White"
+	#define LightThemeColor_OptionValueTextTurningOff             "LightGray"
+	#define LightThemeColor_OptionValueTextTurningOn              "White"
+	#define LightThemeColor_TopbarBtnBack                         "Transparent"
+	#define LightThemeColor_TopbarBtnBackHover                    "DarkBlue"
+	#define LightThemeColor_TopbarBtnBackOpen                     "DarkBlue"
+	#define LightThemeColor_TopbarBtnBorder                       "Transparent"
+	#define LightThemeColor_TopbarBtnBorderHover                  "Blue"
+	#define LightThemeColor_TopbarBtnBorderOpen                   "Transparent"
+	#define LightThemeColor_TopbarBtnText                         "White"
+	#define LightThemeColor_TopbarBtnTextHover                    "White"
+	#define LightThemeColor_TopbarBtnTextOpen                     "White"
+	#define LightThemeColor_DropdownBtnBack                       "Transparent"
+	#define LightThemeColor_DropdownBtnBackHover                  "DarkBlue"
+	#define LightThemeColor_DropdownBtnBackPressed                "Blue"
+	#define LightThemeColor_DropdownBtnBackOpen                   "DarkBlue"
+	#define LightThemeColor_DropdownBtnBackDisabled               "Black"
+	#define LightThemeColor_DropdownBtnBorder                     "Transparent"
+	#define LightThemeColor_DropdownBtnBorderHover                "Blue"
+	#define LightThemeColor_DropdownBtnBorderPressed              "Transparent"
+	#define LightThemeColor_DropdownBtnBorderOpen                 "Transparent"
+	#define LightThemeColor_DropdownBtnBorderDisabled             "Transparent"
+	#define LightThemeColor_DropdownBtnText                       "White"
+	#define LightThemeColor_DropdownBtnTextHover                  "White"
+	#define LightThemeColor_DropdownBtnTextPressed                "White"
+	#define LightThemeColor_DropdownBtnTextOpen                   "White"
+	#define LightThemeColor_DropdownBtnTextDisabled               "White"
+	#define LightThemeColor_DropdownBtnIcon                       "White"
+	#define LightThemeColor_DropdownBtnIconHover                  "White"
+	#define LightThemeColor_DropdownBtnIconPressed                "White"
+	#define LightThemeColor_DropdownBtnIconOpen                   "White"
+	#define LightThemeColor_DropdownBtnIconDisabled               "White"
+	#define LightThemeColor_HotkeyBack                            "Transparent"
+	#define LightThemeColor_HotkeyBackHover                       "Transparent"
+	#define LightThemeColor_HotkeyBackPressed                     "Transparent"
+	#define LightThemeColor_HotkeyBackDisabled                    "Transparent"
+	#define LightThemeColor_HotkeyBorder                          "LightGray"
+	#define LightThemeColor_HotkeyBorderHover                     "LightGray"
+	#define LightThemeColor_HotkeyBorderPressed                   "LightGray"
+	#define LightThemeColor_HotkeyBorderDisabled                  "LightGray"
+	#define LightThemeColor_HotkeyText                            "LightGray"
+	#define LightThemeColor_HotkeyTextHover                       "LightGray"
+	#define LightThemeColor_HotkeyTextPressed                     "LightGray"
+	#define LightThemeColor_HotkeyTextDisabled                    "LightGray"
+	#define LightThemeColor_FileTabDivider                        "LightGray"
+	#define LightThemeColor_FileTabBack                           "Gray"
+	#define LightThemeColor_FileTabBackHover                      "DarkestBlue"
+	#define LightThemeColor_FileTabBackOpen                       "Black"
+	#define LightThemeColor_FileTabBorder                         "Transparent"
+	#define LightThemeColor_FileTabBorderHover                    "Blue"
+	#define LightThemeColor_FileTabBorderOpen                     "Transparent"
+	#define LightThemeColor_FileTabText                           "LighterGray"
+	#define LightThemeColor_FileTabTextHover                      "White"
+	#define LightThemeColor_FileTabTextOpen                       "White"
+	#define LightThemeColor_ConfirmDialogDarken                   "Darken25"
+	#define LightThemeColor_ConfirmDialogBack                     "Gray"
+	#define LightThemeColor_ConfirmDialogBorder                   "LighterGray"
+	#define LightThemeColor_ConfirmDialogText                     "White"
+	#define LightThemeColor_ConfirmDialogPositiveBtnBack          "Transparent"
+	#define LightThemeColor_ConfirmDialogPositiveBtnBackHover     "Blue50"
+	#define LightThemeColor_ConfirmDialogPositiveBtnBackPressed   "Blue50"
+	#define LightThemeColor_ConfirmDialogPositiveBtnBorder        "Blue50"
+	#define LightThemeColor_ConfirmDialogPositiveBtnBorderHover   "Blue"
+	#define LightThemeColor_ConfirmDialogPositiveBtnBorderPressed "Blue"
+	#define LightThemeColor_ConfirmDialogPositiveBtnText          "White"
+	#define LightThemeColor_ConfirmDialogPositiveBtnTextHover     "White"
+	#define LightThemeColor_ConfirmDialogPositiveBtnTextPressed   "White"
+	#define LightThemeColor_ConfirmDialogNegativeBtnBack          "Transparent"
+	#define LightThemeColor_ConfirmDialogNegativeBtnBackHover     "Red50"
+	#define LightThemeColor_ConfirmDialogNegativeBtnBackPressed   "Red50"
+	#define LightThemeColor_ConfirmDialogNegativeBtnBorder        "Red50"
+	#define LightThemeColor_ConfirmDialogNegativeBtnBorderHover   "Red"
+	#define LightThemeColor_ConfirmDialogNegativeBtnBorderPressed "Red"
+	#define LightThemeColor_ConfirmDialogNegativeBtnText          "White"
+	#define LightThemeColor_ConfirmDialogNegativeBtnTextHover     "White"
+	#define LightThemeColor_ConfirmDialogNegativeBtnTextPressed   "White"
+	#define LightThemeColor_ConfirmDialogNeutralBtnBack           "Transparent"
+	#define LightThemeColor_ConfirmDialogNeutralBtnBackHover      "LightGray50"
+	#define LightThemeColor_ConfirmDialogNeutralBtnBackPressed    "LightGray50"
+	#define LightThemeColor_ConfirmDialogNeutralBtnBorder         "LightGray50"
+	#define LightThemeColor_ConfirmDialogNeutralBtnBorderHover    "LightGray"
+	#define LightThemeColor_ConfirmDialogNeutralBtnBorderPressed  "LightGray"
+	#define LightThemeColor_ConfirmDialogNeutralBtnText           "White"
+	#define LightThemeColor_ConfirmDialogNeutralBtnTextHover      "White"
+	#define LightThemeColor_ConfirmDialogNeutralBtnTextPressed    "White"
+	#define LightThemeColor_NotificationDebugBack                 "MonokaiDarkGray"
+	#define LightThemeColor_NotificationDebugBorder               "MonokaiLightGray"
+	#define LightThemeColor_NotificationDebugText                 "White"
+	#define LightThemeColor_NotificationDebugIcon                 "MonokaiGray1"
+	#define LightThemeColor_NotificationRegularBack               "MonokaiDarkGray"
+	#define LightThemeColor_NotificationRegularBorder             "MonokaiLightGray"
+	#define LightThemeColor_NotificationRegularText               "White"
+	#define LightThemeColor_NotificationRegularIcon               "White"
+	#define LightThemeColor_NotificationInfoBack                  "MonokaiDarkGray"
+	#define LightThemeColor_NotificationInfoBorder                "MonokaiLightGray"
+	#define LightThemeColor_NotificationInfoText                  "White"
+	#define LightThemeColor_NotificationInfoIcon                  "MonokaiGreen"
+	#define LightThemeColor_NotificationNotifyBack                "MonokaiDarkGray"
+	#define LightThemeColor_NotificationNotifyBorder              "MonokaiLightGray"
+	#define LightThemeColor_NotificationNotifyText                "White"
+	#define LightThemeColor_NotificationNotifyIcon                "MonokaiPurple"
+	#define LightThemeColor_NotificationOtherBack                 "MonokaiDarkGray"
+	#define LightThemeColor_NotificationOtherBorder               "MonokaiLightGray"
+	#define LightThemeColor_NotificationOtherText                 "White"
+	#define LightThemeColor_NotificationOtherIcon                 "MonokaiLightBlue"
+	#define LightThemeColor_NotificationWarningBack               "MonokaiDarkGray"
+	#define LightThemeColor_NotificationWarningBorder             "MonokaiLightGray"
+	#define LightThemeColor_NotificationWarningText               "White"
+	#define LightThemeColor_NotificationWarningIcon               "MonokaiOrange"
+	#define LightThemeColor_NotificationErrorBack                 "MonokaiDarkGray"
+	#define LightThemeColor_NotificationErrorBorder               "MonokaiLightGray"
+	#define LightThemeColor_NotificationErrorText                 "White"
+	#define LightThemeColor_NotificationErrorIcon                 "MonokaiMagenta"
 // +--------------------------------------------------------------+
 
 // #define DarkThemeColor_BackgroundBlack    MakeColorU32(0xFF191B1C)
@@ -566,32 +566,13 @@ const char* GetThemeColorStr(ThemeColor enumValue)
 }
 bool TryParseThemeColor(Str8 themeColorStr, ThemeColor* colorOut)
 {
-	if      (StrAnyCaseEquals(themeColorStr, StrLit("None"))) { SetOptionalOutPntr(colorOut, ThemeColor_None);               return true; }
+	if (StrAnyCaseEquals(themeColorStr, StrLit("None"))) { SetOptionalOutPntr(colorOut, ThemeColor_None); return true; }
 	
 	#define X(EnumName) else if (StrAnyCaseEquals(themeColorStr, StrLit(#EnumName))) { SetOptionalOutPntr(colorOut, ThemeColor_##EnumName); return true; }
 	Theme_XList(X)
 	#undef X
 	
-	else                                                                    { return false; }
-}
-
-typedef plex Theme Theme;
-plex Theme
-{
-	bool overridden[ThemeColor_Count];
-	Color32 colors[ThemeColor_Count];
-};
-
-Color32 GetColorFromThemeOrDefault(Theme* defaultTheme, Theme* theme, ThemeColor themeColor)
-{
-	NotNull(theme);
-	if (defaultTheme != nullptr && !theme->overridden[themeColor]) { return defaultTheme->colors[themeColor]; }
-	else { return theme->colors[themeColor]; }
-}
-inline void SetThemeColor(Theme* theme, ThemeColor themeColor, Color32 colorValue)
-{
-	theme->overridden[themeColor] = true;
-	theme->colors[themeColor] = colorValue;
+	else { return false; }
 }
 
 typedef enum PresetTheme PresetTheme;
@@ -623,23 +604,142 @@ bool TryParsePresetTheme(Str8 presetThemeStr, PresetTheme* presetThemeOut)
 	else                                                      { return false; }
 }
 
-inline void InitDarkThemePreset(Theme* theme)
+typedef plex BakedTheme BakedTheme;
+plex BakedTheme
 {
-	#define X(EnumName) SetThemeColor(theme, ThemeColor_##EnumName, DarkThemeColor_##EnumName);
-	Theme_XList(X)
-	#undef X
-}
-inline void InitLightThemePreset(Theme* theme)
+	Color32 colors[ThemeColor_Count];
+};
+
+typedef plex UserThemeEntry UserThemeEntry;
+plex UserThemeEntry
 {
-	#define X(EnumName) SetThemeColor(theme, ThemeColor_##EnumName, LightThemeColor_##EnumName);
-	Theme_XList(X)
-	#undef X
-}
-inline void InitDebugThemePreset(Theme* theme)
+	PresetTheme presetTheme;
+	Str8 key;
+	bool isStrValue;
+	bool isResolved;
+	bool isReferenced;
+	Color32 valueColor;
+	Str8 valueStr;
+};
+
+typedef plex UserTheme UserTheme;
+plex UserTheme
 {
-	for (uxx cIndex = 0; cIndex < ThemeColor_Count; cIndex++)
+	Arena* arena;
+	VarArray entries; //UserThemeEntry
+};
+
+UserThemeEntry* FindUserThemeEntry(UserTheme* theme, PresetTheme presetTheme, Str8 key)
+{
+	VarArrayLoop(&theme->entries, eIndex)
 	{
-		SetThemeColor(theme, (ThemeColor)cIndex, GetPredefPalColorByIndex(cIndex));
+		VarArrayLoopGet(UserThemeEntry, entry, &theme->entries, eIndex);
+		if ((entry->presetTheme == PresetTheme_None || entry->presetTheme == presetTheme) &&
+			StrExactEquals(entry->key, key))
+		{
+			return entry;
+		}
+	}
+	return nullptr;
+}
+
+inline void AddUserThemeEntryColor(UserTheme* theme, PresetTheme presetTheme, Str8 key, Color32 color)
+{
+	NotNull(theme);
+	NotNull(theme->arena);
+	UserThemeEntry* existingEntry = FindUserThemeEntry(theme, presetTheme, key);
+	if (existingEntry != nullptr)
+	{
+		if (existingEntry->isStrValue && CanArenaFree(theme->arena)) { FreeStr8(theme->arena, &existingEntry->valueStr); }
+		existingEntry->isStrValue = false;
+		existingEntry->valueColor = color;
+		return;
+	}
+	UserThemeEntry* newEntry = VarArrayAdd(UserThemeEntry, &theme->entries);
+	NotNull(newEntry);
+	ClearPointer(newEntry);
+	newEntry->presetTheme = presetTheme;
+	newEntry->key = AllocStr8(theme->arena, key);
+	newEntry->isStrValue = false;
+	newEntry->valueColor = color;
+}
+inline void AddUserThemeEntryStr(UserTheme* theme, PresetTheme presetTheme, Str8 key, Str8 value)
+{
+	NotNull(theme);
+	NotNull(theme->arena);
+	UserThemeEntry* existingEntry = FindUserThemeEntry(theme, presetTheme, key);
+	if (existingEntry != nullptr)
+	{
+		if (existingEntry->isStrValue && CanArenaFree(theme->arena)) { FreeStr8(theme->arena, &existingEntry->valueStr); }
+		existingEntry->isStrValue = true;
+		existingEntry->valueStr = AllocStr8(theme->arena, value);
+		return;
+	}
+	UserThemeEntry* newEntry = VarArrayAdd(UserThemeEntry, &theme->entries);
+	NotNull(newEntry);
+	ClearPointer(newEntry);
+	newEntry->presetTheme = presetTheme;
+	newEntry->key = AllocStr8(theme->arena, key);
+	newEntry->isStrValue = true;
+	newEntry->valueStr = AllocStr8(theme->arena, value);
+}
+
+inline void InitDefaultTheme(UserTheme* theme)
+{
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("Transparent"),      ThemeVar_Transparent);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("Darken25"),         ThemeVar_Darken25);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiDarkGray"),  ThemeVar_MonokaiDarkGray);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiGray1"),     ThemeVar_MonokaiGray1);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiGreen"),     ThemeVar_MonokaiGreen);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiLightBlue"), ThemeVar_MonokaiLightBlue);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiLightGray"), ThemeVar_MonokaiLightGray);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiMagenta"),   ThemeVar_MonokaiMagenta);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiOrange"),    ThemeVar_MonokaiOrange);
+	AddUserThemeEntryColor(theme, PresetTheme_None, StrLit("MonokaiPurple"),    ThemeVar_MonokaiPurple);
+	
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("Black"),           DarkThemeVar_Black);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("DarkGray"),        DarkThemeVar_DarkGray);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("Gray"),            DarkThemeVar_Gray);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("White"),           DarkThemeVar_White);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("LighterGray"),     DarkThemeVar_LighterGray);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("LightGray"),       DarkThemeVar_LightGray);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("LightGray50"),     DarkThemeVar_LightGray50);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("DarkestBlue"),     DarkThemeVar_DarkestBlue);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("DarkBlue"),        DarkThemeVar_DarkBlue);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("Blue"),            DarkThemeVar_Blue);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("Blue50"),          DarkThemeVar_Blue50);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("Red"),             DarkThemeVar_Red);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("Red50"),           DarkThemeVar_Red50);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("DarkBlueToBlue1"), DarkThemeVar_DarkBlueToBlue1);
+	AddUserThemeEntryColor(theme, PresetTheme_Dark, StrLit("DarkBlueToBlue2"), DarkThemeVar_DarkBlueToBlue2);
+	
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("Black"),           LightThemeVar_Black);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("DarkGray"),        LightThemeVar_DarkGray);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("Gray"),            LightThemeVar_Gray);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("White"),           LightThemeVar_White);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("LighterGray"),     LightThemeVar_LighterGray);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("LightGray"),       LightThemeVar_LightGray);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("LightGray50"),     LightThemeVar_LightGray50);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("DarkestBlue"),     LightThemeVar_DarkestBlue);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("DarkBlue"),        LightThemeVar_DarkBlue);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("Blue"),            LightThemeVar_Blue);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("Blue50"),          LightThemeVar_Blue50);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("Red"),             LightThemeVar_Red);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("Red50"),           LightThemeVar_Red50);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("DarkBlueToBlue1"), LightThemeVar_DarkBlueToBlue1);
+	AddUserThemeEntryColor(theme, PresetTheme_Light, StrLit("DarkBlueToBlue2"), LightThemeVar_DarkBlueToBlue2);
+	
+	#define X(EnumName) AddUserThemeEntryStr(theme, PresetTheme_Dark, StrLit(#EnumName), StrLit(DarkThemeColor_##EnumName));
+	Theme_XList(X)
+	#undef X
+	
+	#define X(EnumName) AddUserThemeEntryStr(theme, PresetTheme_Light, StrLit(#EnumName), StrLit(LightThemeColor_##EnumName));
+	Theme_XList(X)
+	#undef X
+	
+	for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
+	{
+		AddUserThemeEntryColor(theme, PresetTheme_Debug, MakeStr8Nt(GetThemeColorStr((ThemeColor)cIndex)), GetPredefPalColorByIndex(cIndex));
 	}
 }
 

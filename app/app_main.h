@@ -201,10 +201,11 @@ struct AppData
 	PigFont mainFont;
 	Texture icons[AppIcon_Count];
 	
-	Theme themePresets[PresetTheme_Count];
+	BakedTheme theme;
+	UserTheme defaultTheme;
+	UserTheme userThemeOverrides;
 	PresetTheme currentThemePreset;
-	Theme themeOverrides;
-	bool needToReloadUserTheme;
+	bool needToBakeTheme;
 	
 	u64 numFramesConsecutivelyRendered;
 	bool renderedLastFrame;

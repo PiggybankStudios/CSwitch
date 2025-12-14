@@ -1,17 +1,31 @@
 
 @Dark
-OptionBackOn:           A66400
-OptionBackOnHovered:    8E5000
-OptionBackOffHovered:   4C3710
-OptionBackTurningOff:   794E08
-OptionBackTurningOn:    794E08
-OptionBorderOff:        3B3834
-OptionBorderOn:         A66400
-OptionBorderOffHovered: 794E08
-OptionBorderOnHovered:  A66400
-OptionBorderTurningOff: 794E08
-OptionBorderTurningOn:  A66400
+DarkestBlue: 3B3834
+DarkBlue: 4C3710
+Blue: A66400
+Blue50: 80A66400
+DarkBlueToBlue1: 794E08
+DarkBlueToBlue2: 8E5000
 
-// @Light
+// OptionBackOn:           A66400
+// OptionBackOnHovered:    8E5000
+// OptionBackOffHovered:   4C3710
+// OptionBackTurningOff:   794E08
+// OptionBackTurningOn:    794E08
+// OptionBorderOff:        3B3834
+// OptionBorderOn:         A66400
+// OptionBorderOffHovered: 794E08
+// OptionBorderOnHovered:  A66400
+// OptionBorderTurningOff: 794E08
+// OptionBorderTurningOn:  A66400
+
+@Light
+// DarkestBlue: 3B3834
+// DarkBlue: 4C3710
+// Blue: A66400
+// Blue50: 80A66400
+// DarkBlueToBlue1: 794E08
+// DarkBlueToBlue2: 8E5000
+
 // Hovered:   F8E299 //(248, 226, 153)
 // Selected:  EEA900 //(238, 169, 0)
