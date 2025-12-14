@@ -989,14 +989,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
 								: StrLit("current: -");
 							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, nullptr))
+							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, &app->icons[AppIcon_StarFile]))
 							{
 								shouldOpenThemeFile = true;
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), nullptr))
+							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), &app->icons[AppIcon_CloseFile]))
 							{
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
 								SaveAppSettings();

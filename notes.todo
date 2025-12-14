@@ -45,9 +45,11 @@
 	[ ] When hiding the topbar we should display a little floating message in the top-middle of the screen that describes how to bring the topbar back. The message fades after a bit of time but comes back if the mouse is near the top of the screen.
 	[ ] Add support for dragging a tab from one instance of CSwitch to the other
 	[ ] Add an button to auto-size the window to perfect fit the contents of the current tab
+	[ ] If we have 2 versions of CSwitch running and there are changes to settings.txt or recent_files.txt format than they will conflict with eachother destructively
 	[ ] 
 
 # Finished List:
+	[X] Icons for "Load Custom Theme", "Clear Custom Theme" options
 	[X] Unused warnings are unhelpful (or maybe buggy?)
 	[X] Rename light theme vars
 	[X] Reload theme file when it changes
