@@ -1105,7 +1105,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							bool isCurrentTab = (app->currentTabIndex == tIndex);
 							ClayId tabId = ToClayId(tab->filePath);
 							bool isHovered = IsMouseOverClay(tabId);
-							u16 borderThickness = (isHovered && !isCurrentTab) ? 2 : 0;
 							Color32 backgroundColor =
 								  isCurrentTab ? GetThemeColor(FileTabBackOpen)
 								: isHovered    ? GetThemeColor(FileTabBackHover)

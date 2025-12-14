@@ -25,7 +25,6 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	ClayId menuId = ToClayId(menuIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
 	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
-	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
 	Color32 backgroundColor = *isOpenPntr ? GetThemeColor(TopbarBtnBackOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnBackHover) : GetThemeColor(TopbarBtnBack));
 	Color32 borderColor = *isOpenPntr ? GetThemeColor(TopbarBtnBorderOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnBorderHover) : GetThemeColor(TopbarBtnBorder));
 	Color32 textColor = *isOpenPntr ? GetThemeColor(TopbarBtnTextOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnTextHover) : GetThemeColor(TopbarBtnText));
@@ -112,7 +111,6 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	bool isBtnPressed = (isBtnHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
 	bool isHovered = (isBtnHovered || isMenuHovered);
-	bool isBtnHoveredOrMenuOpen = (isBtnHovered || *isOpenPntr);
 	Color32 backgroundColor =
 		  isBtnPressed ? GetThemeColor(DropdownBtnBackPressed)
 		: isBtnHovered ? GetThemeColor(DropdownBtnBackHover)
