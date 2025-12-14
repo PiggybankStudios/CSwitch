@@ -21,12 +21,12 @@ DarkBlueToBlue2: 8E5000
 // OptionBorderTurningOn:  A66400
 
 @Light
-// DarkestBlue: 3B3834
-// DarkBlue: 4C3710
-// Blue: A66400
-// Blue50: 80A66400
-// DarkBlueToBlue1: 794E08
-// DarkBlueToBlue2: 8E5000
+BlueWhite: D3C29F
+LightBlue: FDAF56
+LightBlueToBlue1: E99E44
+LightBlueToBlue2: DB9239
+Blue: D58C33
+Blue50: 80D58C33
 
 // Hovered:   F8E299 //(248, 226, 153)
 // Selected:  EEA900 //(238, 169, 0)

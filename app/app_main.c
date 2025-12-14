@@ -928,25 +928,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								AppBakeTheme();
 							} Clay__CloseElement();
 							
-							Str8 currentThemeStr = !IsEmptyStr(app->settings.userThemePath)
-								? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
-								: StrLit("current: -");
-							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, nullptr))
-							{
-								shouldOpenThemeFile = true;
-								app->isFileMenuOpen = false;
-							} Clay__CloseElement();
-							
-							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), nullptr))
-							{
-								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
-								SaveAppSettings();
-								AppLoadUserTheme();
-								AppBakeTheme();
-							} Clay__CloseElement();
-							
 							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
 							{
 								app->settings.smallButtons = !app->settings.smallButtons;
@@ -979,6 +960,25 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"), true, &app->icons[AppIcon_Topbar]))
 							{
 								app->minimalModeEnabled = !app->minimalModeEnabled;
+							} Clay__CloseElement();
+							
+							Str8 currentThemeStr = !IsEmptyStr(app->settings.userThemePath)
+								? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
+								: StrLit("current: -");
+							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
+							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, nullptr))
+							{
+								shouldOpenThemeFile = true;
+								app->isFileMenuOpen = false;
+							} Clay__CloseElement();
+							
+							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
+							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), nullptr))
+							{
+								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
+								SaveAppSettings();
+								AppLoadUserTheme();
+								AppBakeTheme();
 							} Clay__CloseElement();
 							
 							#if DEBUG_BUILD

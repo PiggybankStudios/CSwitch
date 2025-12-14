@@ -20,17 +20,17 @@ theme: "VS (Dark)"
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66200977592742
+  timestamp: 66201129702537
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66200977591530
+  timestamp: 66201129701569
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66200979130315
+  timestamp: 66201130425632
 }
 debug_info:
 {
@@ -61,4 +61,9 @@ debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/clang_rt.asan_dynamic-x86_64.pdb"
   timestamp: 66188294109391
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/CSwitch/_build/tracy.pdb"
+  timestamp: 66200974484007
 }

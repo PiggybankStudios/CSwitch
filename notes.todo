@@ -7,7 +7,6 @@
 	[X] Choose colors in theme carefully to maximize theme flexibility
 		[ ] Unused warnings are unhelpful (or maybe buggy?)
 		[ ] Rename "UserTheme" to something else? The default theme being a "UserTheme" is confusing
-		[ ] Rename light theme vars
 		[ ] Load embedded txt files for default theme rather than #defines
 		[ ] Option for dumping default theme and/or custom theme template
 	[ ] Separate state from unique UI element names?
@@ -50,6 +49,7 @@
 	[ ] 
 
 # Finished List:
+	[X] Rename light theme vars
 	[X] Reload theme file when it changes
 	[X] Rename PresetTheme to ThemeMode
 	[X] Button for clearing custom theme?
