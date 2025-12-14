@@ -194,7 +194,6 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 	if (IsEmptyStr(fileContents)) { return Result_EmptyFile; }
 	
 	PresetTheme currentPreset = PresetTheme_None;
-	bool numColorsParsed = 0;
 	
 	TextParser parser = MakeTextParser(fileContents);
 	ParsingToken token;
@@ -214,7 +213,8 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 				}
 				else
 				{
-					PrintLine_E("Unknown preset name in theme file: \"%.*s\"", StrPrint(token.value));
+					NotifyPrint_E("Unknown preset name in theme file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.value));
+					return Result_InvalidSyntax;
 				}
 			} break;
 			
@@ -230,14 +230,16 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 				{
 					AddUserThemeEntryStr(themeOut, currentPreset, token.key, token.value);
 				}
-				numColorsParsed++;
 			} break;
 			
-			default: PrintLine_W("Unhandled token in theme file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.str)); break;
+			default:
+			{
+				NotifyPrint_W("Invalid syntax in theme file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.str));
+				return Result_InvalidSyntax;
+			} break;
 		}
 	}
 	
-	if (numColorsParsed == 0) { return Result_EmptyFile; }
 	return Result_Success;
 }
 

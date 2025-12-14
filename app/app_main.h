@@ -204,6 +204,7 @@ struct AppData
 	BakedTheme theme;
 	UserTheme defaultTheme;
 	UserTheme userThemeOverrides;
+	uxx userThemeFileWatchId;
 	PresetTheme currentThemePreset;
 	bool needToBakeTheme;
 	

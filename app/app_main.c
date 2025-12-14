@@ -233,17 +233,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitAppSettings(stdHeap, &app->settings);
 	LoadAppSettings();
 	
-	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
-	InitDefaultTheme(&app->defaultTheme);
-	app->needToBakeTheme = true;
-	if (!TryParsePresetTheme(app->settings.theme, &app->currentThemePreset))
-	{
-		NotifyPrint_W("Unknown theme name in settings file: \"%.*s\"\nDefaulting to Dark Theme", StrPrint(app->settings.theme));
-		app->currentThemePreset = PresetTheme_Dark;
-		SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
-		SaveAppSettings();
-	}
-	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
 	
@@ -291,6 +280,18 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileTab, &app->tabs, stdHeap);
+	
+	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
+	InitDefaultTheme(&app->defaultTheme);
+	AppLoadUserTheme();
+	if (!TryParsePresetTheme(app->settings.theme, &app->currentThemePreset))
+	{
+		NotifyPrint_W("Unknown theme name in settings file: \"%.*s\"\nDefaulting to Dark Theme", StrPrint(app->settings.theme));
+		app->currentThemePreset = PresetTheme_Dark;
+		SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
+		SaveAppSettings();
+	}
+	AppBakeTheme();
 	
 	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
 	AppLoadRecentFilesList();
@@ -409,6 +410,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	TracyCZoneN(_funcZone, "AppUpdate", true);
 	
 	TracyCZoneN(Zone_Update, "Update", true);
+	app->notificationQueue.currentProgramTime = appIn->programTime;
 	UpdateFileWatches(&app->fileWatches);
 	UpdatePopupDialog(&app->popup);
 	if (appIn->frameIndex != 0 && app->renderedLastFrame)
@@ -429,6 +431,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		{
 			ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
 			AppLoadRecentFilesList();
+			refreshScreen = true;
+		}
+		if (app->userThemeFileWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->userThemeFileWatchId, USER_THEME_RELOAD_DELAY))
+		{
+			ClearFileWatchChanged(&app->fileWatches, app->userThemeFileWatchId);
+			WriteLine_D("User theme file write time changed. Auto-reloading!");
+			AppLoadUserTheme();
+			AppBakeTheme();
 			refreshScreen = true;
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
@@ -758,47 +768,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// 	UpdateClayTextbox(&app->testTextbox);
 	// }
 	
-	if (app->needToBakeTheme)
-	{
-		app->needToBakeTheme = false;
-		
-		UserTheme combinedTheme = ZEROED;
-		if (!IsEmptyStr(app->settings.userThemePath))
-		{
-			UserTheme newUserTheme;
-			InitUserTheme(scratch, &newUserTheme, ThemeColor_Count);
-			Result parseResult = TryLoadThemeFile(app->settings.userThemePath, &newUserTheme);
-			if (parseResult == Result_Success)
-			{
-				InitUserTheme(scratch, &combinedTheme, MaxUXX(app->defaultTheme.entries.length, newUserTheme.entries.length));
-				CombineUserTheme(&app->defaultTheme, &newUserTheme, &combinedTheme);
-			}
-			else
-			{
-				NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
-				FreeUserTheme(&app->userThemeOverrides);
-				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
-				SaveAppSettings();
-			}
-		}
-		
-		if (IsEmptyStr(app->settings.userThemePath))
-		{
-			MyMemCopy(&combinedTheme, &app->defaultTheme, sizeof(UserTheme));
-		}
-		
-		BakedTheme newBakedTheme = ZEROED;
-		Result bakeResult = BakeUserTheme(&combinedTheme, app->currentThemePreset, &newBakedTheme);
-		if (bakeResult == Result_Success)
-		{
-			MyMemCopy(&app->theme, &newBakedTheme, sizeof(BakedTheme));
-		}
-		else
-		{
-			Notify_E("Failed to update baked theme!");
-		}
-	}
-	
 	// +==============================+
 	// |          Rendering           |
 	// +==============================+
@@ -949,13 +918,26 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								app->currentThemePreset = IsKeyboardKeyDown(&appIn->keyboard, Key_Shift) ? PresetTheme_Debug : ((app->currentThemePreset == PresetTheme_Dark) ? PresetTheme_Light : PresetTheme_Dark);
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.theme, MakeStr8Nt(GetPresetThemeStr(app->currentThemePreset)));
 								SaveAppSettings();
-								app->needToBakeTheme = true;
+								AppBakeTheme();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, StrLit("Browse to theme file to use"), true, nullptr))
+							Str8 currentThemeStr = !IsEmptyStr(app->settings.userThemePath)
+								? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
+								: StrLit("current: -");
+							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
+							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, nullptr))
 							{
 								shouldOpenThemeFile = true;
 								app->isFileMenuOpen = false;
+							} Clay__CloseElement();
+							
+							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
+							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), nullptr))
+							{
+								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
+								SaveAppSettings();
+								AppLoadUserTheme();
+								AppBakeTheme();
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
@@ -1421,8 +1403,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			else if (shouldOpenThemeFile)
 			{
 				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, selectedPath);
-				SaveAppSettings();
-				app->needToBakeTheme = true;
+				if (AppLoadUserTheme())
+				{
+					SaveAppSettings();
+					AppBakeTheme();
+				}
 			}
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }

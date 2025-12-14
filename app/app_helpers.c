@@ -524,3 +524,74 @@ POPUP_DIALOG_CALLBACK_DEF(AppClearRecentFilesPopupCallback)
 		AppSaveRecentFilesList();
 	}
 }
+
+bool AppLoadUserTheme()
+{
+	bool loadedSuccessfully = false;
+	if (!IsEmptyStr(app->settings.userThemePath))
+	{
+		PrintLine_D("Loading user theme from \"%.*s\"", StrPrint(app->settings.userThemePath));
+		UserTheme newUserTheme;
+		InitUserTheme(stdHeap, &newUserTheme, ThemeColor_Count);
+		Result parseResult = TryLoadThemeFile(app->settings.userThemePath, &newUserTheme);
+		if (parseResult == Result_Success)
+		{
+			FreeUserTheme(&app->userThemeOverrides);
+			MyMemCopy(&app->userThemeOverrides, &newUserTheme, sizeof(UserTheme));
+			if (app->userThemeFileWatchId != 0) { RemoveFileWatch(&app->fileWatches, app->userThemeFileWatchId); }
+			app->userThemeFileWatchId = AddFileWatch(&app->fileWatches, app->settings.userThemePath, CHECK_USER_THEME_PERIOD);
+			loadedSuccessfully = true;
+		}
+		else
+		{
+			if (parseResult == Result_FailedToReadFile && !OsDoesFileExist(app->settings.userThemePath))
+			{
+				NotifyPrint_E("User theme file no longer exists at \"%.*s\"", StrPrint(app->settings.userThemePath));
+				if (app->userThemeFileWatchId != 0) { RemoveFileWatch(&app->fileWatches, app->userThemeFileWatchId); app->userThemeFileWatchId = 0; }
+				FreeUserTheme(&app->userThemeOverrides);
+				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
+				SaveAppSettings();
+			}
+			else
+			{
+				NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
+			}
+			FreeUserTheme(&newUserTheme);
+		}
+	}
+	else
+	{
+		if (app->userThemeFileWatchId != 0) { RemoveFileWatch(&app->fileWatches, app->userThemeFileWatchId); app->userThemeFileWatchId = 0; }
+		FreeUserTheme(&app->userThemeOverrides);
+	}
+	return loadedSuccessfully;
+}
+
+void AppBakeTheme()
+{
+	ScratchBegin(scratch);
+	
+	UserTheme combinedTheme = ZEROED;
+	if (!IsEmptyStr(app->settings.userThemePath))
+	{
+		InitUserTheme(scratch, &combinedTheme, MaxUXX(app->defaultTheme.entries.length, app->userThemeOverrides.entries.length));
+		CombineUserTheme(&app->defaultTheme, &app->userThemeOverrides, &combinedTheme);
+	}
+	else
+	{
+		MyMemCopy(&combinedTheme, &app->defaultTheme, sizeof(UserTheme));
+	}
+	
+	BakedTheme newBakedTheme = ZEROED;
+	Result bakeResult = BakeUserTheme(&combinedTheme, app->currentThemePreset, &newBakedTheme);
+	if (bakeResult == Result_Success)
+	{
+		MyMemCopy(&app->theme, &newBakedTheme, sizeof(BakedTheme));
+	}
+	else
+	{
+		NotifyPrint_E("Failed to bake theme: %s", GetResultStr(bakeResult));
+	}
+	
+	ScratchEnd(scratch);
+}
