@@ -144,7 +144,7 @@ Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 	
 	if (numUnresolvedEntries == 0 && result == Result_None)
 	{
-		#if DEBUG_BUILD
+		#if (0 && DEBUG_BUILD)
 		//Throw warnings for unreferenced variables that don't match a ThemeColor enum value
 		VarArrayLoop(&userTheme->entries, eIndex)
 		{

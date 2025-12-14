@@ -390,6 +390,11 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 	
 	WriteLine_I("New app DLL was loaded!");
 	app->shouldRenderAfterReload = true;
+	// void InitDefaultTheme(UserTheme* theme)
+	FreeUserTheme(&app->defaultTheme);
+	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
+	InitDefaultTheme(&app->defaultTheme);
+	AppBakeTheme();
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -573,6 +578,24 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F6, false))
 	{
 		app->showPerfGraph = !app->showPerfGraph;
+	}
+	
+	// +==============================+
+	// |       Handle F9 Hotkey       |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F9, false))
+	{
+		ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+			? ThemeMode_Debug
+			: ((app->currentThemeMode == ThemeMode_Dark)
+				? ThemeMode_Light
+				: ThemeMode_Dark
+			)
+		);
+		app->currentThemeMode = otherThemeMode;
+		SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
+		SaveAppSettings();
+		AppBakeTheme();
 	}
 	
 	// +==============================+
@@ -920,7 +943,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									: ThemeMode_Dark
 								)
 							);
-							if (ClayBtnStr(ScratchPrintStr("%s Theme", GetThemeModeStr(otherThemeMode)), Str8_Empty, StrLit("Toggle between dark and light theme"), true, &app->icons[AppIcon_LightDark]))
+							if (ClayBtnStr(ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), StrLit("F9"), StrLit("Toggle between dark and light mode"), true, &app->icons[AppIcon_LightDark]))
 							{
 								app->currentThemeMode = otherThemeMode;
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
