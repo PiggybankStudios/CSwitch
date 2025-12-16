@@ -1,6 +1,7 @@
 // raddbg 0.9.24 project file
 
 recent_file: path: "app/app_theme.c"
+recent_file: path: "app/app_helpers.c"
 recent_file: path: "app/app_theme.h"
 recent_file: path: "app/app_main.c"
 recent_file: path: "app/platform_main.c"
@@ -20,17 +21,17 @@ theme: "VS (Dark)"
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66201129702537
+  timestamp: 66201295688417
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66201129701569
+  timestamp: 66201295687498
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66201134593156
+  timestamp: 66201296297462
 }
 debug_info:
 {

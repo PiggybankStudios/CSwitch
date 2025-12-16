@@ -126,6 +126,87 @@ void LoadNotificationIcons()
 	}
 }
 
+bool AppTryLoadDefaultTheme(bool assertOnFailure)
+{
+	TracyCZoneN(_funcZone, "LoadDefaultTheme", true);
+	ScratchBegin(scratch);
+	
+	Str8 defaultThemeFileContents = Str8_Empty;
+	Result readDefaultThemeResult = TryReadAppResource(&app->resources, scratch, StrLit(DEFAULT_THEME_FILE_PATH), true, &defaultThemeFileContents);
+	if (readDefaultThemeResult != Result_Success)
+	{
+		PrintLine_E("Failed to read default theme definition file from resources: %s", GetResultStr(readDefaultThemeResult));
+		if (assertOnFailure) { AssertMsg(readDefaultThemeResult == Result_Success, "Failed to read default theme definition file from resources!"); }
+		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
+		return false;
+	}
+	
+	#if !USE_BUNDLED_RESOURCES
+	if (app->defaultThemeFileWatchId == 0)
+	{
+		app->defaultThemeFileWatchId = AddFileWatch(&app->fileWatches, StrLit(DEFAULT_THEME_FILE_PATH), CHECK_DEFAULT_THEME_PERIOD);
+	}
+	else { ClearFileWatchChanged(&app->fileWatches, app->defaultThemeFileWatchId); }
+	#endif //!USE_BUNDLED_RESOURCES
+	
+	ThemeDefinition newDefaultTheme = ZEROED;
+	InitThemeDefinition(stdHeap, &newDefaultTheme, NUM_ENTRIES_EXPECTED_IN_DEFAULT_THEME);
+	Result parseResult = TryParseThemeFile(defaultThemeFileContents, &newDefaultTheme);
+	if (parseResult != Result_Success)
+	{
+		PrintLine_E("Failed to parse default theme definition: %s", GetResultStr(parseResult));
+		if (assertOnFailure) { AssertMsg(parseResult == Result_Success, "Failed to parse default theme definition!"); }
+		FreeThemeDefinition(&newDefaultTheme);
+		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
+		return false;
+	}
+	
+	BakedTheme bakedDarkTheme = ZEROED;
+	Result bakeResultDark = BakeTheme(&newDefaultTheme, ThemeMode_Dark, &bakedDarkTheme);
+	if (bakeResultDark != Result_Success)
+	{
+		PrintLine_E("Failed to bake default theme definition in Dark mode: %s", GetResultStr(bakeResultDark));
+		if (assertOnFailure) { AssertMsg(bakeResultDark == Result_Success, "Failed to bake default theme definition in Dark mode!"); }
+		FreeThemeDefinition(&newDefaultTheme);
+		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
+		return false;
+	}
+	BakedTheme bakedLightTheme = ZEROED;
+	Result bakeResultLight = BakeTheme(&newDefaultTheme, ThemeMode_Light, &bakedLightTheme);
+	if (bakeResultLight != Result_Success)
+	{
+		PrintLine_E("Failed to bake default theme definition in Light mode: %s", GetResultStr(bakeResultLight));
+		if (assertOnFailure) { AssertMsg(bakeResultLight == Result_Success, "Failed to bake default theme definition in Light mode!"); }
+		FreeThemeDefinition(&newDefaultTheme);
+		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
+		return false;
+	}
+	#if 0
+	BakedTheme bakedDebugTheme = ZEROED;
+	Result bakeResultDebug = BakeTheme(&newDefaultTheme, ThemeMode_Debug, &bakedDebugTheme);
+	if (bakeResultDebug != Result_Success)
+	{
+		PrintLine_E("Failed to bake default theme definition in Debug mode: %s", GetResultStr(bakeResultDebug));
+		if (assertOnFailure) { AssertMsg(bakeResultDebug == Result_Success, "Failed to bake default theme definition in Debug mode!"); }
+		FreeThemeDefinition(&newDefaultTheme);
+		ScratchEnd(scratch);
+		TracyCZoneEnd(_funcZone);
+		return false;
+	}
+	#endif //DEBUG_BUILD
+	
+	FreeThemeDefinition(&app->defaultTheme);
+	MyMemCopy(&app->defaultTheme, &newDefaultTheme, sizeof(ThemeDefinition));
+	
+	ScratchEnd(scratch);
+	TracyCZoneEnd(_funcZone);
+	return true;
+}
+
 Slice TryLoadFontFileFromResources(Arena* arena, Str8 filePath)
 {
 	Slice fileContents = Slice_Empty;

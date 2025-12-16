@@ -203,6 +203,9 @@ struct AppData
 	
 	BakedTheme theme;
 	ThemeDefinition defaultTheme;
+	#if !USE_BUNDLED_RESOURCES
+	uxx defaultThemeFileWatchId;
+	#endif
 	ThemeDefinition userThemeOverrides;
 	uxx userThemeFileWatchId;
 	ThemeMode currentThemeMode;

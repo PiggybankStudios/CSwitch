@@ -47,6 +47,8 @@ Date:   02\25\2025
 
 #define CHECK_RECENT_FILES_WRITE_TIME_PERIOD 1000 //ms
 #define RECENT_FILES_RELOAD_DELAY            100 //ms
+#define CHECK_DEFAULT_THEME_PERIOD              1000 //ms
+#define DEFAULT_THEME_RELOAD_DELAY              100 //ms
 #define CHECK_USER_THEME_PERIOD              1000 //ms
 #define USER_THEME_RELOAD_DELAY              100 //ms
 

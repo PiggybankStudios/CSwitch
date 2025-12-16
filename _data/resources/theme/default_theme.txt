@@ -1,24 +1,375 @@
+// This is the default theme for C-Switch, it contains a complete color set for both Light and Dark mode
 
+Transparent:      00000000
+Darken25:         40000000
+
+//These are just used for notification icon coloring based on DbgLevel
+MonokaiDarkGray:  212121
+MonokaiGray1:     AFAFA2
+MonokaiGreen:     A6E22E
+MonokaiLightBlue: A9FFFF
+MonokaiLightGray: BBBBBB
+MonokaiMagenta:   F92672
+MonokaiOrange:    FD971F
+MonokaiPurple:    AE81FF
+
+// +--------------------------------------------------------------+
+// |                       Dark Mode Colors                       |
+// +--------------------------------------------------------------+
 @Dark
-BackgroundBlack:    191B1C //(25, 27, 28, 255)
-BackgroundDarkGray: 1F2223 //(31, 34, 35, 255)
-BackgroundGray:     272A2B //(39, 42, 43, 255)
-TextWhite:          DDDEE0 //(221, 222, 224, 255)
-TextLightGray:      AFB1B3 //(175, 177, 179, 255)
-TextGray:           6B7078 //(107, 112, 120, 255)
-Outline:            343A3B //(52, 58, 59, 255)
-Hovered:            103C4C //(16, 60, 76, 255)
-Selected:           0079A6 //(0, 121, 166, 255)
-Error:              FF6666 //(255, 102, 102, 255)
+Black:           191B1C
+DarkGray:        1F2223
+Gray:            272A2B
+White:           DDDEE0
+LighterGray:     AFB1B3
+LightGray:       6B7078
+LightGray50:     806B7078
+DarkestBlue:     343A3B
+DarkBlue:        103C4C
+Blue:            0079A6
+Blue50:          800079A6
+Red:             FF6666
+Red50:           80FF6666
+DarkBlueToBlue1: 085B79
+DarkBlueToBlue2: 046A90
 
+// +--------------------------------------------------------------+
+// |                      Light Mode Colors                       |
+// +--------------------------------------------------------------+
 @Light
-BackgroundBlack:    FFFFFF //(255, 255, 255, 255)
-BackgroundDarkGray: F8F8F8 //(248, 248, 248, 255)
-BackgroundGray:     EBEBEB //(235, 235, 235, 255)
-TextWhite:          3E3F40 //(62, 63, 64, 255)
-TextLightGray:      606263 //(96, 98, 99, 255)
-TextGray:           909293 //(144, 146, 147, 255)
-Outline:            DADADB //(218, 218, 219, 255)
-Hovered:            99DEF8 //(153, 222, 248, 255)
-Selected:           00ADEE //(0, 173, 238, 255)
-Error:              FF6666 //(255, 102, 102, 255)
+White:            FFFFFF
+NearWhite:        EBEBEB
+DarkGray:         3E3F40
+Gray:             606263
+LightGray:        909293
+LightGray50:      80909293
+BlueWhite:        56A7D6
+LightBlue:        99DEF8
+Blue:             00ADEE
+Blue50:           8000ADEE
+Red:              FF6666
+Red50:            80FF6666
+LightBlueToBlue1: 4DC6F3
+LightBlueToBlue2: 26B9F1
+
+// +--------------------------------------------------------------+
+// |                          Dark Mode                           |
+// +--------------------------------------------------------------+
+@Dark
+	OptionListBack:                        Black
+	ScrollGutter:                          Black
+	ScrollBar:                             DarkestBlue
+	ScrollBarHover:                        LightGray
+	ScrollBarGrab:                         LightGray
+	TooltipBack:                           White
+	TooltipBorder:                         Transparent
+	TooltipText:                           DarkGray
+	TopmostBorder:                         Blue
+	TopbarBack:                            Gray
+	TopbarBorder:                          DarkestBlue
+	TopbarPathText:                        LighterGray
+	DropdownBack:                          Gray
+	DropdownBorder:                        DarkestBlue
+	
+	OptionBackOff:                         Transparent
+	OptionBackOn:                          Blue
+	OptionBackOnHovered:                   DarkBlueToBlue2
+	OptionBackOffHovered:                  DarkBlue
+	OptionBackTurningOff:                  DarkBlueToBlue1
+	OptionBackTurningOn:                   DarkBlueToBlue1
+	OptionBorderOff:                       DarkestBlue
+	OptionBorderOn:                        Blue
+	OptionBorderOffHovered:                DarkBlueToBlue1
+	OptionBorderOnHovered:                 Blue
+	OptionBorderTurningOff:                DarkBlueToBlue1
+	OptionBorderTurningOn:                 Blue
+	OptionNameTextOff:                     LightGray
+	OptionNameTextOn:                      White
+	OptionNameTextOffHovered:              LightGray
+	OptionNameTextOnHovered:               White
+	OptionNameTextTurningOff:              LightGray
+	OptionNameTextTurningOn:               White
+	OptionValueTextOff:                    LightGray
+	OptionValueTextOn:                     White
+	OptionValueTextOffHovered:             LightGray
+	OptionValueTextOnHovered:              White
+	OptionValueTextTurningOff:             LightGray
+	OptionValueTextTurningOn:              White
+	
+	TopbarBtnBack:                         Transparent
+	TopbarBtnBackHover:                    DarkBlue
+	TopbarBtnBackOpen:                     DarkBlue
+	TopbarBtnBorder:                       Transparent
+	TopbarBtnBorderHover:                  Blue
+	TopbarBtnBorderOpen:                   Transparent
+	TopbarBtnText:                         White
+	TopbarBtnTextHover:                    White
+	TopbarBtnTextOpen:                     White
+	
+	DropdownBtnBack:                       Transparent
+	DropdownBtnBackHover:                  DarkBlue
+	DropdownBtnBackPressed:                Blue
+	DropdownBtnBackOpen:                   DarkBlue
+	DropdownBtnBackDisabled:               Black
+	DropdownBtnBorder:                     Transparent
+	DropdownBtnBorderHover:                Blue
+	DropdownBtnBorderPressed:              Transparent
+	DropdownBtnBorderOpen:                 Transparent
+	DropdownBtnBorderDisabled:             Transparent
+	DropdownBtnText:                       White
+	DropdownBtnTextHover:                  White
+	DropdownBtnTextPressed:                White
+	DropdownBtnTextOpen:                   White
+	DropdownBtnTextDisabled:               LightGray
+	DropdownBtnIcon:                       White
+	DropdownBtnIconHover:                  White
+	DropdownBtnIconPressed:                White
+	DropdownBtnIconOpen:                   White
+	DropdownBtnIconDisabled:               LightGray
+	
+	HotkeyBack:                            Transparent
+	HotkeyBackHover:                       Transparent
+	HotkeyBackPressed:                     Transparent
+	HotkeyBackDisabled:                    Transparent
+	HotkeyBorder:                          LightGray
+	HotkeyBorderHover:                     LightGray
+	HotkeyBorderPressed:                   LightGray
+	HotkeyBorderDisabled:                  LightGray
+	HotkeyText:                            LightGray
+	HotkeyTextHover:                       LightGray
+	HotkeyTextPressed:                     LightGray
+	HotkeyTextDisabled:                    LightGray
+	
+	FileTabDivider:                        LightGray
+	FileTabBack:                           Gray
+	FileTabBackHover:                      DarkestBlue
+	FileTabBackOpen:                       Black
+	FileTabBorder:                         Transparent
+	FileTabBorderHover:                    Blue
+	FileTabBorderOpen:                     Transparent
+	FileTabText:                           LighterGray
+	FileTabTextHover:                      White
+	FileTabTextOpen:                       White
+	
+	ConfirmDialogDarken:                   Darken25
+	ConfirmDialogBack:                     Gray
+	ConfirmDialogBorder:                   LighterGray
+	ConfirmDialogText:                     White
+	ConfirmDialogPositiveBtnBack:          Transparent
+	ConfirmDialogPositiveBtnBackHover:     Blue50
+	ConfirmDialogPositiveBtnBackPressed:   Blue50
+	ConfirmDialogPositiveBtnBorder:        Blue50
+	ConfirmDialogPositiveBtnBorderHover:   Blue
+	ConfirmDialogPositiveBtnBorderPressed: Blue
+	ConfirmDialogPositiveBtnText:          White
+	ConfirmDialogPositiveBtnTextHover:     White
+	ConfirmDialogPositiveBtnTextPressed:   White
+	ConfirmDialogNegativeBtnBack:          Transparent
+	ConfirmDialogNegativeBtnBackHover:     Red50
+	ConfirmDialogNegativeBtnBackPressed:   Red50
+	ConfirmDialogNegativeBtnBorder:        Red50
+	ConfirmDialogNegativeBtnBorderHover:   Red
+	ConfirmDialogNegativeBtnBorderPressed: Red
+	ConfirmDialogNegativeBtnText:          White
+	ConfirmDialogNegativeBtnTextHover:     White
+	ConfirmDialogNegativeBtnTextPressed:   White
+	ConfirmDialogNeutralBtnBack:           Transparent
+	ConfirmDialogNeutralBtnBackHover:      LightGray50
+	ConfirmDialogNeutralBtnBackPressed:    LightGray50
+	ConfirmDialogNeutralBtnBorder:         LightGray50
+	ConfirmDialogNeutralBtnBorderHover:    LightGray
+	ConfirmDialogNeutralBtnBorderPressed:  LightGray
+	ConfirmDialogNeutralBtnText:           White
+	ConfirmDialogNeutralBtnTextHover:      White
+	ConfirmDialogNeutralBtnTextPressed:    White
+	
+	NotificationDebugBack:                 MonokaiDarkGray
+	NotificationDebugBorder:               MonokaiLightGray
+	NotificationDebugText:                 White
+	NotificationDebugIcon:                 MonokaiGray1
+	NotificationRegularBack:               MonokaiDarkGray
+	NotificationRegularBorder:             MonokaiLightGray
+	NotificationRegularText:               White
+	NotificationRegularIcon:               White
+	NotificationInfoBack:                  MonokaiDarkGray
+	NotificationInfoBorder:                MonokaiLightGray
+	NotificationInfoText:                  White
+	NotificationInfoIcon:                  MonokaiGreen
+	NotificationNotifyBack:                MonokaiDarkGray
+	NotificationNotifyBorder:              MonokaiLightGray
+	NotificationNotifyText:                White
+	NotificationNotifyIcon:                MonokaiPurple
+	NotificationOtherBack:                 MonokaiDarkGray
+	NotificationOtherBorder:               MonokaiLightGray
+	NotificationOtherText:                 White
+	NotificationOtherIcon:                 MonokaiLightBlue
+	NotificationWarningBack:               MonokaiDarkGray
+	NotificationWarningBorder:             MonokaiLightGray
+	NotificationWarningText:               White
+	NotificationWarningIcon:               MonokaiOrange
+	NotificationErrorBack:                 MonokaiDarkGray
+	NotificationErrorBorder:               MonokaiLightGray
+	NotificationErrorText:                 White
+	NotificationErrorIcon:                 MonokaiMagenta
+// +--------------------------------------------------------------+
+
+// +--------------------------------------------------------------+
+// |                          Light Mode                          |
+// +--------------------------------------------------------------+
+@Light
+	OptionListBack:                        White
+	ScrollGutter:                          NearWhite
+	ScrollBar:                             LightGray
+	ScrollBarHover:                        Gray
+	ScrollBarGrab:                         Gray
+	TooltipBack:                           NearWhite
+	TooltipBorder:                         Transparent
+	TooltipText:                           DarkGray
+	TopmostBorder:                         Blue
+	TopbarBack:                            NearWhite
+	TopbarBorder:                          BlueWhite
+	TopbarPathText:                        Gray
+	DropdownBack:                          NearWhite
+	DropdownBorder:                        BlueWhite
+	
+	OptionBackOff:                         Transparent
+	OptionBackOn:                          Blue
+	OptionBackOnHovered:                   LightBlueToBlue2
+	OptionBackOffHovered:                  LightBlue
+	OptionBackTurningOff:                  LightBlueToBlue1
+	OptionBackTurningOn:                   LightBlueToBlue1
+	OptionBorderOff:                       BlueWhite
+	OptionBorderOn:                        Blue
+	OptionBorderOffHovered:                LightBlueToBlue1
+	OptionBorderOnHovered:                 Blue
+	OptionBorderTurningOff:                LightBlueToBlue1
+	OptionBorderTurningOn:                 Blue
+	OptionNameTextOff:                     LightGray
+	OptionNameTextOn:                      DarkGray
+	OptionNameTextOffHovered:              LightGray
+	OptionNameTextOnHovered:               DarkGray
+	OptionNameTextTurningOff:              LightGray
+	OptionNameTextTurningOn:               DarkGray
+	OptionValueTextOff:                    LightGray
+	OptionValueTextOn:                     DarkGray
+	OptionValueTextOffHovered:             LightGray
+	OptionValueTextOnHovered:              DarkGray
+	OptionValueTextTurningOff:             LightGray
+	OptionValueTextTurningOn:              DarkGray
+	
+	TopbarBtnBack:                         Transparent
+	TopbarBtnBackHover:                    LightBlue
+	TopbarBtnBackOpen:                     LightBlue
+	TopbarBtnBorder:                       Transparent
+	TopbarBtnBorderHover:                  Blue
+	TopbarBtnBorderOpen:                   Transparent
+	TopbarBtnText:                         DarkGray
+	TopbarBtnTextHover:                    DarkGray
+	TopbarBtnTextOpen:                     DarkGray
+	
+	DropdownBtnBack:                       Transparent
+	DropdownBtnBackHover:                  LightBlue
+	DropdownBtnBackPressed:                Blue
+	DropdownBtnBackOpen:                   LightBlue
+	DropdownBtnBackDisabled:               White
+	DropdownBtnBorder:                     Transparent
+	DropdownBtnBorderHover:                Blue
+	DropdownBtnBorderPressed:              Transparent
+	DropdownBtnBorderOpen:                 Transparent
+	DropdownBtnBorderDisabled:             Transparent
+	DropdownBtnText:                       DarkGray
+	DropdownBtnTextHover:                  DarkGray
+	DropdownBtnTextPressed:                DarkGray
+	DropdownBtnTextOpen:                   DarkGray
+	DropdownBtnTextDisabled:               LightGray
+	DropdownBtnIcon:                       DarkGray
+	DropdownBtnIconHover:                  DarkGray
+	DropdownBtnIconPressed:                DarkGray
+	DropdownBtnIconOpen:                   DarkGray
+	DropdownBtnIconDisabled:               LightGray
+	
+	HotkeyBack:                            Transparent
+	HotkeyBackHover:                       Transparent
+	HotkeyBackPressed:                     Transparent
+	HotkeyBackDisabled:                    Transparent
+	HotkeyBorder:                          LightGray
+	HotkeyBorderHover:                     DarkGray
+	HotkeyBorderPressed:                   DarkGray
+	HotkeyBorderDisabled:                  LightGray
+	HotkeyText:                            LightGray
+	HotkeyTextHover:                       DarkGray
+	HotkeyTextPressed:                     DarkGray
+	HotkeyTextDisabled:                    LightGray
+	
+	FileTabDivider:                        LightGray
+	FileTabBack:                           NearWhite
+	FileTabBackHover:                      BlueWhite
+	FileTabBackOpen:                       White
+	FileTabBorder:                         Transparent
+	FileTabBorderHover:                    Blue
+	FileTabBorderOpen:                     Transparent
+	FileTabText:                           Gray
+	FileTabTextHover:                      DarkGray
+	FileTabTextOpen:                       DarkGray
+	
+	ConfirmDialogDarken:                   Darken25
+	ConfirmDialogBack:                     NearWhite
+	ConfirmDialogBorder:                   Gray
+	ConfirmDialogText:                     DarkGray
+	ConfirmDialogPositiveBtnBack:          Transparent
+	ConfirmDialogPositiveBtnBackHover:     Blue50
+	ConfirmDialogPositiveBtnBackPressed:   Blue50
+	ConfirmDialogPositiveBtnBorder:        Blue50
+	ConfirmDialogPositiveBtnBorderHover:   Blue
+	ConfirmDialogPositiveBtnBorderPressed: Blue
+	ConfirmDialogPositiveBtnText:          DarkGray
+	ConfirmDialogPositiveBtnTextHover:     DarkGray
+	ConfirmDialogPositiveBtnTextPressed:   DarkGray
+	ConfirmDialogNegativeBtnBack:          Transparent
+	ConfirmDialogNegativeBtnBackHover:     Red50
+	ConfirmDialogNegativeBtnBackPressed:   Red50
+	ConfirmDialogNegativeBtnBorder:        Red50
+	ConfirmDialogNegativeBtnBorderHover:   Red
+	ConfirmDialogNegativeBtnBorderPressed: Red
+	ConfirmDialogNegativeBtnText:          DarkGray
+	ConfirmDialogNegativeBtnTextHover:     DarkGray
+	ConfirmDialogNegativeBtnTextPressed:   DarkGray
+	ConfirmDialogNeutralBtnBack:           Transparent
+	ConfirmDialogNeutralBtnBackHover:      LightGray50
+	ConfirmDialogNeutralBtnBackPressed:    LightGray50
+	ConfirmDialogNeutralBtnBorder:         LightGray50
+	ConfirmDialogNeutralBtnBorderHover:    LightGray
+	ConfirmDialogNeutralBtnBorderPressed:  LightGray
+	ConfirmDialogNeutralBtnText:           DarkGray
+	ConfirmDialogNeutralBtnTextHover:      DarkGray
+	ConfirmDialogNeutralBtnTextPressed:    DarkGray
+	
+	NotificationDebugBack:                 MonokaiDarkGray
+	NotificationDebugBorder:               MonokaiLightGray
+	NotificationDebugText:                 DarkGray
+	NotificationDebugIcon:                 MonokaiGray1
+	NotificationRegularBack:               MonokaiDarkGray
+	NotificationRegularBorder:             MonokaiLightGray
+	NotificationRegularText:               DarkGray
+	NotificationRegularIcon:               DarkGray
+	NotificationInfoBack:                  MonokaiDarkGray
+	NotificationInfoBorder:                MonokaiLightGray
+	NotificationInfoText:                  DarkGray
+	NotificationInfoIcon:                  MonokaiGreen
+	NotificationNotifyBack:                MonokaiDarkGray
+	NotificationNotifyBorder:              MonokaiLightGray
+	NotificationNotifyText:                DarkGray
+	NotificationNotifyIcon:                MonokaiPurple
+	NotificationOtherBack:                 MonokaiDarkGray
+	NotificationOtherBorder:               MonokaiLightGray
+	NotificationOtherText:                 DarkGray
+	NotificationOtherIcon:                 MonokaiLightBlue
+	NotificationWarningBack:               MonokaiDarkGray
+	NotificationWarningBorder:             MonokaiLightGray
+	NotificationWarningText:               DarkGray
+	NotificationWarningIcon:               MonokaiOrange
+	NotificationErrorBack:                 MonokaiDarkGray
+	NotificationErrorBorder:               MonokaiLightGray
+	NotificationErrorText:                 DarkGray
+	NotificationErrorIcon:                 MonokaiMagenta
+// +--------------------------------------------------------------+

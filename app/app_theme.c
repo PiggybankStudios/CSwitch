@@ -81,6 +81,15 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 {
 	Result result = Result_None;
 	
+	if (mode == ThemeMode_Debug)
+	{
+		for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
+		{
+			themeOut->colors[cIndex] = GetPredefPalColorByIndex(cIndex);
+		}
+		return Result_Success;
+	}
+	
 	VarArrayLoop(&themeDef->entries, eIndex)
 	{
 		VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
@@ -176,7 +185,6 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 			else
 			{
 				PrintLine_E("Baking ThemeDefinition that is missing an entry for \"%.*s\"", StrPrint(enumValueName));
-				DebugAssertMsg(referencedEntry != nullptr, "Baking incomplete theme! Missing entry for one of the ThemeColor values!");
 				themeOut->colors[cIndex] = Black;
 			}
 		}

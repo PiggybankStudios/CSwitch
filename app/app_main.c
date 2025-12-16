@@ -281,8 +281,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileTab, &app->tabs, stdHeap);
 	
-	InitThemeDefinition(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
-	InitDefaultTheme(&app->defaultTheme);
+	AppTryLoadDefaultTheme(true);
 	AppLoadUserTheme();
 	if (!TryParseThemeMode(app->settings.themeMode, &app->currentThemeMode))
 	{
@@ -390,10 +389,6 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 	
 	WriteLine_I("New app DLL was loaded!");
 	app->shouldRenderAfterReload = true;
-	FreeThemeDefinition(&app->defaultTheme);
-	InitThemeDefinition(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
-	InitDefaultTheme(&app->defaultTheme);
-	AppBakeTheme();
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -437,6 +432,18 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			AppLoadRecentFilesList();
 			refreshScreen = true;
 		}
+		#if !USE_BUNDLED_RESOURCES
+		if (app->defaultThemeFileWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->defaultThemeFileWatchId, DEFAULT_THEME_RELOAD_DELAY))
+		{
+			ClearFileWatchChanged(&app->fileWatches, app->defaultThemeFileWatchId);
+			WriteLine_D("Default theme file write time changed. Auto-reloading!");
+			if (AppTryLoadDefaultTheme(false)) { Notify_D("Reloaded default theme"); }
+			else { Notify_W("Failed to reload default theme!"); }
+			AppBakeTheme();
+			
+			refreshScreen = true;
+		}
+		#endif // !USE_BUNDLED_RESOURCES
 		if (app->userThemeFileWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->userThemeFileWatchId, USER_THEME_RELOAD_DELAY))
 		{
 			ClearFileWatchChanged(&app->fileWatches, app->userThemeFileWatchId);
