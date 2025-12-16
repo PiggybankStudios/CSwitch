@@ -3,6 +3,7 @@ File:   app_theme.c
 Author: Taylor Robbins
 Date:   12\10\2025
 Description: 
+	** TODO: Update this description once we settle fully on a system for themes!
 	** Holds functions related to interacting with Theme structures which holds a set of colors and override booleans for each slot
 	** Theme structures are used to store colors that we use for UI elements. It's not a complex structure but it allows us to let the user pick from multiple themes (primarily "light" and "dark" themes)
 */
@@ -10,7 +11,7 @@ Description:
 //NOTE: This is the primary usage macro in the UI code. See the Theme_XList macro for possible names
 #define GetThemeColor(themeColorSuffix) (app->theme.colors[ThemeColor_##themeColorSuffix])
 
-void FreeUserThemeEntry(UserTheme* theme, UserThemeEntry* entry)
+void FreeThemeDefEntry(ThemeDefinition* theme, ThemeDefEntry* entry)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
@@ -20,30 +21,30 @@ void FreeUserThemeEntry(UserTheme* theme, UserThemeEntry* entry)
 	}
 	ClearPointer(entry);
 }
-void FreeUserTheme(UserTheme* theme)
+void FreeThemeDefinition(ThemeDefinition* theme)
 {
 	NotNull(theme);
 	if (theme->arena != nullptr)
 	{
 		VarArrayLoop(&theme->entries, eIndex)
 		{
-			VarArrayLoopGet(UserThemeEntry, entry, &theme->entries, eIndex);
-			FreeUserThemeEntry(theme, entry);
+			VarArrayLoopGet(ThemeDefEntry, entry, &theme->entries, eIndex);
+			FreeThemeDefEntry(theme, entry);
 		}
 		FreeVarArray(&theme->entries);
 	}
 	ClearPointer(theme);
 }
-void InitUserTheme(Arena* arena, UserTheme* themeOut, uxx numEntriesExpected)
+void InitThemeDefinition(Arena* arena, ThemeDefinition* themeOut, uxx numEntriesExpected)
 {
 	NotNull(arena);
 	NotNull(themeOut);
 	ClearPointer(themeOut);
 	themeOut->arena = arena;
-	InitVarArrayWithInitial(UserThemeEntry, &themeOut->entries, arena, numEntriesExpected);
+	InitVarArrayWithInitial(ThemeDefEntry, &themeOut->entries, arena, numEntriesExpected);
 }
 
-void CombineUserTheme(const UserTheme* baseTheme, const UserTheme* overrideTheme, UserTheme* themeOut)
+void CombineThemeDefinitions(const ThemeDefinition* baseTheme, const ThemeDefinition* overrideTheme, ThemeDefinition* themeOut)
 {
 	NotNull(baseTheme);
 	NotNull(overrideTheme);
@@ -52,37 +53,37 @@ void CombineUserTheme(const UserTheme* baseTheme, const UserTheme* overrideTheme
 	
 	VarArrayLoop(&baseTheme->entries, eIndex)
 	{
-		const VarArrayLoopGet(UserThemeEntry, baseEntry, &baseTheme->entries, eIndex);
+		const VarArrayLoopGet(ThemeDefEntry, baseEntry, &baseTheme->entries, eIndex);
 		if (baseEntry->isStrValue)
 		{
-			AddUserThemeEntryStr(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueStr);
+			AddThemeDefEntryStr(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueStr);
 		}
 		else
 		{
-			AddUserThemeEntryColor(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueColor);
+			AddThemeDefEntryColor(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueColor);
 		}
 	}
 	VarArrayLoop(&overrideTheme->entries, eIndex)
 	{
-		const VarArrayLoopGet(UserThemeEntry, overrideEntry, &overrideTheme->entries, eIndex);
+		const VarArrayLoopGet(ThemeDefEntry, overrideEntry, &overrideTheme->entries, eIndex);
 		if (overrideEntry->isStrValue)
 		{
-			AddUserThemeEntryStr(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueStr);
+			AddThemeDefEntryStr(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueStr);
 		}
 		else
 		{
-			AddUserThemeEntryColor(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueColor);
+			AddThemeDefEntryColor(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueColor);
 		}
 	}
 }
 
-Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
+Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut)
 {
 	Result result = Result_None;
 	
-	VarArrayLoop(&userTheme->entries, eIndex)
+	VarArrayLoop(&themeDef->entries, eIndex)
 	{
-		VarArrayLoopGet(UserThemeEntry, entry, &userTheme->entries, eIndex);
+		VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
 		entry->isResolved = false;
 		entry->isReferenced = false;
 	}
@@ -92,11 +93,11 @@ Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 	while (numUnresolvedEntries > 0)
 	{
 		numUnresolvedEntries = 0;
-		UserThemeEntry* firstUnresolvedEntry = nullptr;
+		ThemeDefEntry* firstUnresolvedEntry = nullptr;
 		uxx numNewlyResolvedEntries = 0;
-		VarArrayLoop(&userTheme->entries, eIndex)
+		VarArrayLoop(&themeDef->entries, eIndex)
 		{
-			VarArrayLoopGet(UserThemeEntry, entry, &userTheme->entries, eIndex);
+			VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
 			if (!entry->isResolved)
 			{
 				if (!entry->isStrValue)
@@ -106,7 +107,7 @@ Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 				}
 				else
 				{
-					UserThemeEntry* referencedEntry = FindUserThemeEntry(userTheme, entry->mode, entry->valueStr);
+					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, entry->valueStr);
 					if (referencedEntry != nullptr)
 					{
 						referencedEntry->isReferenced = true;
@@ -146,9 +147,9 @@ Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 	{
 		#if (0 && DEBUG_BUILD)
 		//Throw warnings for unreferenced variables that don't match a ThemeColor enum value
-		VarArrayLoop(&userTheme->entries, eIndex)
+		VarArrayLoop(&themeDef->entries, eIndex)
 		{
-			VarArrayLoopGet(UserThemeEntry, entry, &userTheme->entries, eIndex);
+			VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
 			if (!entry->isReferenced)
 			{
 				for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
@@ -167,14 +168,14 @@ Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 		for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
 		{
 			Str8 enumValueName = MakeStr8Nt(GetThemeColorStr((ThemeColor)cIndex));
-			UserThemeEntry* referencedEntry = FindUserThemeEntry(userTheme, mode, enumValueName);
+			ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, mode, enumValueName);
 			if (referencedEntry != nullptr)
 			{
 				themeOut->colors[cIndex] = referencedEntry->valueColor;
 			}
 			else
 			{
-				PrintLine_E("Baking UserTheme that is missing an entry for \"%.*s\"", StrPrint(enumValueName));
+				PrintLine_E("Baking ThemeDefinition that is missing an entry for \"%.*s\"", StrPrint(enumValueName));
 				DebugAssertMsg(referencedEntry != nullptr, "Baking incomplete theme! Missing entry for one of the ThemeColor values!");
 				themeOut->colors[cIndex] = Black;
 			}
@@ -186,7 +187,7 @@ Result BakeUserTheme(UserTheme* userTheme, ThemeMode mode, BakedTheme* themeOut)
 	return result;
 }
 
-Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
+Result TryParseThemeFile(Str8 fileContents, ThemeDefinition* themeOut)
 {
 	NotNull(themeOut);
 	NotNull(themeOut->arena);
@@ -228,11 +229,11 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 				Color32 colorValue = Black;
 				if (TryParseColor(token.value, &colorValue, nullptr))
 				{
-					isNewEntry = AddUserThemeEntryColor(themeOut, currentMode, token.key, colorValue);
+					isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, token.key, colorValue);
 				}
 				else
 				{
-					isNewEntry = AddUserThemeEntryStr(themeOut, currentMode, token.key, token.value);
+					isNewEntry = AddThemeDefEntryStr(themeOut, currentMode, token.key, token.value);
 				}
 				
 				if (!isNewEntry) { NotifyPrint_W("Duplicate entry in theme file for \"%.*s\" on line %llu", StrPrint(token.str), parser.lineParser.lineIndex); }
@@ -249,7 +250,7 @@ Result TryParseThemeFile(Str8 fileContents, UserTheme* themeOut)
 	return Result_Success;
 }
 
-Result TryLoadThemeFile(FilePath filePath, UserTheme* themeOut)
+Result TryLoadThemeFile(FilePath filePath, ThemeDefinition* themeOut)
 {
 	NotNull(themeOut);
 	NotNull(themeOut->arena);

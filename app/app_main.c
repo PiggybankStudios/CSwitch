@@ -281,7 +281,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileTab, &app->tabs, stdHeap);
 	
-	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
+	InitThemeDefinition(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
 	InitDefaultTheme(&app->defaultTheme);
 	AppLoadUserTheme();
 	if (!TryParseThemeMode(app->settings.themeMode, &app->currentThemeMode))
@@ -390,9 +390,8 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 	
 	WriteLine_I("New app DLL was loaded!");
 	app->shouldRenderAfterReload = true;
-	// void InitDefaultTheme(UserTheme* theme)
-	FreeUserTheme(&app->defaultTheme);
-	InitUserTheme(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
+	FreeThemeDefinition(&app->defaultTheme);
+	InitThemeDefinition(stdHeap, &app->defaultTheme, 40 + ThemeColor_Count*3);
 	InitDefaultTheme(&app->defaultTheme);
 	AppBakeTheme();
 	

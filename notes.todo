@@ -5,7 +5,6 @@
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
 	[X] Choose colors in theme carefully to maximize theme flexibility
-		[ ] Rename "UserTheme" to something else? The default theme being a "UserTheme" is confusing
 		[ ] Load embedded txt files for default theme rather than #defines
 		[ ] Option for dumping default theme and/or custom theme template
 	[ ] Separate state from unique UI element names?
@@ -49,6 +48,7 @@
 	[ ] 
 
 # Finished List:
+	[X] Rename "UserTheme" to something else? The default theme being a "UserTheme" is confusing
 	[X] Icons for "Load Custom Theme", "Clear Custom Theme" options
 	[X] Unused warnings are unhelpful (or maybe buggy?)
 	[X] Rename light theme vars

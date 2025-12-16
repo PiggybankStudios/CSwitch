@@ -202,8 +202,8 @@ struct AppData
 	Texture icons[AppIcon_Count];
 	
 	BakedTheme theme;
-	UserTheme defaultTheme;
-	UserTheme userThemeOverrides;
+	ThemeDefinition defaultTheme;
+	ThemeDefinition userThemeOverrides;
 	uxx userThemeFileWatchId;
 	ThemeMode currentThemeMode;
 	bool needToBakeTheme;

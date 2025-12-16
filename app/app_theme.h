@@ -609,8 +609,8 @@ plex BakedTheme
 	Color32 colors[ThemeColor_Count];
 };
 
-typedef plex UserThemeEntry UserThemeEntry;
-plex UserThemeEntry
+typedef plex ThemeDefEntry ThemeDefEntry;
+plex ThemeDefEntry
 {
 	ThemeMode mode;
 	Str8 key;
@@ -621,18 +621,18 @@ plex UserThemeEntry
 	Str8 valueStr;
 };
 
-typedef plex UserTheme UserTheme;
-plex UserTheme
+typedef plex ThemeDefinition ThemeDefinition;
+plex ThemeDefinition
 {
 	Arena* arena;
-	VarArray entries; //UserThemeEntry
+	VarArray entries; //ThemeDefEntry
 };
 
-UserThemeEntry* FindUserThemeEntry(UserTheme* theme, ThemeMode mode, Str8 key)
+ThemeDefEntry* FindThemeDefEntry(ThemeDefinition* theme, ThemeMode mode, Str8 key)
 {
 	VarArrayLoop(&theme->entries, eIndex)
 	{
-		VarArrayLoopGet(UserThemeEntry, entry, &theme->entries, eIndex);
+		VarArrayLoopGet(ThemeDefEntry, entry, &theme->entries, eIndex);
 		if ((entry->mode == ThemeMode_None || entry->mode == mode) &&
 			StrExactEquals(entry->key, key))
 		{
@@ -643,11 +643,11 @@ UserThemeEntry* FindUserThemeEntry(UserTheme* theme, ThemeMode mode, Str8 key)
 }
 
 // Returns false if an entry already existed and is getting overridden
-inline bool AddUserThemeEntryColor(UserTheme* theme, ThemeMode mode, Str8 key, Color32 color)
+inline bool AddThemeDefEntryColor(ThemeDefinition* theme, ThemeMode mode, Str8 key, Color32 color)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
-	UserThemeEntry* existingEntry = FindUserThemeEntry(theme, mode, key);
+	ThemeDefEntry* existingEntry = FindThemeDefEntry(theme, mode, key);
 	if (existingEntry != nullptr)
 	{
 		if (existingEntry->isStrValue && CanArenaFree(theme->arena)) { FreeStr8(theme->arena, &existingEntry->valueStr); }
@@ -655,7 +655,7 @@ inline bool AddUserThemeEntryColor(UserTheme* theme, ThemeMode mode, Str8 key, C
 		existingEntry->valueColor = color;
 		return false;
 	}
-	UserThemeEntry* newEntry = VarArrayAdd(UserThemeEntry, &theme->entries);
+	ThemeDefEntry* newEntry = VarArrayAdd(ThemeDefEntry, &theme->entries);
 	NotNull(newEntry);
 	ClearPointer(newEntry);
 	newEntry->mode = mode;
@@ -664,11 +664,11 @@ inline bool AddUserThemeEntryColor(UserTheme* theme, ThemeMode mode, Str8 key, C
 	newEntry->valueColor = color;
 	return true;
 }
-inline bool AddUserThemeEntryStr(UserTheme* theme, ThemeMode mode, Str8 key, Str8 value)
+inline bool AddThemeDefEntryStr(ThemeDefinition* theme, ThemeMode mode, Str8 key, Str8 value)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
-	UserThemeEntry* existingEntry = FindUserThemeEntry(theme, mode, key);
+	ThemeDefEntry* existingEntry = FindThemeDefEntry(theme, mode, key);
 	if (existingEntry != nullptr)
 	{
 		if (existingEntry->isStrValue && CanArenaFree(theme->arena)) { FreeStr8(theme->arena, &existingEntry->valueStr); }
@@ -676,7 +676,7 @@ inline bool AddUserThemeEntryStr(UserTheme* theme, ThemeMode mode, Str8 key, Str
 		existingEntry->valueStr = AllocStr8(theme->arena, value);
 		return false;
 	}
-	UserThemeEntry* newEntry = VarArrayAdd(UserThemeEntry, &theme->entries);
+	ThemeDefEntry* newEntry = VarArrayAdd(ThemeDefEntry, &theme->entries);
 	NotNull(newEntry);
 	ClearPointer(newEntry);
 	newEntry->mode = mode;
@@ -686,61 +686,61 @@ inline bool AddUserThemeEntryStr(UserTheme* theme, ThemeMode mode, Str8 key, Str
 	return true;
 }
 
-inline void InitDefaultTheme(UserTheme* theme)
+inline void InitDefaultTheme(ThemeDefinition* theme)
 {
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("Transparent"),      ThemeVar_Transparent);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("Darken25"),         ThemeVar_Darken25);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiDarkGray"),  ThemeVar_MonokaiDarkGray);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiGray1"),     ThemeVar_MonokaiGray1);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiGreen"),     ThemeVar_MonokaiGreen);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiLightBlue"), ThemeVar_MonokaiLightBlue);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiLightGray"), ThemeVar_MonokaiLightGray);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiMagenta"),   ThemeVar_MonokaiMagenta);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiOrange"),    ThemeVar_MonokaiOrange);
-	AddUserThemeEntryColor(theme, ThemeMode_None, StrLit("MonokaiPurple"),    ThemeVar_MonokaiPurple);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("Transparent"),      ThemeVar_Transparent);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("Darken25"),         ThemeVar_Darken25);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiDarkGray"),  ThemeVar_MonokaiDarkGray);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiGray1"),     ThemeVar_MonokaiGray1);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiGreen"),     ThemeVar_MonokaiGreen);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiLightBlue"), ThemeVar_MonokaiLightBlue);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiLightGray"), ThemeVar_MonokaiLightGray);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiMagenta"),   ThemeVar_MonokaiMagenta);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiOrange"),    ThemeVar_MonokaiOrange);
+	AddThemeDefEntryColor(theme, ThemeMode_None, StrLit("MonokaiPurple"),    ThemeVar_MonokaiPurple);
 	
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("Black"),           DarkThemeVar_Black);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("DarkGray"),        DarkThemeVar_DarkGray);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("Gray"),            DarkThemeVar_Gray);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("White"),           DarkThemeVar_White);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("LighterGray"),     DarkThemeVar_LighterGray);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("LightGray"),       DarkThemeVar_LightGray);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("LightGray50"),     DarkThemeVar_LightGray50);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("DarkestBlue"),     DarkThemeVar_DarkestBlue);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("DarkBlue"),        DarkThemeVar_DarkBlue);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("Blue"),            DarkThemeVar_Blue);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("Blue50"),          DarkThemeVar_Blue50);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("Red"),             DarkThemeVar_Red);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("Red50"),           DarkThemeVar_Red50);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("DarkBlueToBlue1"), DarkThemeVar_DarkBlueToBlue1);
-	AddUserThemeEntryColor(theme, ThemeMode_Dark, StrLit("DarkBlueToBlue2"), DarkThemeVar_DarkBlueToBlue2);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("Black"),           DarkThemeVar_Black);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("DarkGray"),        DarkThemeVar_DarkGray);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("Gray"),            DarkThemeVar_Gray);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("White"),           DarkThemeVar_White);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("LighterGray"),     DarkThemeVar_LighterGray);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("LightGray"),       DarkThemeVar_LightGray);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("LightGray50"),     DarkThemeVar_LightGray50);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("DarkestBlue"),     DarkThemeVar_DarkestBlue);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("DarkBlue"),        DarkThemeVar_DarkBlue);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("Blue"),            DarkThemeVar_Blue);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("Blue50"),          DarkThemeVar_Blue50);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("Red"),             DarkThemeVar_Red);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("Red50"),           DarkThemeVar_Red50);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("DarkBlueToBlue1"), DarkThemeVar_DarkBlueToBlue1);
+	AddThemeDefEntryColor(theme, ThemeMode_Dark, StrLit("DarkBlueToBlue2"), DarkThemeVar_DarkBlueToBlue2);
 	
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("White"),            LightThemeVar_White);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("NearWhite"),        LightThemeVar_NearWhite);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("DarkGray"),         LightThemeVar_DarkGray);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("Gray"),             LightThemeVar_Gray);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("LightGray"),        LightThemeVar_LightGray);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("LightGray50"),      LightThemeVar_LightGray50);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("BlueWhite"),        LightThemeVar_BlueWhite);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("LightBlue"),        LightThemeVar_LightBlue);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("Blue"),             LightThemeVar_Blue);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("Blue50"),           LightThemeVar_Blue50);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("Red"),              LightThemeVar_Red);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("Red50"),            LightThemeVar_Red50);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("LightBlueToBlue1"), LightThemeVar_LightBlueToBlue1);
-	AddUserThemeEntryColor(theme, ThemeMode_Light, StrLit("LightBlueToBlue2"), LightThemeVar_LightBlueToBlue2);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("White"),            LightThemeVar_White);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("NearWhite"),        LightThemeVar_NearWhite);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("DarkGray"),         LightThemeVar_DarkGray);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("Gray"),             LightThemeVar_Gray);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("LightGray"),        LightThemeVar_LightGray);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("LightGray50"),      LightThemeVar_LightGray50);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("BlueWhite"),        LightThemeVar_BlueWhite);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("LightBlue"),        LightThemeVar_LightBlue);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("Blue"),             LightThemeVar_Blue);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("Blue50"),           LightThemeVar_Blue50);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("Red"),              LightThemeVar_Red);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("Red50"),            LightThemeVar_Red50);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("LightBlueToBlue1"), LightThemeVar_LightBlueToBlue1);
+	AddThemeDefEntryColor(theme, ThemeMode_Light, StrLit("LightBlueToBlue2"), LightThemeVar_LightBlueToBlue2);
 	
-	#define X(EnumName) AddUserThemeEntryStr(theme, ThemeMode_Dark, StrLit(#EnumName), StrLit(DarkThemeColor_##EnumName));
+	#define X(EnumName) AddThemeDefEntryStr(theme, ThemeMode_Dark, StrLit(#EnumName), StrLit(DarkThemeColor_##EnumName));
 	Theme_XList(X)
 	#undef X
 	
-	#define X(EnumName) AddUserThemeEntryStr(theme, ThemeMode_Light, StrLit(#EnumName), StrLit(LightThemeColor_##EnumName));
+	#define X(EnumName) AddThemeDefEntryStr(theme, ThemeMode_Light, StrLit(#EnumName), StrLit(LightThemeColor_##EnumName));
 	Theme_XList(X)
 	#undef X
 	
 	for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
 	{
-		AddUserThemeEntryColor(theme, ThemeMode_Debug, MakeStr8Nt(GetThemeColorStr((ThemeColor)cIndex)), GetPredefPalColorByIndex(cIndex));
+		AddThemeDefEntryColor(theme, ThemeMode_Debug, MakeStr8Nt(GetThemeColorStr((ThemeColor)cIndex)), GetPredefPalColorByIndex(cIndex));
 	}
 }
 
