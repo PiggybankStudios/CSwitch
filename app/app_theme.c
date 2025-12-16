@@ -9,7 +9,8 @@ Description:
 */
 
 //NOTE: This is the primary usage macro in the UI code. See the Theme_XList macro for possible names
-#define GetThemeColor(themeColorSuffix) (app->theme.colors[ThemeColor_##themeColorSuffix])
+#define GetThemeColorEx(themeColorSuffix, themeState) (app->theme.entries[ThemeColor_##themeColorSuffix].colors[themeState])
+#define GetThemeColor(themeColorSuffix) GetThemeColorEx(themeColorSuffix, ThemeState_Default)
 
 void FreeThemeDefEntry(ThemeDefinition* theme, ThemeDefEntry* entry)
 {
@@ -56,11 +57,11 @@ void CombineThemeDefinitions(const ThemeDefinition* baseTheme, const ThemeDefini
 		const VarArrayLoopGet(ThemeDefEntry, baseEntry, &baseTheme->entries, eIndex);
 		if (baseEntry->isStrValue)
 		{
-			AddThemeDefEntryStr(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueStr);
+			AddThemeDefEntryStr(themeOut, baseEntry->mode, baseEntry->state, baseEntry->key, baseEntry->valueStr);
 		}
 		else
 		{
-			AddThemeDefEntryColor(themeOut, baseEntry->mode, baseEntry->key, baseEntry->valueColor);
+			AddThemeDefEntryColor(themeOut, baseEntry->mode, baseEntry->state, baseEntry->key, baseEntry->valueColor);
 		}
 	}
 	VarArrayLoop(&overrideTheme->entries, eIndex)
@@ -68,11 +69,11 @@ void CombineThemeDefinitions(const ThemeDefinition* baseTheme, const ThemeDefini
 		const VarArrayLoopGet(ThemeDefEntry, overrideEntry, &overrideTheme->entries, eIndex);
 		if (overrideEntry->isStrValue)
 		{
-			AddThemeDefEntryStr(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueStr);
+			AddThemeDefEntryStr(themeOut, overrideEntry->mode, overrideEntry->state, overrideEntry->key, overrideEntry->valueStr);
 		}
 		else
 		{
-			AddThemeDefEntryColor(themeOut, overrideEntry->mode, overrideEntry->key, overrideEntry->valueColor);
+			AddThemeDefEntryColor(themeOut, overrideEntry->mode, overrideEntry->state, overrideEntry->key, overrideEntry->valueColor);
 		}
 	}
 }
@@ -85,7 +86,10 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 	{
 		for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
 		{
-			themeOut->colors[cIndex] = GetPredefPalColorByIndex(cIndex);
+			for (uxx sIndex = 0; sIndex < ThemeState_Count; sIndex++)
+			{
+				themeOut->entries[cIndex].colors[sIndex] = GetPredefPalColorByIndex(cIndex + sIndex);
+			}
 		}
 		return Result_Success;
 	}
@@ -116,7 +120,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 				}
 				else
 				{
-					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, entry->valueStr);
+					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, true, entry->state, true, entry->valueStr);
 					if (referencedEntry != nullptr)
 					{
 						referencedEntry->isReferenced = true;
@@ -154,7 +158,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 	
 	if (numUnresolvedEntries == 0 && result == Result_None)
 	{
-		#if (0 && DEBUG_BUILD)
+		#if (1 && DEBUG_BUILD)
 		//Throw warnings for unreferenced variables that don't match a ThemeColor enum value
 		VarArrayLoop(&themeDef->entries, eIndex)
 		{
@@ -176,16 +180,25 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 		
 		for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
 		{
-			Str8 enumValueName = MakeStr8Nt(GetThemeColorStr((ThemeColor)cIndex));
-			ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, mode, enumValueName);
-			if (referencedEntry != nullptr)
+			ThemeColor themeColor = (ThemeColor)cIndex;
+			u8 colorStateFlags = GetThemeColorStateFlags(themeColor);
+			Str8 enumValueName = MakeStr8Nt(GetThemeColorStr(themeColor));
+			for (uxx sIndex = 0; sIndex < ThemeState_Count; sIndex++)
 			{
-				themeOut->colors[cIndex] = referencedEntry->valueColor;
-			}
-			else
-			{
-				PrintLine_E("Baking ThemeDefinition that is missing an entry for \"%.*s\"", StrPrint(enumValueName));
-				themeOut->colors[cIndex] = Black;
+				ThemeState themeState = (ThemeState)sIndex;
+				if (IsThemeStatePossibleFromFlags(colorStateFlags, themeState))
+				{
+					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, mode, true, themeState, true, enumValueName);
+					if (referencedEntry != nullptr)
+					{
+						themeOut->entries[cIndex].colors[sIndex] = referencedEntry->valueColor;
+					}
+					else
+					{
+						NotifyPrint_E("Baking Theme that is missing an entry for \"%.*s\" %s", StrPrint(enumValueName), GetThemeStateStr(themeState));
+						themeOut->entries[cIndex].colors[sIndex] = Black;
+					}
+				}
 			}
 		}
 		
@@ -234,17 +247,42 @@ Result TryParseThemeFile(Str8 fileContents, ThemeDefinition* themeOut)
 			{
 				bool isNewEntry = false;
 				
+				ThemeState themeState = ThemeState_Any;
+				Str8 strippedNamed = token.key;
+				for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
+				{
+					ThemeState possibleThemeState = (ThemeState)sIndex;
+					Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
+					if (StrAnyCaseEndsWith(strippedNamed, themeStateName))
+					{
+						// PrintLine_D("\"%.*s\" is %s", StrPrint(strippedNamed), GetThemeStateStr(possibleThemeState));
+						strippedNamed = StrSlice(strippedNamed, 0, strippedNamed.length - themeStateName.length);
+						// PrintLine_D("Now \"%.*s\"", StrPrint(strippedNamed));
+						themeState = possibleThemeState;
+						break;
+					}
+				}
+				
 				Color32 colorValue = Black;
 				if (TryParseColor(token.value, &colorValue, nullptr))
 				{
-					isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, token.key, colorValue);
+					isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, themeState, strippedNamed, colorValue);
 				}
 				else
 				{
-					isNewEntry = AddThemeDefEntryStr(themeOut, currentMode, token.key, token.value);
+					isNewEntry = AddThemeDefEntryStr(themeOut, currentMode, themeState, strippedNamed, token.value);
 				}
 				
-				if (!isNewEntry) { NotifyPrint_W("Duplicate entry in theme file for \"%.*s\" on line %llu", StrPrint(token.str), parser.lineParser.lineIndex); }
+				if (!isNewEntry)
+				{
+					NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
+						StrPrint(strippedNamed),
+						(themeState == ThemeState_Any ? "" : " ("),
+						(themeState == ThemeState_Any ? "" : GetThemeStateStr(themeState)),
+						(themeState == ThemeState_Any ? "" : ")"),
+						parser.lineParser.lineIndex
+					);
+				}
 			} break;
 			
 			default:

@@ -353,7 +353,7 @@ void DrawClayTextbox(ClayTextbox* textbox, Clay_SizingAxis boxSizingWidth)
 	ClayUIRendererFont* clayFont = VarArrayGetHard(ClayUIRendererFont, &app->clay.fonts, (uxx)textbox->clayFontId);
 	NotNull(clayFont);
 	u16 borderWidth = (textbox->edit.isFocused) ? 1 : 0;
-	Color32 hintColor = (textbox->edit.str.length > 0 || textbox->hintStr.length == 0) ? Transparent : GetThemeColor(OptionNameTextOff);
+	Color32 hintColor = (textbox->edit.str.length > 0 || textbox->hintStr.length == 0) ? Transparent : GetThemeColor(OptionOnNameText);
 	Str8 hintStr = IsEmptyStr(textbox->hintStr) ? StrLit("W") : textbox->hintStr;
 	r32 textboxHeight = GetFontLineHeight(clayFont->pntr, textbox->fontSize, clayFont->styleFlags) + UI_U16(4)*2.0f;
 	
@@ -363,7 +363,7 @@ void DrawClayTextbox(ClayTextbox* textbox, Clay_SizingAxis boxSizingWidth)
 			.padding = CLAY_PADDING_ALL(UI_U16(4)),
 			.sizing = { .width=boxSizingWidth, .height=CLAY_SIZING_FIXED(textboxHeight) },
 		},
-		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=GetThemeColor(OptionNameTextOff) },
+		.border = { .width=CLAY_BORDER_OUTSIDE(UI_BORDER(borderWidth)), .color=GetThemeColor(OptionOnNameText) },
 		.cornerRadius = CLAY_CORNER_RADIUS(UI_R32(4)),
 	})
 	{
@@ -398,7 +398,7 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 	}
 	
 	SetTextBackgroundColor(GetThemeColor(OptionListBack));
-	DrawRichTextWithFont(clayFont->pntr, textbox->fontSize, clayFont->styleFlags, highlightedText, textbox->textPos, GetThemeColor(OptionNameTextOff));
+	DrawRichTextWithFont(clayFont->pntr, textbox->fontSize, clayFont->styleFlags, highlightedText, textbox->textPos, GetThemeColor(OptionOnNameText));
 	
 	if (textbox->edit.isFocused && textbox->edit.cursorActive)
 	{
@@ -437,7 +437,7 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 		);
 		AlignV2(&cursorRec.TopLeft);
 		
-		Color32 cursorColor = GetThemeColor(OptionNameTextOff);
+		Color32 cursorColor = GetThemeColor(OptionOnNameText);
 		cursorColor.a = (u8)RoundR32i(OscillateBy(appIn->programTime, 0, 255, 1000, textbox->edit.cursorMoveTime + 600));
 		
 		DrawRectangle(cursorRec, cursorColor);

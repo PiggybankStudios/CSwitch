@@ -4,9 +4,8 @@
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
-	[X] Choose colors in theme carefully to maximize theme flexibility
-		[ ] Option for dumping default theme and/or custom theme template
-	[ ] Separate state from unique UI element names?
+	[ ] Option for dumping default theme and/or custom theme template
+	[?] Separate On/Off state out of Option theme entries somehow?
 	[ ] Update file watching to use PigCore file watch functions/type
 	[?] Theme file parsing errors should go into a log that we can display to the user somewhere in the UI!
 	[!] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
@@ -47,6 +46,8 @@
 	[ ] 
 
 # Finished List:
+	[X] Choose colors in theme carefully to maximize theme flexibility
+	[X] Separate state from unique UI element names?
 	[X] Load embedded txt files for default theme rather than #defines
 	[X] Rename "UserTheme" to something else? The default theme being a "UserTheme" is confusing
 	[X] Icons for "Load Custom Theme", "Clear Custom Theme" options

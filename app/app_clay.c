@@ -25,9 +25,10 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	ClayId menuId = ToClayId(menuIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
 	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
-	Color32 backgroundColor = *isOpenPntr ? GetThemeColor(TopbarBtnBackOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnBackHover) : GetThemeColor(TopbarBtnBack));
-	Color32 borderColor = *isOpenPntr ? GetThemeColor(TopbarBtnBorderOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnBorderHover) : GetThemeColor(TopbarBtnBorder));
-	Color32 textColor = *isOpenPntr ? GetThemeColor(TopbarBtnTextOpen) : (isBtnHovered ? GetThemeColor(TopbarBtnTextHover) : GetThemeColor(TopbarBtnText));
+	ThemeState btnThemeState = *isOpenPntr ? ThemeState_Open : (isBtnHovered ? ThemeState_Hovered : ThemeState_Default);
+	Color32 backgroundColor = GetThemeColorEx(TopbarBtnBack, btnThemeState);
+	Color32 borderColor = GetThemeColorEx(TopbarBtnBorder, btnThemeState);
+	Color32 textColor = GetThemeColorEx(TopbarBtnText, btnThemeState);
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -111,26 +112,11 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	bool isBtnPressed = (isBtnHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
 	bool isHovered = (isBtnHovered || isMenuHovered);
-	Color32 backgroundColor =
-		  isBtnPressed ? GetThemeColor(DropdownBtnBackPressed)
-		: isBtnHovered ? GetThemeColor(DropdownBtnBackHover)
-		:  *isOpenPntr ? GetThemeColor(DropdownBtnBackOpen)
-		:                GetThemeColor(DropdownBtnBack);
-	Color32 borderColor =
-		  isBtnPressed ? GetThemeColor(DropdownBtnBorderPressed)
-		: isBtnHovered ? GetThemeColor(DropdownBtnBorderHover)
-		:  *isOpenPntr ? GetThemeColor(DropdownBtnBorderOpen)
-		:                GetThemeColor(DropdownBtnBorder);
-	Color32 textColor =
-		  isBtnPressed ? GetThemeColor(DropdownBtnTextPressed)
-		: isBtnHovered ? GetThemeColor(DropdownBtnTextHover)
-		:  *isOpenPntr ? GetThemeColor(DropdownBtnTextOpen)
-		:                GetThemeColor(DropdownBtnText);
-	Color32 iconColor =
-		  isBtnPressed ? GetThemeColor(DropdownBtnIconPressed)
-		: isBtnHovered ? GetThemeColor(DropdownBtnIconHover)
-		:  *isOpenPntr ? GetThemeColor(DropdownBtnIconOpen)
-		:                GetThemeColor(DropdownBtnIcon);
+	ThemeState btnThemeState = isBtnPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : (*isOpenPntr ? ThemeState_Open : ThemeState_Default));
+	Color32 backgroundColor = GetThemeColorEx(DropdownBtnBack,   btnThemeState);
+	Color32 borderColor     = GetThemeColorEx(DropdownBtnBorder, btnThemeState);
+	Color32 textColor       = GetThemeColorEx(DropdownBtnText,   btnThemeState);
+	Color32 iconColor       = GetThemeColorEx(DropdownBtnIcon,   btnThemeState);
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 		.id = btnId,
@@ -212,41 +198,14 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	bool isHovered = IsMouseOverClay(btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	
-	Color32 backgroundColor =
-		  !isEnabled  ? GetThemeColor(DropdownBtnBackDisabled)
-		: isPressed   ? GetThemeColor(DropdownBtnBackPressed)
-		: isHovered   ? GetThemeColor(DropdownBtnBackHover)
-		:               GetThemeColor(DropdownBtnBack);
-	Color32 borderColor =
-		  !isEnabled  ? GetThemeColor(DropdownBtnBorderDisabled)
-		: isPressed   ? GetThemeColor(DropdownBtnBorderPressed)
-		: isHovered   ? GetThemeColor(DropdownBtnBorderHover)
-		:               GetThemeColor(DropdownBtnBorder);
-	Color32 textColor =
-		  !isEnabled  ? GetThemeColor(DropdownBtnTextDisabled)
-		: isPressed   ? GetThemeColor(DropdownBtnTextPressed)
-		: isHovered   ? GetThemeColor(DropdownBtnTextHover)
-		:               GetThemeColor(DropdownBtnText);
-	Color32 iconColor =
-		  !isEnabled  ? GetThemeColor(DropdownBtnIconDisabled)
-		: isPressed   ? GetThemeColor(DropdownBtnIconPressed)
-		: isHovered   ? GetThemeColor(DropdownBtnIconHover)
-		:               GetThemeColor(DropdownBtnIcon);
-	Color32 hotkeyBackColor =
-		  !isEnabled  ? GetThemeColor(HotkeyBackDisabled)
-		: isPressed   ? GetThemeColor(HotkeyBackPressed)
-		: isHovered   ? GetThemeColor(HotkeyBackHover)
-		:               GetThemeColor(HotkeyBack);
-	Color32 hotkeyBorderColor =
-		  !isEnabled  ? GetThemeColor(HotkeyBorderDisabled)
-		: isPressed   ? GetThemeColor(HotkeyBorderPressed)
-		: isHovered   ? GetThemeColor(HotkeyBorderHover)
-		:               GetThemeColor(HotkeyBorder);
-	Color32 hotkeyTextColor =
-		  !isEnabled  ? GetThemeColor(HotkeyTextDisabled)
-		: isPressed   ? GetThemeColor(HotkeyTextPressed)
-		: isHovered   ? GetThemeColor(HotkeyTextHover)
-		:               GetThemeColor(HotkeyText);
+	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default));
+	Color32 backgroundColor   = GetThemeColorEx(DropdownBtnBack,   btnThemeState);
+	Color32 borderColor       = GetThemeColorEx(DropdownBtnBorder, btnThemeState);
+	Color32 textColor         = GetThemeColorEx(DropdownBtnText,   btnThemeState);
+	Color32 iconColor         = GetThemeColorEx(DropdownBtnIcon,   btnThemeState);
+	Color32 hotkeyBackColor   = GetThemeColorEx(HotkeyBack,        btnThemeState);
+	Color32 hotkeyBorderColor = GetThemeColorEx(HotkeyBorder,      btnThemeState);
+	Color32 hotkeyTextColor   = GetThemeColorEx(HotkeyText,        btnThemeState);
 	
 	Clay__OpenElement();
 	Clay__ConfigureOpenElement((Clay_ElementDeclaration){
@@ -337,50 +296,11 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	
-	Color32 backgroundColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionBackTurningOn)
-			: isHovered ? GetThemeColor(OptionBackOnHovered)
-			:             GetThemeColor(OptionBackOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionBackTurningOff)
-			: isHovered ? GetThemeColor(OptionBackOffHovered)
-			:             GetThemeColor(OptionBackOff)
-		)
-	);
-	Color32 borderColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionBorderTurningOn)
-			: isHovered ? GetThemeColor(OptionBorderOnHovered)
-			:             GetThemeColor(OptionBorderOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionBorderTurningOff)
-			: isHovered ? GetThemeColor(OptionBorderOffHovered)
-			:             GetThemeColor(OptionBorderOff)
-		)
-	);
-	Color32 nameTextColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionNameTextTurningOn)
-			: isHovered ? GetThemeColor(OptionNameTextOnHovered)
-			:             GetThemeColor(OptionNameTextOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionNameTextTurningOff)
-			: isHovered ? GetThemeColor(OptionNameTextOffHovered)
-			:             GetThemeColor(OptionNameTextOff)
-		)
-	);
-	Color32 valueTextColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionValueTextTurningOn)
-			: isHovered ? GetThemeColor(OptionValueTextOnHovered)
-			:             GetThemeColor(OptionValueTextOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionValueTextTurningOff)
-			: isHovered ? GetThemeColor(OptionValueTextOffHovered)
-			:             GetThemeColor(OptionValueTextOff)
-		)
-	);
+	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
+	Color32 borderColor     = enabled ? GetThemeColorEx(OptionOnBorder,    btnThemeState) : GetThemeColorEx(OptionOffBorder,    btnThemeState);
+	Color32 nameTextColor   = enabled ? GetThemeColorEx(OptionOnNameText,  btnThemeState) : GetThemeColorEx(OptionOffNameText,  btnThemeState);
+	Color32 valueTextColor  = enabled ? GetThemeColorEx(OptionOnValueText, btnThemeState) : GetThemeColorEx(OptionOffValueText, btnThemeState);
 	
 	CLAY({ .id = btnId,
 		.layout = {
@@ -439,40 +359,12 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 	ClayId btnId = ToClayId(btnIdStr);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
-	
-	Color32 backgroundColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionBackTurningOn)
-			: isHovered ? GetThemeColor(OptionBackOnHovered)
-			:             GetThemeColor(OptionBackOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionBackTurningOff)
-			: isHovered ? GetThemeColor(OptionBackOffHovered)
-			:             GetThemeColor(OptionBackOff)
-		)
-	);
-	Color32 borderColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionBorderTurningOn)
-			: isHovered ? GetThemeColor(OptionBorderOnHovered)
-			:             GetThemeColor(OptionBorderOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionBorderTurningOff)
-			: isHovered ? GetThemeColor(OptionBorderOffHovered)
-			:             GetThemeColor(OptionBorderOff)
-		)
-	);
-	Color32 nameTextColor = (enabled
-		? (
-			  isPressed ? GetThemeColor(OptionNameTextTurningOn)
-			: isHovered ? GetThemeColor(OptionNameTextOnHovered)
-			:             GetThemeColor(OptionNameTextOn)
-		) : (
-			  isPressed ? GetThemeColor(OptionNameTextTurningOff)
-			: isHovered ? GetThemeColor(OptionNameTextOffHovered)
-			:             GetThemeColor(OptionNameTextOff)
-		)
-	);
+
+	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
+	Color32 borderColor     = enabled ? GetThemeColorEx(OptionOnBorder,    btnThemeState) : GetThemeColorEx(OptionOffBorder,    btnThemeState);
+	Color32 nameTextColor   = enabled ? GetThemeColorEx(OptionOnNameText,  btnThemeState) : GetThemeColorEx(OptionOffNameText,  btnThemeState);
+	// Color32 valueTextColor  = enabled ? GetThemeColorEx(OptionOnValueText, btnThemeState) : GetThemeColorEx(OptionOffValueText, btnThemeState);
 	
 	u16 buttonPaddingX = UI_U16(SMALL_BTN_PADDING_X);
 	u16 buttonPaddingY = UI_U16(SMALL_BTN_PADDING_Y);
@@ -554,10 +446,8 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 				scrollGutterDrawRec.Height * scrollbarSizePercent
 			);
 			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
-			Color32 scrollBarColor =
-				  state->isDragging ? GetThemeColor(ScrollBarGrab)
-				: isHovered ?         GetThemeColor(ScrollBarHover)
-				:                     GetThemeColor(ScrollBar);
+			ThemeState scrollbarThemeState = state->isDragging ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+			Color32 scrollBarColor = GetThemeColorEx(ScrollBar, scrollbarThemeState);
 			
 			CLAY({ .id = scrollbarId,
 				.floating = {

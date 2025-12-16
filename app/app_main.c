@@ -906,8 +906,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 											ScratchPrintStr("Are you sure you want to clear all %llu recent file entr%s", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
 											AppClearRecentFilesPopupCallback, nullptr
 										);
-										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorderHover));
-										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorderHover));
+										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
+										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
@@ -927,8 +927,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
 									AppResetCurrentFilePopupCallback, nullptr
 								);
-								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorderHover));
-								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorderHover));
+								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
+								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
 							} Clay__CloseElement();
 							
 							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
@@ -1111,18 +1111,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							bool isCurrentTab = (app->currentTabIndex == tIndex);
 							ClayId tabId = ToClayId(tab->filePath);
 							bool isHovered = IsMouseOverClay(tabId);
-							Color32 backgroundColor =
-								  isCurrentTab ? GetThemeColor(FileTabBackOpen)
-								: isHovered    ? GetThemeColor(FileTabBackHover)
-								:                GetThemeColor(FileTabBack);
-							Color32 borderColor =
-								  isCurrentTab ? GetThemeColor(FileTabBorderOpen)
-								: isHovered    ? GetThemeColor(FileTabBorderHover)
-								:                GetThemeColor(FileTabBorder);
-							Color32 textColor =
-								  isCurrentTab ? GetThemeColor(FileTabTextOpen)
-								: isHovered    ? GetThemeColor(FileTabTextHover)
-								:                GetThemeColor(FileTabText);
+							ThemeState tabThemeState = isCurrentTab ? ThemeState_Open : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+							Color32 backgroundColor = GetThemeColorEx(FileTabBack,   tabThemeState);
+							Color32 borderColor     = GetThemeColorEx(FileTabBorder, tabThemeState);
+							Color32 textColor       = GetThemeColorEx(FileTabText,   tabThemeState);
 							
 							// Dividers in-between not-selected and not-hovered tabs
 							if (tIndex > 0)
@@ -1385,11 +1377,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			Str8 openTooltipStr = (openTooltip != nullptr) ? openTooltip->displayStr : Str8_Empty;
 			BindFont(&app->uiFont);
 			v2 textPos = MakeV2(10, 200);
-			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(OptionNameTextOff)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
 		}
 		#endif
 		
