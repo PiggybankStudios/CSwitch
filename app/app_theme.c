@@ -120,7 +120,23 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 				}
 				else
 				{
-					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, true, entry->state, true, entry->valueStr);
+					Str8 strippedReferenceName = entry->valueStr;
+					ThemeState referencedState = ThemeState_Any;
+					for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
+					{
+						ThemeState possibleThemeState = (ThemeState)sIndex;
+						Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
+						if (strippedReferenceName.length > 1 + themeStateName.length &&
+							strippedReferenceName.chars[strippedReferenceName.length - themeStateName.length - 1] == '_' &&
+							StrAnyCaseEndsWith(strippedReferenceName, themeStateName))
+						{
+							strippedReferenceName = StrSlice(strippedReferenceName, 0, strippedReferenceName.length - themeStateName.length - 1);
+							referencedState = possibleThemeState;
+							break;
+						}
+					}
+					
+					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, true, referencedState, false, entry->valueStr);
 					if (referencedEntry != nullptr)
 					{
 						referencedEntry->isReferenced = true;
@@ -247,41 +263,71 @@ Result TryParseThemeFile(Str8 fileContents, ThemeDefinition* themeOut)
 			{
 				bool isNewEntry = false;
 				
-				ThemeState themeState = ThemeState_Any;
+				uxx numThemeStates = 0;
+				ThemeState themeStates[3];
+				
 				Str8 strippedNamed = token.key;
-				for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
+				while (strippedNamed.length > 0 && numThemeStates < ArrayCount(themeStates))
 				{
-					ThemeState possibleThemeState = (ThemeState)sIndex;
-					Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
-					if (StrAnyCaseEndsWith(strippedNamed, themeStateName))
+					bool foundSuffix = false;
+					for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
 					{
-						// PrintLine_D("\"%.*s\" is %s", StrPrint(strippedNamed), GetThemeStateStr(possibleThemeState));
-						strippedNamed = StrSlice(strippedNamed, 0, strippedNamed.length - themeStateName.length);
-						// PrintLine_D("Now \"%.*s\"", StrPrint(strippedNamed));
-						themeState = possibleThemeState;
-						break;
+						ThemeState possibleThemeState = (ThemeState)sIndex;
+						Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
+						if (strippedNamed.length > 1 + themeStateName.length &&
+							strippedNamed.chars[strippedNamed.length - themeStateName.length - 1] == '_' &&
+							StrAnyCaseEndsWith(strippedNamed, themeStateName))
+						{
+							strippedNamed = StrSlice(strippedNamed, 0, strippedNamed.length - themeStateName.length - 1);
+							themeStates[numThemeStates] = possibleThemeState;
+							numThemeStates++;
+							foundSuffix = true;
+							break;
+						}
 					}
+					if (!foundSuffix) { break; }
+				}
+				
+				if (numThemeStates == 0)
+				{
+					themeStates[0] = ThemeState_Any;
+					numThemeStates = 1;
 				}
 				
 				Color32 colorValue = Black;
 				if (TryParseColor(token.value, &colorValue, nullptr))
 				{
-					isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, themeState, strippedNamed, colorValue);
+					for (uxx sIndex = 0; sIndex < numThemeStates; sIndex++)
+					{
+						isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, themeStates[sIndex], strippedNamed, colorValue);
+						if (!isNewEntry)
+						{
+							NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
+								StrPrint(strippedNamed),
+								(themeStates[sIndex] == ThemeState_Any ? "" : " ("),
+								(themeStates[sIndex] == ThemeState_Any ? "" : GetThemeStateStr(themeStates[sIndex])),
+								(themeStates[sIndex] == ThemeState_Any ? "" : ")"),
+								parser.lineParser.lineIndex
+							);
+						}
+					}
 				}
 				else
 				{
-					isNewEntry = AddThemeDefEntryStr(themeOut, currentMode, themeState, strippedNamed, token.value);
-				}
-				
-				if (!isNewEntry)
-				{
-					NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
-						StrPrint(strippedNamed),
-						(themeState == ThemeState_Any ? "" : " ("),
-						(themeState == ThemeState_Any ? "" : GetThemeStateStr(themeState)),
-						(themeState == ThemeState_Any ? "" : ")"),
-						parser.lineParser.lineIndex
-					);
+					for (uxx sIndex = 0; sIndex < numThemeStates; sIndex++)
+					{
+						isNewEntry = AddThemeDefEntryStr(themeOut, currentMode, themeStates[sIndex], strippedNamed, token.value);
+						if (!isNewEntry)
+						{
+							NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
+								StrPrint(strippedNamed),
+								(themeStates[sIndex] == ThemeState_Any ? "" : " ("),
+								(themeStates[sIndex] == ThemeState_Any ? "" : GetThemeStateStr(themeStates[sIndex])),
+								(themeStates[sIndex] == ThemeState_Any ? "" : ")"),
+								parser.lineParser.lineIndex
+							);
+						}
+					}
 				}
 			} break;
 			
