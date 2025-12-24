@@ -35,6 +35,7 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_theme_funcs.h"
 #include "app_theme.h"
 #include "app_icons.h"
 #include "app_settings.h"
@@ -60,7 +61,9 @@ static Arena* stdHeap = nullptr;
 #include "main2d_shader.glsl.h"
 #include "app_resources.c"
 #include "app_file_watch.c"
+#include "app_theme_funcs.c"
 #include "app_theme.c"
+#include "app_theme_funcs_implementations.c"
 #include "app_clay_helpers.c"
 #include "app_textbox.c"
 #include "app_popup_dialog.c"
@@ -281,6 +284,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileTab, &app->tabs, stdHeap);
 	
+	InitThemeDefFuncArgInfos();
 	AppTryLoadDefaultTheme(true);
 	AppLoadUserTheme();
 	if (!TryParseThemeMode(app->settings.themeMode, &app->currentThemeMode))
@@ -389,6 +393,7 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 	
 	WriteLine_I("New app DLL was loaded!");
 	app->shouldRenderAfterReload = true;
+	InitThemeDefFuncArgInfos();
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);

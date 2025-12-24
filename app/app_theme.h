@@ -259,17 +259,38 @@ plex BakedTheme
 	BakedThemeEntry entries[ThemeColor_Count];
 };
 
+typedef enum ThemeDefEntryType ThemeDefEntryType;
+enum ThemeDefEntryType
+{
+	ThemeDefEntryType_None = 0,
+	ThemeDefEntryType_Color, //Name: RRGGBB
+	ThemeDefEntryType_Reference, //Name: OtherName
+	ThemeDefEntryType_Function, //Name: Func(Arg1, Arg2)
+	ThemeDefEntryType_Count,
+};
+
 typedef plex ThemeDefEntry ThemeDefEntry;
 plex ThemeDefEntry
 {
 	ThemeMode mode;
 	ThemeState state;
 	Str8 key;
-	bool isStrValue;
+	
 	bool isResolved;
 	bool isReferenced;
-	Color32 valueColor; //only filled if (!isStrValue || isResolved)
-	Str8 valueStr; //only filled if isStrValue
+	
+	ThemeDefEntryType type;
+	
+	//only filled if (type == ThemeDefEntryType_Color || isResolved)
+	Color32 color;
+	
+	//only filled if (type == ThemeDefEntryType_Reference)
+	Str8 referenceKey;
+	
+	//only filled if (type == ThemeDefEntryType_Function)
+	ThemeDefFunc function;
+	uxx functionArgCount;
+	Str8 functionArgStrs[THEME_DEF_FUNC_MAX_ARGS];
 };
 
 // A theme "definition" contains a loose set of key-value pairs where the value can be an identifier of another entry
@@ -280,6 +301,35 @@ plex ThemeDefinition
 	Arena* arena;
 	VarArray entries; //ThemeDefEntry
 };
+
+void FreeThemeDefEntryValue(ThemeDefinition* theme, ThemeDefEntry* entry)
+{
+	NotNull(theme);
+	NotNull(theme->arena);
+	NotNull(entry);
+	if (CanArenaFree(theme->arena))
+	{
+		if (entry->type == ThemeDefEntryType_Reference)
+		{
+			FreeStr8(theme->arena, &entry->referenceKey);
+		}
+		if (entry->type == ThemeDefEntryType_Function)
+		{
+			for (uxx aIndex = 0; aIndex < entry->functionArgCount; aIndex++) { FreeStr8(theme->arena, &entry->functionArgStrs[aIndex]); }
+		}
+	}
+}
+void FreeThemeDefEntry(ThemeDefinition* theme, ThemeDefEntry* entry)
+{
+	NotNull(theme);
+	NotNull(theme->arena);
+	if (CanArenaFree(theme->arena))
+	{
+		FreeStr8(theme->arena, &entry->key);
+		FreeThemeDefEntryValue(theme, entry);
+	}
+	ClearPointer(entry);
+}
 
 ThemeDefEntry* FindThemeDefEntry(ThemeDefinition* theme, ThemeMode mode, bool allowModeNone, ThemeState state, bool allowStateAny, Str8 key)
 {
@@ -320,9 +370,9 @@ inline bool AddThemeDefEntryColor(ThemeDefinition* theme, ThemeMode mode, ThemeS
 	ThemeDefEntry* existingEntry = FindThemeDefEntry(theme, mode, false, state, false, key);
 	if (existingEntry != nullptr)
 	{
-		if (existingEntry->isStrValue && CanArenaFree(theme->arena)) { FreeStr8(theme->arena, &existingEntry->valueStr); }
-		existingEntry->isStrValue = false;
-		existingEntry->valueColor = color;
+		FreeThemeDefEntryValue(theme, existingEntry);
+		existingEntry->type = ThemeDefEntryType_Color;
+		existingEntry->color = color;
 		return false;
 	}
 	ThemeDefEntry* newEntry = VarArrayAdd(ThemeDefEntry, &theme->entries);
@@ -331,21 +381,21 @@ inline bool AddThemeDefEntryColor(ThemeDefinition* theme, ThemeMode mode, ThemeS
 	newEntry->mode = mode;
 	newEntry->state = state;
 	newEntry->key = AllocStr8(theme->arena, key);
-	newEntry->isStrValue = false;
-	newEntry->valueColor = color;
+	newEntry->type = ThemeDefEntryType_Color;
+	newEntry->color = color;
 	return true;
 }
 // Returns false if an entry already existed and is getting overridden
-inline bool AddThemeDefEntryStr(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, Str8 value)
+inline bool AddThemeDefEntryReference(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, Str8 referenceStr)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
 	ThemeDefEntry* existingEntry = FindThemeDefEntry(theme, mode, false, state, false, key);
 	if (existingEntry != nullptr)
 	{
-		if (existingEntry->isStrValue && CanArenaFree(theme->arena)) { FreeStr8(theme->arena, &existingEntry->valueStr); }
-		existingEntry->isStrValue = true;
-		existingEntry->valueStr = AllocStr8(theme->arena, value);
+		FreeThemeDefEntryValue(theme, existingEntry);
+		existingEntry->type = ThemeDefEntryType_Reference;
+		existingEntry->referenceKey = AllocStr8(theme->arena, referenceStr);
 		return false;
 	}
 	ThemeDefEntry* newEntry = VarArrayAdd(ThemeDefEntry, &theme->entries);
@@ -354,9 +404,22 @@ inline bool AddThemeDefEntryStr(ThemeDefinition* theme, ThemeMode mode, ThemeSta
 	newEntry->mode = mode;
 	newEntry->state = state;
 	newEntry->key = AllocStr8(theme->arena, key);
-	newEntry->isStrValue = true;
-	newEntry->valueStr = AllocStr8(theme->arena, value);
+	newEntry->type = ThemeDefEntryType_Reference;
+	newEntry->referenceKey = AllocStr8(theme->arena, referenceStr);
 	return true;
+}
+
+inline bool AddThemeDefEntryPntr(ThemeDefinition* theme, const ThemeDefEntry* entryPntr)
+{
+	if (entryPntr->type == ThemeDefEntryType_Color)
+	{
+		return AddThemeDefEntryColor(theme, entryPntr->mode, entryPntr->state, entryPntr->key, entryPntr->color);
+	}
+	else if (entryPntr->type == ThemeDefEntryType_Reference)
+	{
+		return AddThemeDefEntryReference(theme, entryPntr->mode, entryPntr->state, entryPntr->key, entryPntr->referenceKey);
+	}
+	else { Assert(false); return false; }
 }
 
 #endif //  _APP_THEME_H

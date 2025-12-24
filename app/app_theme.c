@@ -12,16 +12,6 @@ Description:
 #define GetThemeColorEx(themeColorSuffix, themeState) (app->theme.entries[ThemeColor_##themeColorSuffix].colors[themeState])
 #define GetThemeColor(themeColorSuffix) GetThemeColorEx(themeColorSuffix, ThemeState_Default)
 
-void FreeThemeDefEntry(ThemeDefinition* theme, ThemeDefEntry* entry)
-{
-	NotNull(theme);
-	NotNull(theme->arena);
-	if (entry->isStrValue && CanArenaFree(theme->arena))
-	{
-		FreeStr8(theme->arena, &entry->valueStr);
-	}
-	ClearPointer(entry);
-}
 void FreeThemeDefinition(ThemeDefinition* theme)
 {
 	NotNull(theme);
@@ -55,26 +45,12 @@ void CombineThemeDefinitions(const ThemeDefinition* baseTheme, const ThemeDefini
 	VarArrayLoop(&baseTheme->entries, eIndex)
 	{
 		const VarArrayLoopGet(ThemeDefEntry, baseEntry, &baseTheme->entries, eIndex);
-		if (baseEntry->isStrValue)
-		{
-			AddThemeDefEntryStr(themeOut, baseEntry->mode, baseEntry->state, baseEntry->key, baseEntry->valueStr);
-		}
-		else
-		{
-			AddThemeDefEntryColor(themeOut, baseEntry->mode, baseEntry->state, baseEntry->key, baseEntry->valueColor);
-		}
+		AddThemeDefEntryPntr(themeOut, baseEntry);
 	}
 	VarArrayLoop(&overrideTheme->entries, eIndex)
 	{
 		const VarArrayLoopGet(ThemeDefEntry, overrideEntry, &overrideTheme->entries, eIndex);
-		if (overrideEntry->isStrValue)
-		{
-			AddThemeDefEntryStr(themeOut, overrideEntry->mode, overrideEntry->state, overrideEntry->key, overrideEntry->valueStr);
-		}
-		else
-		{
-			AddThemeDefEntryColor(themeOut, overrideEntry->mode, overrideEntry->state, overrideEntry->key, overrideEntry->valueColor);
-		}
+		AddThemeDefEntryPntr(themeOut, overrideEntry);
 	}
 }
 
@@ -113,14 +89,14 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 			VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
 			if (!entry->isResolved)
 			{
-				if (!entry->isStrValue)
+				if (entry->type == ThemeDefEntryType_Color)
 				{
 					entry->isResolved = true;
 					numNewlyResolvedEntries++;
 				}
-				else
+				else if (entry->type == ThemeDefEntryType_Reference)
 				{
-					Str8 strippedReferenceName = entry->valueStr;
+					Str8 strippedReferenceName = entry->referenceKey;
 					ThemeState referencedState = ThemeState_Any;
 					for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
 					{
@@ -136,14 +112,14 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 						}
 					}
 					
-					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, true, referencedState, false, entry->valueStr);
+					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, true, referencedState, false, strippedReferenceName);
 					if (referencedEntry != nullptr)
 					{
 						referencedEntry->isReferenced = true;
 						if (referencedEntry->isResolved)
 						{
 							entry->isResolved = true;
-							entry->valueColor = referencedEntry->valueColor;
+							entry->color = referencedEntry->color;
 							numNewlyResolvedEntries++;
 						}
 						else
@@ -154,7 +130,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 					}
 					else
 					{
-						NotifyPrint_E("Unknown identifier: \"%.*s\" given for theme value file for \"%.*s\"!", StrPrint(entry->valueStr), StrPrint(entry->key));
+						NotifyPrint_E("Unknown identifier: \"%.*s\" given for theme value file for \"%.*s\"!", StrPrint(entry->referenceKey), StrPrint(entry->key));
 						result = Result_UnknownString;
 					}
 				}
@@ -207,7 +183,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, mode, true, themeState, true, enumValueName);
 					if (referencedEntry != nullptr)
 					{
-						themeOut->entries[cIndex].colors[sIndex] = referencedEntry->valueColor;
+						themeOut->entries[cIndex].colors[sIndex] = referencedEntry->color;
 					}
 					else
 					{
@@ -316,7 +292,7 @@ Result TryParseThemeFile(Str8 fileContents, ThemeDefinition* themeOut)
 				{
 					for (uxx sIndex = 0; sIndex < numThemeStates; sIndex++)
 					{
-						isNewEntry = AddThemeDefEntryStr(themeOut, currentMode, themeStates[sIndex], strippedNamed, token.value);
+						isNewEntry = AddThemeDefEntryReference(themeOut, currentMode, themeStates[sIndex], strippedNamed, token.value);
 						if (!isNewEntry)
 						{
 							NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
