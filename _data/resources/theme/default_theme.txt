@@ -1,7 +1,7 @@
 // This is the default theme for C-Switch, it contains a complete color set for both Light and Dark mode
 
 Transparent:      00000000
-Darken25:         40000000
+Darken25:         Transparent(000000, 0.25)
 
 //These are just used for notification icon coloring based on DbgLevel
 MonokaiDarkGray:  212121
@@ -23,15 +23,10 @@ Gray:            272A2B
 White:           DDDEE0
 LighterGray:     AFB1B3
 LightGray:       6B7078
-LightGray50:     806B7078
 DarkestBlue:     343A3B
 DarkBlue:        103C4C
 Blue:            0079A6
-Blue50:          800079A6
 Red:             FF6666
-Red50:           80FF6666
-DarkBlueToBlue1: 085B79
-DarkBlueToBlue2: 046A90
 
 // +--------------------------------------------------------------+
 // |                      Light Mode Colors                       |
@@ -42,15 +37,10 @@ NearWhite:        EBEBEB
 DarkGray:         3E3F40
 Gray:             606263
 LightGray:        909293
-LightGray50:      80909293
 BlueWhite:        56A7D6
 LightBlue:        99DEF8
 Blue:             00ADEE
-Blue50:           8000ADEE
 Red:              FF6666
-Red50:            80FF6666
-LightBlueToBlue1: 4DC6F3
-LightBlueToBlue2: 26B9F1
 
 // +--------------------------------------------------------------+
 // |                          Dark Mode                           |
@@ -75,17 +65,17 @@ LightBlueToBlue2: 26B9F1
 	OptionOffNameText:                      LightGray
 	OptionOffValueText:                     LightGray
 	OptionOffBack_Hovered:                  DarkBlue
-	OptionOffBack_Pressed:                  DarkBlueToBlue1
-	OptionOffBorder_Hovered_Pressed:        DarkBlueToBlue1
+	OptionOffBack_Pressed:                  Mix(DarkBlue, Blue, 0.5)
+	OptionOffBorder_Hovered_Pressed:        Mix(DarkBlue, Blue, 0.5)
 	
 	OptionOnBack:                           Blue
 	OptionOnBorder:                         Blue
 	OptionOnNameText:                       White
 	OptionOnValueText:                      White
-	OptionOnBack_Hovered:                   DarkBlueToBlue2
-	OptionOnBack_Pressed:                   DarkBlueToBlue1
-	OptionOnBorder_Hovered:                 DarkBlueToBlue1
-	OptionOnBorder_Pressed:                 DarkBlueToBlue2
+	OptionOnBack_Hovered:                   Mix(DarkBlue, Blue, 0.75)
+	OptionOnBack_Pressed:                   Mix(DarkBlue, Blue, 0.5)
+	OptionOnBorder_Hovered:                 Mix(DarkBlue, Blue, 0.5)
+	OptionOnBorder_Pressed:                 Mix(DarkBlue, Blue, 0.75)
 	
 	TopbarBtnBack:                          Transparent
 	TopbarBtnBack_Hovered_Open:             DarkBlue
@@ -122,19 +112,19 @@ LightBlueToBlue2: 26B9F1
 	ConfirmDialogBorder:                            LighterGray
 	ConfirmDialogText:                              White
 	ConfirmDialogPositiveBtnBack:                   Transparent
-	ConfirmDialogPositiveBtnBorder:                 Blue50
+	ConfirmDialogPositiveBtnBorder:                 Transparent(Blue, 0.5)
 	ConfirmDialogPositiveBtnText:                   White
-	ConfirmDialogPositiveBtnBack_Hovered_Pressed:   Blue50
+	ConfirmDialogPositiveBtnBack_Hovered_Pressed:   Transparent(Blue, 0.5)
 	ConfirmDialogPositiveBtnBorder_Hovered_Pressed: Blue
 	ConfirmDialogNegativeBtnBack:                   Transparent
-	ConfirmDialogNegativeBtnBorder:                 Red50
+	ConfirmDialogNegativeBtnBorder:                 Transparent(Red, 0.5)
 	ConfirmDialogNegativeBtnText:                   White
-	ConfirmDialogNegativeBtnBack_Hovered_Pressed:   Red50
+	ConfirmDialogNegativeBtnBack_Hovered_Pressed:   Transparent(Red, 0.5)
 	ConfirmDialogNegativeBtnBorder_Hovered_Pressed: Red
 	ConfirmDialogNeutralBtnBack:                    Transparent
-	ConfirmDialogNeutralBtnBorder:                  LightGray50
+	ConfirmDialogNeutralBtnBorder:                  Transparent(LightGray, 0.5)
 	ConfirmDialogNeutralBtnText:                    White
-	ConfirmDialogNeutralBtnBack_Hovered_Pressed:    LightGray50
+	ConfirmDialogNeutralBtnBack_Hovered_Pressed:    Transparent(LightGray, 0.5)
 	ConfirmDialogNeutralBtnBorder_Hovered_Pressed:  LightGray
 	
 	NotificationDebugBack:     MonokaiDarkGray
@@ -190,15 +180,15 @@ LightBlueToBlue2: 26B9F1
 	OptionOffNameText:                 LightGray
 	OptionOffValueText:                LightGray
 	OptionOffBack_Hovered:             LightBlue
-	OptionOffBack_Pressed:             LightBlueToBlue1
-	OptionOffBorder_Hovered_Pressed:   LightBlueToBlue1
+	OptionOffBack_Pressed:             Mix(LightBlue, Blue, 0.5)
+	OptionOffBorder_Hovered_Pressed:   Mix(LightBlue, Blue, 0.5)
 	
 	OptionOnBack:                      Blue
 	OptionOnBorder:                    Blue
 	OptionOnNameText:                  DarkGray
 	OptionOnValueText:                 DarkGray
-	OptionOnBack_Hovered:              LightBlueToBlue2
-	OptionOnBack_Pressed:              LightBlueToBlue1
+	OptionOnBack_Hovered:              Mix(LightBlue, Blue, 0.75)
+	OptionOnBack_Pressed:              Mix(LightBlue, Blue, 0.5)
 	
 	TopbarBtnBack:                     Transparent
 	TopbarBtnBorder:                   Transparent
@@ -238,19 +228,19 @@ LightBlueToBlue2: 26B9F1
 	ConfirmDialogBorder:                            Gray
 	ConfirmDialogText:                              DarkGray
 	ConfirmDialogPositiveBtnBack:                   Transparent
-	ConfirmDialogPositiveBtnBorder:                 Blue50
+	ConfirmDialogPositiveBtnBorder:                 Transparent(Blue, 0.5)
 	ConfirmDialogPositiveBtnText:                   DarkGray
-	ConfirmDialogPositiveBtnBack_Hovered_Pressed:   Blue50
+	ConfirmDialogPositiveBtnBack_Hovered_Pressed:   Transparent(Blue, 0.5)
 	ConfirmDialogPositiveBtnBorder_Hovered_Pressed: Blue
 	ConfirmDialogNegativeBtnBack:                   Transparent
-	ConfirmDialogNegativeBtnBorder:                 Red50
+	ConfirmDialogNegativeBtnBorder:                 Transparent(Red, 0.5)
 	ConfirmDialogNegativeBtnText:                   DarkGray
-	ConfirmDialogNegativeBtnBack_Hovered_Pressed:   Red50
+	ConfirmDialogNegativeBtnBack_Hovered_Pressed:   Transparent(Red, 0.5)
 	ConfirmDialogNegativeBtnBorder_Hovered_Pressed: Red
 	ConfirmDialogNeutralBtnBack:                    Transparent
-	ConfirmDialogNeutralBtnBorder:                  LightGray50
+	ConfirmDialogNeutralBtnBorder:                  Transparent(LightGray, 0.5)
 	ConfirmDialogNeutralBtnText:                    DarkGray
-	ConfirmDialogNeutralBtnBack_Hovered_Pressed:    LightGray50
+	ConfirmDialogNeutralBtnBack_Hovered_Pressed:    Transparent(LightGray, 0.5)
 	ConfirmDialogNeutralBtnBorder_Hovered_Pressed:  LightGray
 	
 	NotificationDebugBack:     MonokaiDarkGray

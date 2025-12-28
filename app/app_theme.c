@@ -54,6 +54,45 @@ void CombineThemeDefinitions(const ThemeDefinition* baseTheme, const ThemeDefini
 	}
 }
 
+ThemeState StripThemeIdentifierStateSuffix(Str8* identifierPntr)
+{
+	for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
+	{
+		ThemeState possibleThemeState = (ThemeState)sIndex;
+		Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
+		if (identifierPntr->length > 1 + themeStateName.length &&
+			identifierPntr->chars[identifierPntr->length - themeStateName.length - 1] == '_' &&
+			StrAnyCaseEndsWith(*identifierPntr, themeStateName))
+		{
+			*identifierPntr = StrSlice(*identifierPntr, 0, identifierPntr->length - themeStateName.length - 1);
+			return possibleThemeState;
+		}
+	}
+	return ThemeState_Any;
+}
+
+Result TryResolveThemeIdentifier(const ThemeDefinition* themeDef, ThemeMode mode, Str8 identifier, Color32* colorOut)
+{
+	ThemeState stateSuffix = StripThemeIdentifierStateSuffix(&identifier);
+	const ThemeDefEntry* referencedEntry = FindThemeDefEntry((ThemeDefinition*)themeDef, mode, true, stateSuffix, true, identifier);
+	while (referencedEntry != nullptr)
+	{
+		if (referencedEntry->type == ThemeDefEntryType_Color || referencedEntry->isResolved)
+		{
+			SetOptionalOutPntr(colorOut, referencedEntry->color);
+			return Result_Success;
+		}
+		else if (referencedEntry->type == ThemeDefEntryType_Reference)
+		{
+			Str8 referenceIdentifier = referencedEntry->referenceKey;
+			stateSuffix = StripThemeIdentifierStateSuffix(&referenceIdentifier);
+			referencedEntry = FindThemeDefEntry((ThemeDefinition*)themeDef, mode, true, stateSuffix, true, referenceIdentifier);
+		}
+		else { return Result_Unresolved; }
+	}
+	return Result_NotFound;
+}
+
 Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut)
 {
 	Result result = Result_None;
@@ -87,7 +126,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 		VarArrayLoop(&themeDef->entries, eIndex)
 		{
 			VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
-			if (!entry->isResolved)
+			if (!entry->isResolved && (entry->mode == mode || entry->mode == ThemeMode_None))
 			{
 				if (entry->type == ThemeDefEntryType_Color)
 				{
@@ -97,21 +136,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 				else if (entry->type == ThemeDefEntryType_Reference)
 				{
 					Str8 strippedReferenceName = entry->referenceKey;
-					ThemeState referencedState = ThemeState_Any;
-					for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
-					{
-						ThemeState possibleThemeState = (ThemeState)sIndex;
-						Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
-						if (strippedReferenceName.length > 1 + themeStateName.length &&
-							strippedReferenceName.chars[strippedReferenceName.length - themeStateName.length - 1] == '_' &&
-							StrAnyCaseEndsWith(strippedReferenceName, themeStateName))
-						{
-							strippedReferenceName = StrSlice(strippedReferenceName, 0, strippedReferenceName.length - themeStateName.length - 1);
-							referencedState = possibleThemeState;
-							break;
-						}
-					}
-					
+					ThemeState referencedState = StripThemeIdentifierStateSuffix(&strippedReferenceName);
 					ThemeDefEntry* referencedEntry = FindThemeDefEntry(themeDef, entry->mode, true, referencedState, false, strippedReferenceName);
 					if (referencedEntry != nullptr)
 					{
@@ -134,6 +159,46 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 						result = Result_UnknownString;
 					}
 				}
+				else if (entry->type == ThemeDefEntryType_Function)
+				{
+					bool allArgsResolved = true;
+					ThemeDefFuncArgValue resolvedArgs[THEME_DEF_FUNC_MAX_ARGS];
+					for (uxx aIndex = 0; aIndex < entry->functionArgCount; aIndex++)
+					{
+						if (entry->functionArgValues[aIndex].type == ThemeDefFuncArgType_Identifier)
+						{
+							Color32 resolvedColor = Transparent_Const;
+							Result resolveResult = TryResolveThemeIdentifier(themeDef, mode, entry->functionArgValues[aIndex].valueIdentifier, &resolvedColor);
+							if (resolveResult == Result_Success)
+							{
+								resolvedArgs[aIndex].type = ThemeDefFuncArgType_Color;
+								resolvedArgs[aIndex].valueColor = resolvedColor;
+							}
+							else { allArgsResolved = false; break; }
+						}
+						else
+						{
+							MyMemCopy(&resolvedArgs[aIndex], &entry->functionArgValues[aIndex], sizeof(ThemeDefFuncArgValue));
+						}
+					}
+					
+					if (allArgsResolved)
+					{
+						Color32 functionResult = CallThemeDefFunc(
+							entry->function,
+							themeDef, mode,
+							entry->functionArgCount, &resolvedArgs[0]
+						);
+						entry->isResolved = true;
+						entry->color = functionResult;
+						numNewlyResolvedEntries++;
+					}
+					else
+					{
+						numUnresolvedEntries++;
+					}
+				}
+				else { Assert(false); }
 			}
 		}
 		if (numNewlyResolvedEntries == 0 && numUnresolvedEntries > 0)
@@ -155,7 +220,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 		VarArrayLoop(&themeDef->entries, eIndex)
 		{
 			VarArrayLoopGet(ThemeDefEntry, entry, &themeDef->entries, eIndex);
-			if (!entry->isReferenced)
+			if (!entry->isReferenced && (entry->mode == mode || entry->mode == ThemeMode_None))
 			{
 				for (uxx cIndex = 1; cIndex < ThemeColor_Count; cIndex++)
 				{
@@ -241,45 +306,36 @@ Result TryParseThemeFile(Str8 fileContents, ThemeDefinition* themeOut)
 				
 				uxx numThemeStates = 0;
 				ThemeState themeStates[3];
-				
-				Str8 strippedNamed = token.key;
-				while (strippedNamed.length > 0 && numThemeStates < ArrayCount(themeStates))
+				Str8 strippedName = token.key;
+				while (strippedName.length > 0 && numThemeStates < ArrayCount(themeStates))
 				{
-					bool foundSuffix = false;
-					for (uxx sIndex = 1; sIndex < ThemeState_Count; sIndex++)
+					ThemeState strippedStateSuffix = StripThemeIdentifierStateSuffix(&strippedName);
+					if (strippedStateSuffix != ThemeState_Any)
 					{
-						ThemeState possibleThemeState = (ThemeState)sIndex;
-						Str8 themeStateName = MakeStr8Nt(GetThemeStateStr(possibleThemeState));
-						if (strippedNamed.length > 1 + themeStateName.length &&
-							strippedNamed.chars[strippedNamed.length - themeStateName.length - 1] == '_' &&
-							StrAnyCaseEndsWith(strippedNamed, themeStateName))
-						{
-							strippedNamed = StrSlice(strippedNamed, 0, strippedNamed.length - themeStateName.length - 1);
-							themeStates[numThemeStates] = possibleThemeState;
-							numThemeStates++;
-							foundSuffix = true;
-							break;
-						}
+						themeStates[numThemeStates] = strippedStateSuffix;
+						numThemeStates++;
 					}
-					if (!foundSuffix) { break; }
+					else { break; }
 				}
-				
 				if (numThemeStates == 0)
 				{
 					themeStates[0] = ThemeState_Any;
 					numThemeStates = 1;
 				}
 				
+				// +==============================+
+				// |      Parse Color Entry       |
+				// +==============================+
 				Color32 colorValue = Black;
 				if (TryParseColor(token.value, &colorValue, nullptr))
 				{
 					for (uxx sIndex = 0; sIndex < numThemeStates; sIndex++)
 					{
-						isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, themeStates[sIndex], strippedNamed, colorValue);
+						isNewEntry = AddThemeDefEntryColor(themeOut, currentMode, themeStates[sIndex], strippedName, colorValue);
 						if (!isNewEntry)
 						{
 							NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
-								StrPrint(strippedNamed),
+								StrPrint(strippedName),
 								(themeStates[sIndex] == ThemeState_Any ? "" : " ("),
 								(themeStates[sIndex] == ThemeState_Any ? "" : GetThemeStateStr(themeStates[sIndex])),
 								(themeStates[sIndex] == ThemeState_Any ? "" : ")"),
@@ -288,15 +344,152 @@ Result TryParseThemeFile(Str8 fileContents, ThemeDefinition* themeOut)
 						}
 					}
 				}
+				// +==============================+
+				// |     Parse Function Entry     |
+				// +==============================+
+				else if (FindNextUnknownCharInStr(token.value, 0, StrLit(IDENTIFIER_CHARS)) < token.value.length)
+				{
+					bool parsedFunction = false;
+					
+					for (uxx fIndex = 1; fIndex < ThemeDefFunc_Count; fIndex++)
+					{
+						ThemeDefFunc function = (ThemeDefFunc)fIndex;
+						Str8 functionName = MakeStr8Nt(GetThemeDefFuncStr(function));
+						if (StrAnyCaseStartsWith(token.value, functionName))
+						{
+							ThemeDefFuncArgInfo funcArgInfo = GetThemeDefFuncArgInfo(function);
+							
+							Str8 argsStr = TrimWhitespace(StrSliceFrom(token.value, functionName.length));
+							if (argsStr.length >= 2 && argsStr.chars[0] == '(' && argsStr.chars[argsStr.length-1] == ')')
+							{
+								argsStr = TrimWhitespace(StrSlice(argsStr, 1, argsStr.length-1));
+							}
+							
+							uxx argIndex = 0;
+							ThemeDefFuncArgValue argValues[THEME_DEF_FUNC_MAX_ARGS];
+							bool parsedAllArguments = true;
+							uxx prevCommaIndex = 0;
+							for (uxx cIndex = 0; cIndex <= argsStr.length; cIndex++)
+							{
+								if (cIndex == argsStr.length || argsStr.chars[cIndex] == ',')
+								{
+									Str8 argStr = TrimWhitespace(StrSlice(argsStr, prevCommaIndex, cIndex));
+									if (argStr.length == 0) { return Result_EmptyArgument; }
+									if (argIndex >= funcArgInfo.argCount)
+									{
+										PrintLine_W("Too many arguments for function %.*s (expected %llu) on line %llu",
+											StrPrint(functionName),
+											funcArgInfo.argCount,
+											parser.lineParser.lineIndex
+										);
+										parsedAllArguments = false;
+										break;
+									}
+									
+									bool argParseSuccess = false;
+									Result argParseError = Result_None;
+									ThemeDefFuncArgType actualArgType = funcArgInfo.argType[argIndex];
+									switch (funcArgInfo.argType[argIndex])
+									{
+										case ThemeDefFuncArgType_U8: argParseSuccess = TryParseU8(argStr, &argValues[argIndex].valueU8, &argParseError); break;
+										case ThemeDefFuncArgType_I32: argParseSuccess = TryParseI32(argStr, &argValues[argIndex].valueI32, &argParseError); break;
+										case ThemeDefFuncArgType_R32: argParseSuccess = TryParseR32(argStr, &argValues[argIndex].valueR32, &argParseError); break;
+										case ThemeDefFuncArgType_Color:
+										{
+											argParseSuccess = TryParseColor(argStr, &argValues[argIndex].valueColor, &argParseError);
+											
+											//NOTE: Color type parameters could be identifiers that get resolved during the baking process
+											if (!argParseSuccess && IsValidIdentifier(argStr.length, argStr.chars, false, false, false))
+											{
+												actualArgType = ThemeDefFuncArgType_Identifier;
+												argValues[argIndex].valueIdentifier = argStr;
+												argParseSuccess = true;
+											}
+										} break;
+										case ThemeDefFuncArgType_Identifier:
+										{
+											if (IsValidIdentifier(argStr.length, argStr.chars, false, false, false))
+											{
+												argValues[argIndex].valueIdentifier = argStr;
+												argParseSuccess = true;
+											}
+											else
+											{
+												argParseError = Result_InvalidIdentifier;
+												argParseSuccess = false;
+											}
+											
+										} break;
+										default: Assert(false); break;
+									}
+									
+									if (argParseSuccess)
+									{
+										argValues[argIndex].type = actualArgType;
+									}
+									else
+									{
+										PrintLine_W("Couldn't parse function %.*s arg %llu as %s on line %llu: \"%.*s\" (Error: %s)",
+											StrPrint(functionName),
+											argIndex,
+											GetThemeDefFuncArgTypeStr(actualArgType),
+											parser.lineParser.lineIndex,
+											StrPrint(argStr),
+											GetResultStr(argParseError)
+										);
+										parsedAllArguments = false;
+										break;
+									}
+									
+									prevCommaIndex = cIndex+1;
+									argIndex++;
+								}
+							}
+							
+							if (parsedAllArguments && argIndex == GetThemeDefFuncArgCount(function))
+							{
+								for (uxx sIndex = 0; sIndex < numThemeStates; sIndex++)
+								{
+									isNewEntry = AddThemeDefEntryFunction(themeOut, currentMode, themeStates[sIndex], strippedName, function, argIndex, &argValues[0]);
+									if (!isNewEntry)
+									{
+										NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
+											StrPrint(strippedName),
+											(themeStates[sIndex] == ThemeState_Any ? "" : " ("),
+											(themeStates[sIndex] == ThemeState_Any ? "" : GetThemeStateStr(themeStates[sIndex])),
+											(themeStates[sIndex] == ThemeState_Any ? "" : ")"),
+											parser.lineParser.lineIndex
+										);
+									}
+								}
+								parsedFunction = true;
+								break;
+							}
+						}
+					}
+					
+					if (!parsedFunction)
+					{
+						NotifyPrint_E("Invalid function in theme file for \"%.*s\" on line %llu: \"%.*s\"",
+							StrPrint(strippedName),
+							parser.lineParser.lineIndex,
+							StrPrint(token.value)
+						);
+						return Result_InvalidSyntax;
+					}
+				}
+				// +==============================+
+				// |    Parse Reference Entry     |
+				// +==============================+
 				else
 				{
 					for (uxx sIndex = 0; sIndex < numThemeStates; sIndex++)
 					{
-						isNewEntry = AddThemeDefEntryReference(themeOut, currentMode, themeStates[sIndex], strippedNamed, token.value);
+						isNewEntry = AddThemeDefEntryReference(themeOut, currentMode, themeStates[sIndex], strippedName, token.value);
 						if (!isNewEntry)
 						{
 							NotifyPrint_W("Duplicate entry in theme file for \"%.*s\"%s%s%s on line %llu",
-								StrPrint(strippedNamed),
+								StrPrint(strippedName),
 								(themeStates[sIndex] == ThemeState_Any ? "" : " ("),
 								(themeStates[sIndex] == ThemeState_Any ? "" : GetThemeStateStr(themeStates[sIndex])),
 								(themeStates[sIndex] == ThemeState_Any ? "" : ")"),

@@ -290,7 +290,7 @@ plex ThemeDefEntry
 	//only filled if (type == ThemeDefEntryType_Function)
 	ThemeDefFunc function;
 	uxx functionArgCount;
-	Str8 functionArgStrs[THEME_DEF_FUNC_MAX_ARGS];
+	ThemeDefFuncArgValue functionArgValues[THEME_DEF_FUNC_MAX_ARGS];
 };
 
 // A theme "definition" contains a loose set of key-value pairs where the value can be an identifier of another entry
@@ -315,7 +315,13 @@ void FreeThemeDefEntryValue(ThemeDefinition* theme, ThemeDefEntry* entry)
 		}
 		if (entry->type == ThemeDefEntryType_Function)
 		{
-			for (uxx aIndex = 0; aIndex < entry->functionArgCount; aIndex++) { FreeStr8(theme->arena, &entry->functionArgStrs[aIndex]); }
+			for (uxx aIndex = 0; aIndex < entry->functionArgCount; aIndex++)
+			{
+				if (entry->functionArgValues[aIndex].type == ThemeDefFuncArgType_Identifier)
+				{
+					FreeStr8(theme->arena, &entry->functionArgValues[aIndex].valueIdentifier);
+				}
+			}
 		}
 	}
 }
@@ -406,6 +412,47 @@ inline bool AddThemeDefEntryReference(ThemeDefinition* theme, ThemeMode mode, Th
 	newEntry->key = AllocStr8(theme->arena, key);
 	newEntry->type = ThemeDefEntryType_Reference;
 	newEntry->referenceKey = AllocStr8(theme->arena, referenceStr);
+	return true;
+}
+// Returns false if an entry already existed and is getting overridden
+inline bool AddThemeDefEntryFunction(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, ThemeDefFunc function, uxx numArgs, const ThemeDefFuncArgValue* argValues)
+{
+	NotNull(theme);
+	NotNull(theme->arena);
+	ThemeDefEntry* existingEntry = FindThemeDefEntry(theme, mode, false, state, false, key);
+	if (existingEntry != nullptr)
+	{
+		FreeThemeDefEntryValue(theme, existingEntry);
+		existingEntry->type = ThemeDefEntryType_Function;
+		existingEntry->function = function;
+		existingEntry->functionArgCount = numArgs;
+		for (uxx aIndex = 0; aIndex < numArgs; aIndex++)
+		{
+			MyMemCopy(&existingEntry->functionArgValues[aIndex], &argValues[aIndex], sizeof(ThemeDefFuncArgValue));
+			if (argValues[aIndex].type == ThemeDefFuncArgType_Identifier)
+			{
+				existingEntry->functionArgValues[aIndex].valueIdentifier = AllocStr8(theme->arena, existingEntry->functionArgValues[aIndex].valueIdentifier);
+			}
+		}
+		return false;
+	}
+	ThemeDefEntry* newEntry = VarArrayAdd(ThemeDefEntry, &theme->entries);
+	NotNull(newEntry);
+	ClearPointer(newEntry);
+	newEntry->mode = mode;
+	newEntry->state = state;
+	newEntry->key = AllocStr8(theme->arena, key);
+	newEntry->type = ThemeDefEntryType_Function;
+	newEntry->function = function;
+	newEntry->functionArgCount = numArgs;
+	for (uxx aIndex = 0; aIndex < numArgs; aIndex++)
+	{
+		MyMemCopy(&newEntry->functionArgValues[aIndex], &argValues[aIndex], sizeof(ThemeDefFuncArgValue));
+		if (argValues[aIndex].type == ThemeDefFuncArgType_Identifier)
+		{
+			newEntry->functionArgValues[aIndex].valueIdentifier = AllocStr8(theme->arena, newEntry->functionArgValues[aIndex].valueIdentifier);
+		}
+	}
 	return true;
 }
 
