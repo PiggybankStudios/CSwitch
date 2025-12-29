@@ -72,6 +72,26 @@ static Arena* stdHeap = nullptr;
 #include "app_clay.c"
 
 // +==============================+
+// |         TestWorkItem         |
+// +==============================+
+// Result TestWorkItem(ThreadPoolThread* thread, plex ThreadPoolWorkItem* workItem)
+THREAD_POOL_WORK_ITEM_FUNC_DEF(TestWorkItem)
+{
+	uxx numIterations = workItem->subject.id0;
+	// Str8* allocatedStr = *GetStructInWorkSubject(Str8, &workItem->subject, 0);
+	Str8 allocatedStr = workItem->subject.string0;
+	Str8 threadName = GetStandardPeopleFirstName(thread->id);
+	PrintLine_D("%.*s STARTED by %.*s...", StrPrint(allocatedStr), StrPrint(threadName));
+	for (uxx i = 0; i < numIterations; i++)
+	{
+		PrintLine_D("%.*s worked (%llu/%llu) by %.*s...", StrPrint(allocatedStr), i+1, numIterations, StrPrint(threadName));
+		Sleep(1000);
+	}
+	PrintLine_D("%.*s ENDED by %.*s...", StrPrint(allocatedStr), StrPrint(threadName));
+	return Result_Success;
+}
+
+// +==============================+
 // |           DllMain            |
 // +==============================+
 #if (TARGET_IS_WINDOWS && !BUILD_INTO_SINGLE_UNIT)
@@ -232,10 +252,10 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
 	InitThreadPool(stdHeap, StrLit("TestThreadPool"), true, true, Gigabytes(4), &app->threadPool);
-	StartThreadPoolThread(&app->threadPool, nullptr);
-	StartThreadPoolThread(&app->threadPool, nullptr);
-	StartThreadPoolThread(&app->threadPool, nullptr);
-	StartThreadPoolThread(&app->threadPool, nullptr);
+	AddThreadToPool(&app->threadPool);
+	AddThreadToPool(&app->threadPool);
+	AddThreadToPool(&app->threadPool);
+	AddThreadToPool(&app->threadPool);
 	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	
@@ -431,11 +451,33 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		UpdatePerfGraph(&app->perfGraph, fullUpdateMs, ((r32)appIn->unclampedElapsedMsR64 - fullUpdateMs));
 	}
 	
+	bool refreshScreen = (app->sleepingDisabled || app->showPerfGraph);
+	
+	// +==============================+
+	// |  Handle Finished WorkItems   |
+	// +==============================+
+	ThreadPoolWorkItem* finishedWorkItem = nullptr;
+	while ((finishedWorkItem = GetFinishedThreadPoolWorkItem(&app->threadPool)) != nullptr)
+	{
+		PrintLine_O("%.*s FINISHED: %s", StrPrint(finishedWorkItem->subject.string0), GetResultStr(finishedWorkItem->result));
+		FreeThreadPoolWorkItem(&app->threadPool, finishedWorkItem);
+	}
+	
+	// +==============================+
+	// |     Handle Dropped Files     |
+	// +==============================+
+	VarArrayLoop(&appIn->droppedFilePaths, pIndex)
+	{
+		VarArrayLoopGet(Str8, droppedFilePath, &appIn->droppedFilePaths, pIndex);
+		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(*droppedFilePath));
+		AppOpenFileTab(*droppedFilePath);
+		refreshScreen = true;
+	}
+	
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
 	// +====================================+
 	{
-		bool refreshScreen = app->sleepingDisabled;
 		if (AppCheckForFileChanges()) { refreshScreen = true; }
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
 		if (app->tooltips.openTooltipId != TOOLTIP_ID_INVALID || app->tooltips.hoverTooltipId != TOOLTIP_ID_INVALID) { refreshScreen = true; }
@@ -501,13 +543,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	FontNewFrame(&app->mainFont, appIn->programTime);
 	UpdateTooltipRegistry(&app->tooltips);
 	
-	VarArrayLoop(&appIn->droppedFilePaths, pIndex)
-	{
-		VarArrayLoopGet(Str8, droppedFilePath, &appIn->droppedFilePaths, pIndex);
-		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(*droppedFilePath));
-		AppOpenFileTab(*droppedFilePath);
-	}
-	
+	// +======================================+
+	// | Calculate Longest Abbreviation Width |
+	// +======================================+
 	VarArrayLoop(&app->tabs, tIndex)
 	{
 		VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
@@ -570,7 +608,34 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, true))
+	// +==============================+
+	// |       Thread Pool Test       |
+	// +==============================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, true))
+	{
+		WorkSubject subject = ZEROED;
+		subject.id0 = GetRandU32Range(&app->random, 3, 16);
+		// Str8* allocatedStr = AllocStructInWorkSubject(Str8, stdHeap, &subject, 0);
+		// NotNull(allocatedStr);
+		// allocatedStr->length = GetRandU32Range(&app->random, 2, 10);
+		// allocatedStr->chars = AllocArray(char, stdHeap, allocatedStr->length);
+		// NotNull(allocatedStr->chars);
+		// for (uxx cIndex = 0; cIndex < allocatedStr->length; cIndex++)
+		// {
+		// 	allocatedStr->chars[cIndex] = (char)GetRandU32Range(&app->random, 'A', 'Z'+1);
+		// }
+		// Str8 allocatedStr = AllocStringInWorkSubject(stdHeap, &subject, 0, StrLit("Hello World"), false);
+		// for (uxx cIndex = 0; cIndex < allocatedStr.length; cIndex++)
+		// {
+		// 	if (cIndex == 0 || GetRandU32Range(&app->random, 0, 100) < 20) { allocatedStr.chars[cIndex] = (char)GetRandU32Range(&app->random, 'A', 'Z'+1); }
+		// 	else { allocatedStr.chars[cIndex] = (char)GetRandU32Range(&app->random, 'a', 'z'+1); }
+		// }
+		Str8 allocatedStr = AllocStringInWorkSubject(stdHeap, &subject, 0, MakeStr8Nt(GetStandardRockName(GetRandU32(&app->random))), false);
+		ThreadPoolWorkItem* newItem = AddWorkItemToThreadPool(&app->threadPool, TestWorkItem, &subject);
+		NotNull(newItem);
+		PrintLine_D("Queued %.*s as item %llu", StrPrint(allocatedStr), newItem->id);
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_K, true))
 	{
 		bool stoppedAThread = false;
 		for (uxx tIndex = 0; tIndex < app->threadPool.threads.length; tIndex++)
