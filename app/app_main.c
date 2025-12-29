@@ -272,6 +272,8 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
 	
+	app->usingKeyboardToSelect = false;
+	
 	InitTooltipRegistry(stdHeap, &app->tooltips);
 	
 	// InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
@@ -510,6 +512,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	
+	// +==============================+
+	// | Native Windows Tooltip Test  |
+	// +==============================+
 	#if 0
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false))
 	{
@@ -764,6 +769,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +======================================+
 	// | Handle Home/End and PageUp/PageDown  |
 	// +======================================+
+	//TODO: These should probably move the app->currentTab->selectedOptionIndex if app->usingKeyboardToSelect
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home, false))
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
@@ -794,6 +800,169 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		{
 			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
+		}
+	}
+	
+	// +====================================+
+	// | Handle Arrow Keys to Select Option |
+	// +====================================+
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true) ||
+		IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true) ||
+		IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true) ||
+		IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
+	{
+		app->usingKeyboardToSelect = true;
+		if (app->currentTab != nullptr)
+		{
+			bool movedSelection = false;
+			
+			if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
+			{
+				//TODO: Could we somehow choose the option thats near the middle of the screen?
+				app->currentTab->selectedOptionIndex = 0;
+				movedSelection = true;
+			}
+			else if (app->currentTab->selectedOptionIndex >= 0)
+			{
+				if (app->settings.smallButtons)
+				{
+					r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
+					u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
+					r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
+					i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
+					if (numColumns <= 0) { numColumns = 1; }
+					i32 numRows = CeilDivI32((i32)app->currentTab->fileOptions.length, numColumns);
+					
+					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true))
+					{
+						if (app->currentTab->selectedOptionIndex >= numColumns)
+						{
+							app->currentTab->selectedOptionIndex -= numColumns;
+							movedSelection = true;
+						}
+						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, false))
+						{
+							app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
+							movedSelection = true;
+						}
+					}
+					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
+					{
+						if (((i32)app->currentTab->selectedOptionIndex / numColumns) < numRows-1)
+						{
+							app->currentTab->selectedOptionIndex += numColumns;
+							if ((uxx)app->currentTab->selectedOptionIndex >= app->currentTab->fileOptions.length)
+							{
+								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+							}
+							movedSelection = true;
+						}
+						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, false))
+						{
+							app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
+							movedSelection = true;
+						}
+					}
+					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true))
+					{
+						if (app->currentTab->selectedOptionIndex > 0)
+						{
+							app->currentTab->selectedOptionIndex--;
+							movedSelection = true;
+						}
+						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, false))
+						{
+							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+							movedSelection = true;
+						}
+					}
+					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true))
+					{
+						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
+						{
+							app->currentTab->selectedOptionIndex++;
+							movedSelection = true;
+						}
+						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, false))
+						{
+							app->currentTab->selectedOptionIndex = 0;
+							movedSelection = true;
+						}
+					}
+				}
+				else
+				{
+					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true))
+					{
+						if (app->currentTab->selectedOptionIndex > 0)
+						{
+							app->currentTab->selectedOptionIndex--;
+							movedSelection = true;
+						}
+						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, false))
+						{
+							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+							movedSelection = true;
+						}
+					}
+					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
+					{
+						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
+						{
+							app->currentTab->selectedOptionIndex++;
+							movedSelection = true;
+						}
+						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, false))
+						{
+							app->currentTab->selectedOptionIndex = 0;
+							movedSelection = true;
+						}
+					}
+				}
+			}
+			
+			// Auto-scroll up/down to the newly selected option if needed
+			if (movedSelection && app->currentTab->selectedOptionIndex >= 0)
+			{
+				rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+				Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
+				FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
+				Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
+				ClayId btnId = ToClayId(btnIdStr);
+				rec optionRec = GetClayElementDrawRec(btnId);
+				if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
+				{
+					r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
+					r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
+					r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
+					r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
+					if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
+					{
+						viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
+					}
+					else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
+					{
+						viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
+					}
+				}
+			}
+		}
+	}
+	else if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left) ||
+		IsMouseBtnPressed(&appIn->mouse, MouseBtn_Right) ||
+		IsMouseBtnPressed(&appIn->mouse, MouseBtn_Middle) ||
+		(appIn->mouse.isOverWindow && !AreSimilarV2(appIn->mouse.scrollDelta, V2_Zero, DEFAULT_R32_TOLERANCE)))
+	{
+		app->usingKeyboardToSelect = false;
+	}
+	
+	if (app->usingKeyboardToSelect && IsKeyboardKeyPressed(&appIn->keyboard, Key_Enter, false) &&
+		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0)
+	{
+		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
+		if (selectedOption->type == FileOptionType_Bool)
+		{
+			ToggleOption(app->currentTab, selectedOption);
 		}
 	}
 	
@@ -1218,6 +1387,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 								{
 									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+									bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
 									
 									if ((oIndex % numColumns) == 0)
 									{
@@ -1236,29 +1406,23 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									
 									if (option->type == FileOptionType_Bool)
 									{
-										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->valueBool))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->valueBool, isOptionSelected))
 										{
-											option->valueBool = !option->valueBool;
-											if (StrExactEquals(option->valueStr, StrLit("false"))) { SetOptionValue(app->currentTab, option, StrLit("true")); }
-											else if (StrExactEquals(option->valueStr, StrLit("true"))) { SetOptionValue(app->currentTab, option, StrLit("false")); }
-											else if (StrExactEquals(option->valueStr, StrLit("0"))) { SetOptionValue(app->currentTab, option, StrLit("1")); }
-											else { SetOptionValue(app->currentTab, option, StrLit("0")); }
+											ToggleOption(app->currentTab, option);
 										}
 									}
 									else if (option->type == FileOptionType_CommentDefine)
 									{
-										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->isUncommented))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->isUncommented, isOptionSelected))
 										{
-											option->isUncommented = !option->isUncommented;
-											SetOptionValue(app->currentTab, option, option->isUncommented ? StrLit("") : StrLit("// "));
+											ToggleOption(app->currentTab, option);
 										}
 									}
 									else
 									{
-										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, false))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, false, isOptionSelected))
 										{
-											Notify_W("This #define type is not supported yet!");
-											//TODO: Implement me!
+											ToggleOption(app->currentTab, option);
 										}
 									}
 								}
@@ -1269,32 +1433,28 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 								{
 									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+									bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
+									
 									if (option->type == FileOptionType_Bool)
 									{
 										//NOTE: We have to put a copy of valueStr in uiArena because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-										if (ClayOptionBtn(optionsContainerId, option->name, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool))
+										if (ClayOptionBtn(optionsContainerId, option->name, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool, isOptionSelected))
 										{
-											option->valueBool = !option->valueBool;
-											if (StrExactEquals(option->valueStr, StrLit("false"))) { SetOptionValue(app->currentTab, option, StrLit("true")); }
-											else if (StrExactEquals(option->valueStr, StrLit("true"))) { SetOptionValue(app->currentTab, option, StrLit("false")); }
-											else if (StrExactEquals(option->valueStr, StrLit("0"))) { SetOptionValue(app->currentTab, option, StrLit("1")); }
-											else { SetOptionValue(app->currentTab, option, StrLit("0")); }
+											ToggleOption(app->currentTab, option);
 										}
 									}
 									else if (option->type == FileOptionType_CommentDefine)
 									{
-										if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented))
+										if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
 										{
-											option->isUncommented = !option->isUncommented;
-											SetOptionValue(app->currentTab, option, option->isUncommented ? StrLit("") : StrLit("// "));
+											ToggleOption(app->currentTab, option);
 										}
 									}
 									else
 									{
-										if (ClayOptionBtn(optionsContainerId, option->name, option->name, StrLit("-"), false))
+										if (ClayOptionBtn(optionsContainerId, option->name, option->name, StrLit("-"), false, isOptionSelected))
 										{
-											Notify_W("This #define type is not supported yet!");
-											//TODO: Implement me!
+											ToggleOption(app->currentTab, option);
 										}
 									}
 									if (option->numEmptyLinesAfter > 0)

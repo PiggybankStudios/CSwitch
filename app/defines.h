@@ -42,6 +42,7 @@ Date:   02\25\2025
 
 #define OPTION_UI_GAP                    2 //px (at uiScale=1.0f)
 #define OPTIONS_SMOOTH_SCROLLING_DIVISOR 5 //divisor
+#define OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW 0.15f //percent of viewport
 #define LINE_BREAK_EXTRA_UI_GAP          4 //px (at uiScale=1.0f)
 #define MAX_LINE_BREAKS_CONSIDERED       4 //lines
 

@@ -67,6 +67,7 @@ Red:              FF6666
 	OptionOffBack_Hovered:                  DarkBlue
 	OptionOffBack_Pressed:                  Mix(DarkBlue, Blue, 0.5)
 	OptionOffBorder_Hovered_Pressed:        Mix(DarkBlue, Blue, 0.5)
+	OptionOffBorder_Selected:               White
 	
 	OptionOnBack:                           Blue
 	OptionOnBorder:                         Blue
@@ -76,6 +77,7 @@ Red:              FF6666
 	OptionOnBack_Pressed:                   Mix(DarkBlue, Blue, 0.5)
 	OptionOnBorder_Hovered:                 Mix(DarkBlue, Blue, 0.5)
 	OptionOnBorder_Pressed:                 Mix(DarkBlue, Blue, 0.75)
+	OptionOnBorder_Selected:                White
 	
 	TopbarBtnBack:                          Transparent
 	TopbarBtnBack_Hovered_Open:             DarkBlue
@@ -179,16 +181,18 @@ Red:              FF6666
 	OptionOffBorder:                   BlueWhite
 	OptionOffNameText:                 LightGray
 	OptionOffValueText:                LightGray
-	OptionOffBack_Hovered:             LightBlue
+	OptionOffBack_Hovered_Selected:    LightBlue
 	OptionOffBack_Pressed:             Mix(LightBlue, Blue, 0.5)
 	OptionOffBorder_Hovered_Pressed:   Mix(LightBlue, Blue, 0.5)
+	OptionOffBorder_Selected:          LightGray
 	
 	OptionOnBack:                      Blue
 	OptionOnBorder:                    Blue
 	OptionOnNameText:                  DarkGray
 	OptionOnValueText:                 DarkGray
-	OptionOnBack_Hovered:              Mix(LightBlue, Blue, 0.75)
+	OptionOnBack_Hovered_Selected:     Mix(LightBlue, Blue, 0.75)
 	OptionOnBack_Pressed:              Mix(LightBlue, Blue, 0.5)
+	OptionOnBorder_Selected:           LightGray
 	
 	TopbarBtnBack:                     Transparent
 	TopbarBtnBorder:                   Transparent

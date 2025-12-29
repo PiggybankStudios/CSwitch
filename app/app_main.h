@@ -89,6 +89,7 @@ struct FileTab
 	r32 longestAbbreviationWidth;
 	r32 longestAbbreviationWidthFontSize;
 	ScrollbarInteractionState scrollbarState;
+	ixx selectedOptionIndex; //-1 = no selection
 };
 
 typedef enum PopupDialogResult PopupDialogResult;
@@ -237,6 +238,7 @@ struct AppData
 	VarArray tabs; //FileTab
 	uxx currentTabIndex;
 	FileTab* currentTab;
+	bool usingKeyboardToSelect;
 	
 	ClayTextbox testTextbox;
 	u64 testTooltipId;
@@ -247,10 +249,6 @@ struct AppData
 	#endif
 	
 	//User Options
-	// bool smallBtnModeEnabled;
-	// bool clipNamesOnLeftSide;
-	// bool smoothScrollingEnabled;
-	// bool optionTooltipsEnabled;
 	bool sleepingDisabled;
 	#if DEBUG_BUILD
 	bool enableFrameUpdateIndicator;

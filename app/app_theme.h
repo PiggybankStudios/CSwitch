@@ -14,95 +14,96 @@ Date:   12\10\2025
 typedef enum ThemeStateFlag ThemeStateFlag;
 enum ThemeStateFlag
 {
-	ThemeStateFlag_None     = 0x00,
-	ThemeStateFlag_Mouse    = 0x01, //Hovered and Pressed
-	ThemeStateFlag_Disabled = 0x02,
-	ThemeStateFlag_Open     = 0x04,
+	ThemeStateFlag_None        = 0x00,
+	ThemeStateFlag_Clickable   = 0x01, //Hovered and Pressed
+	ThemeStateFlag_Selectable  = 0x02,
+	ThemeStateFlag_Disableable = 0x04,
+	ThemeStateFlag_Openable    = 0x08,
 };
 
 //For brevity sake in the XList we #define these here and #undef them below after all the code that uses Theme_XList
-#define S_None     ThemeStateFlag_None
-#define S_Mouse    ThemeStateFlag_Mouse
-#define S_Mouse    ThemeStateFlag_Mouse
-#define S_Disabled ThemeStateFlag_Disabled
-#define S_Open     ThemeStateFlag_Open
+#define S_None        ThemeStateFlag_None
+#define S_Clickable   ThemeStateFlag_Clickable
+#define S_Selectable  ThemeStateFlag_Selectable
+#define S_Disableable ThemeStateFlag_Disableable
+#define S_Openable    ThemeStateFlag_Openable
 
 // X(EnumName, StateFlags)
-#define Theme_XList(X)                                                  \
-	X(OptionListBack,                        S_None)                    \
-	X(ScrollGutter,                          S_None)                    \
-	X(ScrollBar,                             S_Mouse)                   \
-	X(TooltipBack,                           S_None)                    \
-	X(TooltipBorder,                         S_None)                    \
-	X(TooltipText,                           S_None)                    \
-	X(TopmostBorder,                         S_None)                    \
-	X(TopbarBack,                            S_None)                    \
-	X(TopbarBorder,                          S_None)                    \
-	X(TopbarPathText,                        S_None)                    \
-	X(DropdownBack,                          S_None)                    \
-	X(DropdownBorder,                        S_None)                    \
-	X(OptionOnBack,                          S_Mouse)                   \
-	X(OptionOnBorder,                        S_Mouse)                   \
-	X(OptionOnNameText,                      S_Mouse)                   \
-	X(OptionOnValueText,                     S_Mouse)                   \
-	X(OptionOffBack,                         S_Mouse)                   \
-	X(OptionOffBorder,                       S_Mouse)                   \
-	X(OptionOffNameText,                     S_Mouse)                   \
-	X(OptionOffValueText,                    S_Mouse)                   \
-	X(TopbarBtnBack,                         S_Mouse|S_Open)            \
-	X(TopbarBtnBorder,                       S_Mouse|S_Open)            \
-	X(TopbarBtnText,                         S_Mouse|S_Open)            \
-	X(DropdownBtnBack,                       S_Mouse|S_Disabled|S_Open) \
-	X(DropdownBtnBorder,                     S_Mouse|S_Disabled|S_Open) \
-	X(DropdownBtnText,                       S_Mouse|S_Disabled|S_Open) \
-	X(DropdownBtnIcon,                       S_Mouse|S_Disabled|S_Open) \
-	X(HotkeyBack,                            S_Mouse|S_Disabled)        \
-	X(HotkeyBorder,                          S_Mouse|S_Disabled)        \
-	X(HotkeyText,                            S_Mouse|S_Disabled)        \
-	X(FileTabDivider,                        S_None)                    \
-	X(FileTabBack,                           S_Mouse|S_Open)            \
-	X(FileTabBorder,                         S_Mouse|S_Open)            \
-	X(FileTabText,                           S_Mouse|S_Open)            \
-	X(ConfirmDialogDarken,                   S_None)                    \
-	X(ConfirmDialogBack,                     S_None)                    \
-	X(ConfirmDialogBorder,                   S_None)                    \
-	X(ConfirmDialogText,                     S_None)                    \
-	X(ConfirmDialogPositiveBtnBack,          S_Mouse)                   \
-	X(ConfirmDialogPositiveBtnBorder,        S_Mouse)                   \
-	X(ConfirmDialogPositiveBtnText,          S_Mouse)                   \
-	X(ConfirmDialogNegativeBtnBack,          S_Mouse)                   \
-	X(ConfirmDialogNegativeBtnBorder,        S_Mouse)                   \
-	X(ConfirmDialogNegativeBtnText,          S_Mouse)                   \
-	X(ConfirmDialogNeutralBtnBack,           S_Mouse)                   \
-	X(ConfirmDialogNeutralBtnBorder,         S_Mouse)                   \
-	X(ConfirmDialogNeutralBtnText,           S_Mouse)                   \
-	X(NotificationDebugBack,                 S_None)                    \
-	X(NotificationDebugBorder,               S_None)                    \
-	X(NotificationDebugText,                 S_None)                    \
-	X(NotificationDebugIcon,                 S_None)                    \
-	X(NotificationRegularBack,               S_None)                    \
-	X(NotificationRegularBorder,             S_None)                    \
-	X(NotificationRegularText,               S_None)                    \
-	X(NotificationRegularIcon,               S_None)                    \
-	X(NotificationInfoBack,                  S_None)                    \
-	X(NotificationInfoBorder,                S_None)                    \
-	X(NotificationInfoText,                  S_None)                    \
-	X(NotificationInfoIcon,                  S_None)                    \
-	X(NotificationNotifyBack,                S_None)                    \
-	X(NotificationNotifyBorder,              S_None)                    \
-	X(NotificationNotifyText,                S_None)                    \
-	X(NotificationNotifyIcon,                S_None)                    \
-	X(NotificationOtherBack,                 S_None)                    \
-	X(NotificationOtherBorder,               S_None)                    \
-	X(NotificationOtherText,                 S_None)                    \
-	X(NotificationOtherIcon,                 S_None)                    \
-	X(NotificationWarningBack,               S_None)                    \
-	X(NotificationWarningBorder,             S_None)                    \
-	X(NotificationWarningText,               S_None)                    \
-	X(NotificationWarningIcon,               S_None)                    \
-	X(NotificationErrorBack,                 S_None)                    \
-	X(NotificationErrorBorder,               S_None)                    \
-	X(NotificationErrorText,                 S_None)                    \
+#define Theme_XList(X)                                                             \
+	X(OptionListBack,                        S_None)                               \
+	X(ScrollGutter,                          S_None)                               \
+	X(ScrollBar,                             S_Clickable)                          \
+	X(TooltipBack,                           S_None)                               \
+	X(TooltipBorder,                         S_None)                               \
+	X(TooltipText,                           S_None)                               \
+	X(TopmostBorder,                         S_None)                               \
+	X(TopbarBack,                            S_None)                               \
+	X(TopbarBorder,                          S_None)                               \
+	X(TopbarPathText,                        S_None)                               \
+	X(DropdownBack,                          S_None)                               \
+	X(DropdownBorder,                        S_None)                               \
+	X(OptionOnBack,                          S_Clickable|S_Selectable)             \
+	X(OptionOnBorder,                        S_Clickable|S_Selectable)             \
+	X(OptionOnNameText,                      S_Clickable|S_Selectable)             \
+	X(OptionOnValueText,                     S_Clickable|S_Selectable)             \
+	X(OptionOffBack,                         S_Clickable|S_Selectable)             \
+	X(OptionOffBorder,                       S_Clickable|S_Selectable)             \
+	X(OptionOffNameText,                     S_Clickable|S_Selectable)             \
+	X(OptionOffValueText,                    S_Clickable|S_Selectable)             \
+	X(TopbarBtnBack,                         S_Clickable|S_Openable)               \
+	X(TopbarBtnBorder,                       S_Clickable|S_Openable)               \
+	X(TopbarBtnText,                         S_Clickable|S_Openable)               \
+	X(DropdownBtnBack,                       S_Clickable|S_Disableable|S_Openable) \
+	X(DropdownBtnBorder,                     S_Clickable|S_Disableable|S_Openable) \
+	X(DropdownBtnText,                       S_Clickable|S_Disableable|S_Openable) \
+	X(DropdownBtnIcon,                       S_Clickable|S_Disableable|S_Openable) \
+	X(HotkeyBack,                            S_Clickable|S_Disableable)            \
+	X(HotkeyBorder,                          S_Clickable|S_Disableable)            \
+	X(HotkeyText,                            S_Clickable|S_Disableable)            \
+	X(FileTabDivider,                        S_None)                               \
+	X(FileTabBack,                           S_Clickable|S_Openable)               \
+	X(FileTabBorder,                         S_Clickable|S_Openable)               \
+	X(FileTabText,                           S_Clickable|S_Openable)               \
+	X(ConfirmDialogDarken,                   S_None)                               \
+	X(ConfirmDialogBack,                     S_None)                               \
+	X(ConfirmDialogBorder,                   S_None)                               \
+	X(ConfirmDialogText,                     S_None)                               \
+	X(ConfirmDialogPositiveBtnBack,          S_Clickable)                          \
+	X(ConfirmDialogPositiveBtnBorder,        S_Clickable)                          \
+	X(ConfirmDialogPositiveBtnText,          S_Clickable)                          \
+	X(ConfirmDialogNegativeBtnBack,          S_Clickable)                          \
+	X(ConfirmDialogNegativeBtnBorder,        S_Clickable)                          \
+	X(ConfirmDialogNegativeBtnText,          S_Clickable)                          \
+	X(ConfirmDialogNeutralBtnBack,           S_Clickable)                          \
+	X(ConfirmDialogNeutralBtnBorder,         S_Clickable)                          \
+	X(ConfirmDialogNeutralBtnText,           S_Clickable)                          \
+	X(NotificationDebugBack,                 S_None)                               \
+	X(NotificationDebugBorder,               S_None)                               \
+	X(NotificationDebugText,                 S_None)                               \
+	X(NotificationDebugIcon,                 S_None)                               \
+	X(NotificationRegularBack,               S_None)                               \
+	X(NotificationRegularBorder,             S_None)                               \
+	X(NotificationRegularText,               S_None)                               \
+	X(NotificationRegularIcon,               S_None)                               \
+	X(NotificationInfoBack,                  S_None)                               \
+	X(NotificationInfoBorder,                S_None)                               \
+	X(NotificationInfoText,                  S_None)                               \
+	X(NotificationInfoIcon,                  S_None)                               \
+	X(NotificationNotifyBack,                S_None)                               \
+	X(NotificationNotifyBorder,              S_None)                               \
+	X(NotificationNotifyText,                S_None)                               \
+	X(NotificationNotifyIcon,                S_None)                               \
+	X(NotificationOtherBack,                 S_None)                               \
+	X(NotificationOtherBorder,               S_None)                               \
+	X(NotificationOtherText,                 S_None)                               \
+	X(NotificationOtherIcon,                 S_None)                               \
+	X(NotificationWarningBack,               S_None)                               \
+	X(NotificationWarningBorder,             S_None)                               \
+	X(NotificationWarningText,               S_None)                               \
+	X(NotificationWarningIcon,               S_None)                               \
+	X(NotificationErrorBack,                 S_None)                               \
+	X(NotificationErrorBorder,               S_None)                               \
+	X(NotificationErrorText,                 S_None)                               \
 	X(NotificationErrorIcon,                 S_None)
 
 typedef enum ThemeColor ThemeColor;
@@ -152,10 +153,10 @@ u8 GetThemeColorStateFlags(ThemeColor themeColor)
 }
 
 #undef S_None
-#undef S_Mouse
-#undef S_Mouse
-#undef S_Disabled
-#undef S_Open
+#undef S_Clickable
+#undef S_Selectable
+#undef S_Disableable
+#undef S_Openable
 #undef Theme_XList
 
 // Every theme can be in a "Light" or "Dark" mode and should have different colors chosen for both
@@ -199,6 +200,7 @@ enum ThemeState
 	ThemeState_Default = 1,
 	ThemeState_Disabled,
 	ThemeState_Pressed,
+	ThemeState_Selected,
 	ThemeState_Hovered,
 	ThemeState_Open,
 	ThemeState_Count,
@@ -211,6 +213,7 @@ const char* GetThemeStateStr(ThemeState enumValue)
 		case ThemeState_Default:  return "Default";
 		case ThemeState_Disabled: return "Disabled";
 		case ThemeState_Pressed:  return "Pressed";
+		case ThemeState_Selected: return "Selected";
 		case ThemeState_Hovered:  return "Hovered";
 		case ThemeState_Open:     return "Open";
 		default: return UNKNOWN_STR;
@@ -223,25 +226,28 @@ inline bool TryParseThemeState(Str8 modeStr, ThemeState* themeStateOut)
 	else if (StrAnyCaseEquals(modeStr, StrLit("Disabled"))) { SetOptionalOutPntr(themeStateOut, ThemeState_Disabled); return true; }
 	else if (StrAnyCaseEquals(modeStr, StrLit("Pressed")))  { SetOptionalOutPntr(themeStateOut, ThemeState_Pressed);  return true; }
 	else if (StrAnyCaseEquals(modeStr, StrLit("Hovered")))  { SetOptionalOutPntr(themeStateOut, ThemeState_Hovered);  return true; }
+	else if (StrAnyCaseEquals(modeStr, StrLit("Selected"))) { SetOptionalOutPntr(themeStateOut, ThemeState_Selected); return true; }
 	else if (StrAnyCaseEquals(modeStr, StrLit("Open")))     { SetOptionalOutPntr(themeStateOut, ThemeState_Open);     return true; }
 	else                                                    { return false; }
 }
 inline bool IsThemeStatePossibleFromFlags(u8 flags, ThemeState state)
 {
 	if (state == ThemeState_Default || state == ThemeState_Any) { return true; }
-	if (IsFlagSet(flags, ThemeStateFlag_Mouse) && (state == ThemeState_Hovered || state == ThemeState_Pressed)) { return true; }
-	if (IsFlagSet(flags, ThemeStateFlag_Disabled) && state == ThemeState_Disabled) { return true; }
-	if (IsFlagSet(flags, ThemeStateFlag_Open) && state == ThemeState_Open) { return true; }
+	if (IsFlagSet(flags, ThemeStateFlag_Clickable) && (state == ThemeState_Hovered || state == ThemeState_Pressed)) { return true; }
+	if (IsFlagSet(flags, ThemeStateFlag_Selectable) && state == ThemeState_Selected) { return true; }
+	if (IsFlagSet(flags, ThemeStateFlag_Disableable) && state == ThemeState_Disabled) { return true; }
+	if (IsFlagSet(flags, ThemeStateFlag_Openable) && state == ThemeState_Open) { return true; }
 	return false;
 }
 inline u8 GetThemeStateFlagForState(ThemeState state)
 {
 	switch (state)
 	{
-		case ThemeState_Hovered:  return ThemeStateFlag_Mouse;
-		case ThemeState_Pressed:  return ThemeStateFlag_Mouse;
-		case ThemeState_Disabled: return ThemeStateFlag_Disabled;
-		case ThemeState_Open:     return ThemeStateFlag_Open;
+		case ThemeState_Hovered:  return ThemeStateFlag_Clickable;
+		case ThemeState_Pressed:  return ThemeStateFlag_Clickable;
+		case ThemeState_Selected: return ThemeStateFlag_Selectable;
+		case ThemeState_Disabled: return ThemeStateFlag_Disableable;
+		case ThemeState_Open:     return ThemeStateFlag_Openable;
 		default: return ThemeStateFlag_None;
 	}
 }

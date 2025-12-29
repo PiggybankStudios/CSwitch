@@ -306,6 +306,13 @@ void UpdateFileTabOptions(FileTab* tab)
 	
 	CalculateLongestAbbreviationWidth(tab);
 	
+	//TODO: We need to maintain the selectedOptionIndex through the option reload. We could save the name of the option it had selected and find it in the new file if it stil exists. Otherwise we could fall back to selecting a similar index or a nearby option?
+	if (tab->selectedOptionIndex >= 0 && (uxx)tab->selectedOptionIndex >= tab->fileOptions.length)
+	{
+		//For now we will just make sure the index is still within the range of options
+		tab->selectedOptionIndex = tab->fileOptions.length > 0 ? (ixx)tab->fileOptions.length-1 : -1;
+	}
+	
 	ScratchEnd(scratch);
 }
 
@@ -329,6 +336,7 @@ FileTab* AppOpenFileTab(FilePath filePath)
 	FileTab* newTab = VarArrayAdd(FileTab, &app->tabs);
 	NotNull(newTab);
 	ClearPointer(newTab);
+	newTab->selectedOptionIndex = -1;
 	//TODO: Should we maybe check if the file is already open in an existing tab?
 	// if (app->isFileOpen) { AppCloseFile(); }
 	newTab->fileContents = fileContents;
@@ -446,6 +454,30 @@ void SetOptionValue(FileTab* tab, FileOption* option, Str8 newValueStr)
 		FreeStr8(stdHeap, &option->valueStr);
 		option->valueStr = AllocStr8(stdHeap, newValueStr);
 		UpdateOptionValueInFile(tab, option);
+	}
+}
+
+void ToggleOption(FileTab* tab, FileOption* option)
+{
+	NotNull(tab);
+	NotNull(option);
+	if (option->type == FileOptionType_Bool)
+	{
+		option->valueBool = !option->valueBool;
+		if (StrExactEquals(option->valueStr, StrLit("false"))) { SetOptionValue(tab, option, StrLit("true")); }
+		else if (StrExactEquals(option->valueStr, StrLit("true"))) { SetOptionValue(tab, option, StrLit("false")); }
+		else if (StrExactEquals(option->valueStr, StrLit("0"))) { SetOptionValue(tab, option, StrLit("1")); }
+		else { SetOptionValue(tab, option, StrLit("0")); }
+	}
+	else if (option->type == FileOptionType_CommentDefine)
+	{
+		option->isUncommented = !option->isUncommented;
+		SetOptionValue(tab, option, option->isUncommented ? StrLit("") : StrLit("// "));
+	}
+	else
+	{
+		Notify_W("This #define type is not supported yet!");
+		//TODO: Implement me!
 	}
 }
 

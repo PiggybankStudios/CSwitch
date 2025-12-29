@@ -48,7 +48,8 @@ ThemeDefFunc_DEFINITION(ThemeFunc_Darken)
 	UNUSED(mode);
 	UNUSED(numArgs);
 	// return ColorDarken(argValues[0].valueColor, argValues[1].valueR32);
-	return argValues[0].valueColor; //TODO: Remove me once the function above is implemented
+	DebugAssert(false); //TODO: Remove me once the function above is implemented
+	return argValues[0].valueColor;
 }
 
 // +==============================+
@@ -61,5 +62,6 @@ ThemeDefFunc_DEFINITION(ThemeFunc_Lighten)
 	UNUSED(mode);
 	UNUSED(numArgs);
 	// return ColorLighten(argValues[0].valueColor, argValues[1].valueR32);
-	return argValues[0].valueColor; //TODO: Remove me once the function above is implemented
+	DebugAssert(false); //TODO: Remove me once the function above is implemented
+	return argValues[0].valueColor;
 }

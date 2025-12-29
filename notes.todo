@@ -4,12 +4,11 @@
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
-	[!] "Mix(Color1, Color2, Amount)" and "Transparent(Color, Alpha)" functions accepted in theme files (Maybe also "Darken(Color, Amount)" and "Lighten(Color, Amount)")
+	[!] Implement ColorDarken and ColorLighten
 	[ ] Option for dumping default theme and/or custom theme template
 	[?] Separate On/Off state out of Option theme entries somehow?
 	[ ] Update file watching to use PigCore file watch functions/type
 	[?] Theme file parsing errors should go into a log that we can display to the user somewhere in the UI!
-	[!] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[!] Add a search bar that can be used to filter the buttons
 	[!] Re-open all tabs that were open in the last session of CSwitch
 	[!] Restore other state information between CSwitch sessions
@@ -47,6 +46,8 @@
 	[ ] 
 
 # Finished List:
+	[X] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
+	[X] "Mix(Color1, Color2, Amount)" and "Transparent(Color, Alpha)" functions accepted in theme files (Maybe also "Darken(Color, Amount)" and "Lighten(Color, Amount)")
 	[X] Choose colors in theme carefully to maximize theme flexibility
 	[X] Separate state from unique UI element names?
 	[X] Load embedded txt files for default theme rather than #defines

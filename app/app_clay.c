@@ -288,7 +288,7 @@ bool ClayBtn(const char* btnText, const char* hotkeyStr, const char* tooltipStr,
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, bool enabled)
+bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
@@ -296,7 +296,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	
-	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
 	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
 	Color32 borderColor     = enabled ? GetThemeColorEx(OptionOnBorder,    btnThemeState) : GetThemeColorEx(OptionOffBorder,    btnThemeState);
 	Color32 nameTextColor   = enabled ? GetThemeColorEx(OptionOnNameText,  btnThemeState) : GetThemeColorEx(OptionOffNameText,  btnThemeState);
@@ -352,7 +352,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
 
-bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 abbreviation, bool enabled)
+bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 abbreviation, bool enabled, bool isSelected)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
@@ -360,7 +360,7 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 ab
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 
-	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
 	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
 	Color32 borderColor     = enabled ? GetThemeColorEx(OptionOnBorder,    btnThemeState) : GetThemeColorEx(OptionOffBorder,    btnThemeState);
 	Color32 nameTextColor   = enabled ? GetThemeColorEx(OptionOnNameText,  btnThemeState) : GetThemeColorEx(OptionOffNameText,  btnThemeState);
