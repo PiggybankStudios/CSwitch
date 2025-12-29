@@ -231,6 +231,12 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
+	InitThreadPool(stdHeap, StrLit("TestThreadPool"), true, true, Gigabytes(4), &app->threadPool);
+	StartThreadPoolThread(&app->threadPool, nullptr);
+	StartThreadPoolThread(&app->threadPool, nullptr);
+	StartThreadPoolThread(&app->threadPool, nullptr);
+	StartThreadPoolThread(&app->threadPool, nullptr);
+	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	
 	InitAppSettings(stdHeap, &app->settings);
@@ -563,6 +569,25 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 	}
 	#endif
+	
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, true))
+	{
+		bool stoppedAThread = false;
+		for (uxx tIndex = 0; tIndex < app->threadPool.threads.length; tIndex++)
+		{
+			ThreadPoolThread* thread = BktArrayGet(ThreadPoolThread, &app->threadPool.threads, tIndex);
+			if (!thread->stopRequested)
+			{
+				thread->stopRequested = true;
+				stoppedAThread = true;
+				break;
+			}
+		}
+		if (!stoppedAThread)
+		{
+			FreeThreadPool(&app->threadPool);
+		}
+	}
 	
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{

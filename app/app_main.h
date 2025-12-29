@@ -256,6 +256,8 @@ struct AppData
 	bool minimalModeEnabled;
 	
 	SpriteSheet testSheet;
+	
+	ThreadPool threadPool;
 };
 
 #endif //  _APP_MAIN_H

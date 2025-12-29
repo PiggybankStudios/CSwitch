@@ -27,10 +27,6 @@ Description:
 #include "struct/struct_all.h"
 #include "ui/ui_all.h"
 
-#if BUILD_INTO_SINGLE_UNIT
-#include "base/base_debug_output_impl.h"
-#endif
-
 #if 0
 #include "Commctrl.h"
 #endif
@@ -471,6 +467,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 	#endif
 	
 	OsMarkStartTime(); //NOTE: We reset this at the end of PlatSappInit
+	
+	InitDebugOutputRouter(nullptr);
 	
 	Arena stdHeapLocal = ZEROED;
 	InitArenaStdHeap(&stdHeapLocal);
