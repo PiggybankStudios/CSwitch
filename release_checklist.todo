@@ -1,0 +1,68 @@
+
+This checklist helps us test CSwitch in a thorough manner by keeping track of all the unique bits of functionality that we think could experience regressions between versions
+By following this list slowly and methodically we can test the majority of major code-paths in CSwitch on each platform to make sure things are working as expected
+A major bug fix or change while we're performing a test should cause an restart of the list, since unintended consequences of a change might cause another feature to break
+This checklist should be run on every platform before every release. Upon successful completion on each platform we should save and label that binary as the official version
+Whenever bugs (especially regressions) are encountered in regular testing we should add items to this list to help track them in the future
+As new features are added, or existing features are changed, this list should be expanded or modified to reflect those changes
+We should track how long each test takes, once we get to 10+ minutes of testing on a single platform, even once practiced, we should prioritize certain tests over others
+
+# Platforms
+	[ ] Windows 10 (Desktop)
+	[ ] Windows 11 (Laptop)
+	[ ] Ubuntu (VirtualBox VM)
+	[ ] TODO: Another linux distro VM
+
+# Test History
+	@ Date - Version Number - Result and Time Taken (per Platform)
+	[ ] -
+
+# Checklist (Should be performed once on each platform)
+	[ ] Change build_config.h: BUILD_INTO_SINGLE_UNIT, BUNDLE_RESOURCES, USE_BUNDLED_RESOURCES, !DEBUG_BUILD, BUILD_SHADERS, !PROFILING_ENABLED
+	[ ] Compile the executable, move it to the Programs folder (or any empty folder), check to make sure it has executable permissions, start the program from explorer
+	[ ] Drag and drop to open file
+	[ ] F6 to open framerate graph, make sure the framerate is reasonable
+	[ ] File -> Open File (also test Ctrl+O)
+	[ ] Ctrl+Tab and Ctrl+Shift+Tab to change tabs
+	[ ] Ctrl+W and Middle Click to close file
+	[ ] Reset file (Confirm dialog should work properly, try Cancel as well!)
+	[ ] Close all files
+	[ ] Open Recent File, restart CSwitch to make sure it's persisting
+	[ ] Clear Recent Files
+	[ ] Delete "%APPDATA%/Roaming/C_Switch/" or "~/.C_Switch" and start CSwitch
+	[ ] For EACH setting, change through menu AND hotkey, check functionality changes, checking "settings.txt" and restarting application to make sure it persists properly
+		[ ] Light Mode (F9)
+		[ ] Small Buttons (F10)
+		[ ] Topmost (Ctrl+T) //Windows only, shouldn't persist, Linux has an option if you right-click on window title
+		[ ] Clip Names on Right
+		[ ] Smooth Scrolling
+		[ ] Option Tooltips
+		[ ] Topbar (F11 and ESC) //shouldn't persist
+		[ ] Custom Theme (open, light/dark mode, restart, clear, and try opening invalid theme)
+	[ ] Make sure tooltips show up on all things and are not missing characters or incorrectly formatted/possitioned
+	[ ] Ctrl+Plus/Minus and Ctrl+Scroll to scale UI (to max and min scale, shouldn't crash, shouldn't horrendously fail to layout)
+	[ ] PageUp/PageDown and Home/End to scroll up/down with keyboard
+	[ ] Click and drag scrollbar
+	[ ] Click in scroll gutter to jump up/down by pages
+	[ ] Does application icon show properly in File Explorer and in taskbar?
+	[ ] Does window title change when opening different files and changing tabs?
+	[ ] Maximize and Minimize application, shouldn't crash or cause any issues
+	[ ] Make the window large, open a file with a lot of options, and check framerate with F6
+	[ ] Make the window small (test recent files submenu when window is skinny)
+	[ ] Check CPU usage of application while idle
+	[ ] Ellipses on file path in topbar should be placed appropriately (in the middle of the folder portion of the path, prioritizing the file name)
+	[ ] Shortened names in recent files dialog should be distinguishable (just enough to be unique), and tooltips should be readable (full path)
+	[ ] Check 0/1 defines work
+	[ ] Check true/false defines work
+	[ ] Check commentable defines work
+	[ ] Open an empty file
+	[ ] Open a binary or large file
+	[ ] Open a file that has spaces in the path
+	[ ] Change the file on disk while it's open in CSwitch
+	[ ] Open multiple instances of CSwitch
+		[ ] Open a new file, check "recent_files.txt" is automatically reloaded in other instance
+		[ ] Check that "settings.txt" are not auto-reloaded, and last changer wins for all options
+	[ ] Lock the computer while CSwitch is running, and then sign back in, shouldn't crash or cause graphical issues
+	[ ] On Laptop: Try changing desktops rapidly until the graphics driver crashes?
+	[ ] Pass a file path on the command-line as an argument
+	[ ] Pass the "-size=300,300" argument (and "-top" on Windows)
