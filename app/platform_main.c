@@ -482,12 +482,14 @@ sapp_desc sokol_main(int argc, char* argv[])
 	FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AllowFreeWithoutSize);
 	// FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AddPaddingForDebug);
 	
+	#if 0
 	char printBuffer[256];
 	BufferPrintLine_D(printBuffer, "There %s %llu program argument%s", PluralEx(argc, "is", "are"), (uxx)argc, Plural(argc, "s"));
 	for (uxx aIndex = 0; aIndex < (uxx)argc; aIndex++)
 	{
 		BufferPrintLine_D(printBuffer, "Arg[%llu]: \"%s\"", aIndex, argv[aIndex]);
 	}
+	#endif
 	
 	//TODO: Is the above true for other platforms??
 	Assert(argc >= 1); //First argument on Windows and Linux (Ubuntu tested) is always the path to our executable

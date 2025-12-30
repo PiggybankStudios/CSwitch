@@ -1105,6 +1105,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		);
 		
 		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
+		#if TARGET_IS_LINUX
+		scrollContainerInput = ScaleV2(scrollContainerInput, LINUX_SCROLL_WHEEL_SCALING);
+		#endif
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 		{
@@ -1146,8 +1149,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						{
 							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
 							{
+								#if TARGET_IS_WINDOWS
 								shouldOpenFile = true;
 								app->isFileMenuOpen = false;
+								#else
+								Notify_W("Open File dialog is not implemented on Linux currently! Please use drag-and-drop or pass the file path as a command-line argument!");
+								#endif
 							} Clay__CloseElement();
 							
 							if (app->recentFiles.length > 0)
@@ -1233,9 +1240,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused"), TARGET_IS_WINDOWS, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
+							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"), true, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 							{
+								#if TARGET_IS_WINDOWS
 								platform->SetWindowTopmost(!appIn->isWindowTopmost);
+								#else
+								Notify_W("Topmost toggling is only implemented for Windows.\nOn some Linux distributions you can toggle this yourself by right-clicking on the window topbar  ");
+								#endif
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight]))

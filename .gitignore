@@ -6,6 +6,7 @@ _data/*.dll
 _data/*.ini
 _data/cswitch
 _data/cswitch_app.so
+_data/cswitch_app_TEMP.so
 _data/libpig_core.so
 _data/old_resources/
 DEBUG_*.png
