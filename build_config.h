@@ -14,7 +14,7 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 0
+#define BUILD_PIG_BUILD 1
 
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
@@ -109,7 +109,7 @@ Description:
 #define BUILD_WITH_IMGUI      0
 #define BUILD_WITH_PHYSX      0
 #define BUILD_WITH_HTTP       0
-#define BUILD_WITH_FREETYPE   0
+#define BUILD_WITH_FREETYPE   1
 
 #define PIG_CORE_NUM_STANDARD_PEOPLE_NAMES 1000
 #define PIG_CORE_NUM_STANDARD_ROCK_NAMES 100

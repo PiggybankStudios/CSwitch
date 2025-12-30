@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 	CliArgList cl_CommonFlags              = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
 	CliArgList cl_LangCFlags               = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags             = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
-	CliArgList clang_CommonFlags           = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
+	CliArgList clang_CommonFlags           = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
 	CliArgList clang_LangCFlags            = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
 	CliArgList clang_LangCppFlags          = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags   = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
