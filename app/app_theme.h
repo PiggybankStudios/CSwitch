@@ -219,7 +219,7 @@ const char* GetThemeStateStr(ThemeState enumValue)
 		default: return UNKNOWN_STR;
 	}
 }
-inline bool TryParseThemeState(Str8 modeStr, ThemeState* themeStateOut)
+bool TryParseThemeState(Str8 modeStr, ThemeState* themeStateOut)
 {
 	if      (StrAnyCaseEquals(modeStr, StrLit("Any")))      { SetOptionalOutPntr(themeStateOut, ThemeState_Any);      return true; }
 	else if (StrAnyCaseEquals(modeStr, StrLit("Default")))  { SetOptionalOutPntr(themeStateOut, ThemeState_Default);  return true; }
@@ -230,7 +230,7 @@ inline bool TryParseThemeState(Str8 modeStr, ThemeState* themeStateOut)
 	else if (StrAnyCaseEquals(modeStr, StrLit("Open")))     { SetOptionalOutPntr(themeStateOut, ThemeState_Open);     return true; }
 	else                                                    { return false; }
 }
-inline bool IsThemeStatePossibleFromFlags(u8 flags, ThemeState state)
+bool IsThemeStatePossibleFromFlags(u8 flags, ThemeState state)
 {
 	if (state == ThemeState_Default || state == ThemeState_Any) { return true; }
 	if (IsFlagSet(flags, ThemeStateFlag_Clickable) && (state == ThemeState_Hovered || state == ThemeState_Pressed)) { return true; }
@@ -239,7 +239,7 @@ inline bool IsThemeStatePossibleFromFlags(u8 flags, ThemeState state)
 	if (IsFlagSet(flags, ThemeStateFlag_Openable) && state == ThemeState_Open) { return true; }
 	return false;
 }
-inline u8 GetThemeStateFlagForState(ThemeState state)
+u8 GetThemeStateFlagForState(ThemeState state)
 {
 	switch (state)
 	{
@@ -375,7 +375,7 @@ ThemeDefEntry* FindThemeDefEntry(ThemeDefinition* theme, ThemeMode mode, bool al
 }
 
 // Returns false if an entry already existed and is getting overridden
-inline bool AddThemeDefEntryColor(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, Color32 color)
+bool AddThemeDefEntryColor(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, Color32 color)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
@@ -398,7 +398,7 @@ inline bool AddThemeDefEntryColor(ThemeDefinition* theme, ThemeMode mode, ThemeS
 	return true;
 }
 // Returns false if an entry already existed and is getting overridden
-inline bool AddThemeDefEntryReference(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, Str8 referenceStr)
+bool AddThemeDefEntryReference(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, Str8 referenceStr)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
@@ -421,7 +421,7 @@ inline bool AddThemeDefEntryReference(ThemeDefinition* theme, ThemeMode mode, Th
 	return true;
 }
 // Returns false if an entry already existed and is getting overridden
-inline bool AddThemeDefEntryFunction(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, ThemeDefFunc function, uxx numArgs, const ThemeDefFuncArgValue* argValues)
+bool AddThemeDefEntryFunction(ThemeDefinition* theme, ThemeMode mode, ThemeState state, Str8 key, ThemeDefFunc function, uxx numArgs, const ThemeDefFuncArgValue* argValues)
 {
 	NotNull(theme);
 	NotNull(theme->arena);
@@ -462,7 +462,7 @@ inline bool AddThemeDefEntryFunction(ThemeDefinition* theme, ThemeMode mode, The
 	return true;
 }
 
-inline bool AddThemeDefEntryPntr(ThemeDefinition* theme, const ThemeDefEntry* entryPntr)
+bool AddThemeDefEntryPntr(ThemeDefinition* theme, const ThemeDefEntry* entryPntr)
 {
 	if (entryPntr->type == ThemeDefEntryType_Color)
 	{

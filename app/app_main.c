@@ -85,7 +85,7 @@ THREAD_POOL_WORK_ITEM_FUNC_DEF(TestWorkItem)
 	for (uxx i = 0; i < numIterations; i++)
 	{
 		PrintLine_D("%.*s worked (%llu/%llu) by %.*s...", StrPrint(allocatedStr), i+1, numIterations, StrPrint(threadName));
-		Sleep(1000);
+		OsSleepMs(1000);
 	}
 	PrintLine_D("%.*s ENDED by %.*s...", StrPrint(allocatedStr), StrPrint(threadName));
 	return Result_Success;
@@ -251,11 +251,13 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
+	#if TARGET_IS_WINDOWS
 	InitThreadPool(stdHeap, StrLit("TestThreadPool"), true, true, Gigabytes(4), &app->threadPool);
 	AddThreadToPool(&app->threadPool);
 	AddThreadToPool(&app->threadPool);
 	AddThreadToPool(&app->threadPool);
 	AddThreadToPool(&app->threadPool);
+	#endif
 	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	
@@ -456,12 +458,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |  Handle Finished WorkItems   |
 	// +==============================+
+	#if TARGET_IS_WINDOWS
 	ThreadPoolWorkItem* finishedWorkItem = nullptr;
 	while ((finishedWorkItem = GetFinishedThreadPoolWorkItem(&app->threadPool)) != nullptr)
 	{
 		PrintLine_O("%.*s FINISHED: %s", StrPrint(finishedWorkItem->subject.string0), GetResultStr(finishedWorkItem->result));
 		FreeThreadPoolWorkItem(&app->threadPool, finishedWorkItem);
 	}
+	#endif
 	
 	// +==============================+
 	// |     Handle Dropped Files     |
@@ -611,6 +615,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |       Thread Pool Test       |
 	// +==============================+
+	#if TARGET_IS_WINDOWS
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, true))
 	{
 		WorkSubject subject = ZEROED;
@@ -653,6 +658,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			FreeThreadPool(&app->threadPool);
 		}
 	}
+	#endif
 	
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{
@@ -1092,7 +1098,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			&appIn->mouse,
 			app->uiScale,
 			nullptr, //TODO: Fill focusedElementPntr
-			CursorShape_Default,
+			MouseCursorShape_Default,
 			OsWindowHandleEmpty,
 			appIn->programTime,
 			&app->tooltips

@@ -23,8 +23,8 @@ void SaveAppSettings()
 	bool saveSuccess = TrySaveAppSettingsTo(&app->settings, settingsFilePath);
 	if (!saveSuccess)
 	{
-		DebugAssert(saveSuccess);
 		NotifyPrint_E("Failed to save settings file! Make sure the folder has write permissions for the current user!\nPath: \"%.*s\"", StrPrint(settingsFilePath));
+		DebugAssert(saveSuccess);
 	}
 	ScratchEnd(scratch);
 }
@@ -460,7 +460,7 @@ void AppSaveRecentFilesList()
 	
 	
 	OsFile fileHandle = ZEROED;
-	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Write, false, &fileHandle))
+	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Create, false, &fileHandle))
 	{
 		VarArrayLoop(&app->recentFiles, rIndex)
 		{

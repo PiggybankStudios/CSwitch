@@ -117,7 +117,7 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 	}
 	
 	uxx numUnresolvedEntries = 1;
-	uxx resolveIter = 0;
+	uxx resolveIter = 0; UNUSED(resolveIter);
 	while (numUnresolvedEntries > 0)
 	{
 		numUnresolvedEntries = 0;

@@ -206,15 +206,20 @@ int main(int argc, char* argv[])
 	CliArgList cl_LangCFlags               = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
 	CliArgList cl_LangCppFlags             = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
 	CliArgList clang_CommonFlags           = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
-	CliArgList clang_LangCFlags            = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags);
+	CliArgList clang_LangCFlags            = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
 	CliArgList clang_LangCppFlags          = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags   = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
 	CliArgList clang_LinuxOrOsxFlags       = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags        = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
+	CliArgList clang_CommonLibraries       = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
 	CliArgList clang_LinuxCommonLibraries  = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
+	CliArgList clang_OsxCommonLibraries    = ZEROED; Fill_clang_OsxCommonLibraries(&clang_OsxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries         = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
 	CliArgList clang_PigCoreLinuxLibraries = ZEROED; Fill_clang_PigCoreLinuxLibraries(&clang_PigCoreLinuxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
 	CliArgList clang_PigCoreOsxLibraries   = ZEROED; Fill_clang_PigCoreOsxLibraries(&clang_PigCoreOsxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
+	//clang_AndroidFlags, clang_AndroidLinkFlags, clang_WasmFlags, clang_WebFlags, clang_OrcaFlags
+	//cl_PlaydateSimulatorCompilerFlags, link_PlaydateSimulatorLinkerFlags, link_PlaydateSimulatorLibraries
+	//gcc_PlaydateDeviceCommonFlags, gcc_PlaydateDeviceCompilerFlags, gcc_PlaydateDeviceLinkerFlags, pdc_CommonFlags
 	
 	AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/app");
 	AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/core");
@@ -262,6 +267,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			
 			#if BUILDING_ON_LINUX
@@ -658,6 +664,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_CommonFlags);
 			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
 			
@@ -736,6 +743,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
 			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &clang_ShaderObjects); }
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
 			
@@ -806,6 +814,7 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &clang_LangCFlags);
 			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
+			AddArgList(&cmd, &clang_CommonLibraries);
 			AddArgList(&cmd, &clang_LinuxCommonLibraries);
 			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
 			AddArgList(&cmd, &clang_ShaderObjects);
@@ -840,13 +849,13 @@ int main(int argc, char* argv[])
 		Str8 dataFolder = StrLit("../_data");
 		PrintLine("Copying files to %.*s...", dataFolder.length, dataFolder.chars);
 		#if BUILDING_ON_WINDOWS
-		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder); }
-		if (BUILD_APP_EXE) { CopyFileToFolder(filenameAppExe, dataFolder); }
-		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppDll, dataFolder); }
+		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder, true); }
+		if (BUILD_APP_EXE) { CopyFileToFolder(filenameAppExe, dataFolder, true); }
+		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppDll, dataFolder, true); }
 		#elif BUILDING_ON_LINUX
-		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_SO), dataFolder); }
-		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder); }
-		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppSo, dataFolder); }
+		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_SO), dataFolder, true); }
+		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder, true); }
+		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppSo, dataFolder, true); }
 		#endif
 	}
 	

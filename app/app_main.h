@@ -257,7 +257,9 @@ struct AppData
 	
 	SpriteSheet testSheet;
 	
+	#if TARGET_IS_WINDOWS
 	ThreadPool threadPool;
+	#endif
 };
 
 #endif //  _APP_MAIN_H

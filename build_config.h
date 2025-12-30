@@ -20,42 +20,39 @@ Description:
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
 #define DEBUG_BUILD  1
-// This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  0
-// The .exe will use the resources_zip.h/c file instead of loading resources from disk
-#define USE_BUNDLED_RESOURCES   0
-// Enables linking with tracy.lib to enable profiling through Tracy
-#define PROFILING_ENABLED       0
 
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   0
+#define BUILD_LINUX   1
+
+
+// This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
+#define BUILD_INTO_SINGLE_UNIT  1
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0
-
-
-// Compiles piggen/main.c
-#define BUILD_PIGGEN   0
-// Generates code using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
-#define RUN_PIGGEN    0
-
-// Builds third_party/tracy/TracyClient.cpp in C++ mode into tracy.obj which will be linked into pig_core.dll
-#define BUILD_TRACY_DLL 0
-
-// This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
-#define BUNDLE_RESOURCES_ZIP            0
-
 // Builds dll_main.c into pig_core.dll and pig_core.lib
-#define BUILD_PIG_CORE_DLL            1
-
+#define BUILD_PIG_CORE_DLL      0
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
 #define BUILD_APP_EXE  1
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
-#define BUILD_APP_DLL  1
-// Runs the %PROJECT_EXE_NAME%.exe
-#define RUN_APP        0
+#define BUILD_APP_DLL  0
+// Compiles piggen/main.c
+#define BUILD_PIGGEN   0
+
+
+// This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
+#define BUNDLE_RESOURCES_ZIP    0
+// The .exe will use the resources_zip.h/c file instead of loading resources from disk
+#define USE_BUNDLED_RESOURCES   0
+
+
+// Builds third_party/tracy/TracyClient.cpp in C++ mode into tracy.obj which will be linked into pig_core.dll
+#define BUILD_TRACY_DLL 0
+// Enables linking with tracy.lib to enable profiling through Tracy
+#define PROFILING_ENABLED       0
+
 
 
 
@@ -71,6 +68,15 @@ Description:
 
 // Tells the sokol_gfx.h include to use OpenGL instead of D3D11 on Windows (NOTE: Smooth resizing only works in OpenGL mode right now!)
 #define PREFER_OPENGL_OVER_D3D11 1
+
+
+
+// Generates code using piggen.exe (you can turn this off if you're not making changes to generated code and you've already generated it once)
+#define RUN_PIGGEN    0
+// Runs the %PROJECT_EXE_NAME%.exe
+#define RUN_APP        0
+
+
 
 #define PROJECT_READABLE_NAME C-Switch
 #define PROJECT_FOLDER_NAME   C_Switch
@@ -101,7 +107,7 @@ Description:
 #define BUILD_WITH_IMGUI      0
 #define BUILD_WITH_PHYSX      0
 #define BUILD_WITH_HTTP       0
-#define BUILD_WITH_FREETYPE   1
+#define BUILD_WITH_FREETYPE   0
 
 #define PIG_CORE_NUM_STANDARD_PEOPLE_NAMES 1000
 #define PIG_CORE_NUM_STANDARD_ROCK_NAMES 100

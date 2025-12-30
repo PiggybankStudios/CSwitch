@@ -66,7 +66,7 @@ plex AppSettings
 	#undef X
 };
 
-inline AppSettingType GetAppSettingTypeAtIndex(uxx settingIndex)
+AppSettingType GetAppSettingTypeAtIndex(uxx settingIndex)
 {
 	const AppSettingType typeArray[] = {
 		#define X(type, cType, nameNt, cName, defaultValue) AppSettingType_##type,
@@ -76,7 +76,7 @@ inline AppSettingType GetAppSettingTypeAtIndex(uxx settingIndex)
 	if (settingIndex >= ArrayCount(typeArray)) { return AppSettingType_None; }
 	return typeArray[settingIndex];
 }
-inline const char* GetAppSettingNameAtIndex(uxx settingIndex)
+const char* GetAppSettingNameAtIndex(uxx settingIndex)
 {
 	const char* nameArray[] = {
 		#define X(type, cType, nameNt, cName, defaultValue) nameNt,
@@ -86,7 +86,7 @@ inline const char* GetAppSettingNameAtIndex(uxx settingIndex)
 	if (settingIndex >= ArrayCount(nameArray)) { return nullptr; }
 	return nameArray[settingIndex];
 }
-inline void* GetAppSettingPntrAtIndex(AppSettings* settings, uxx settingIndex, uxx* sizeOut)
+void* GetAppSettingPntrAtIndex(AppSettings* settings, uxx settingIndex, uxx* sizeOut)
 {
 	const u32 memberOffsets[] = {
 		#define X(type, cType, nameNt, cName, defaultValue) STRUCT_VAR_OFFSET(AppSettings, cName),
@@ -102,7 +102,7 @@ inline void* GetAppSettingPntrAtIndex(AppSettings* settings, uxx settingIndex, u
 	SetOptionalOutPntr(sizeOut, memberSizes[settingIndex]);
 	return ((u8*)settings) + memberOffsets[settingIndex];
 }
-inline uxx GetAppSettingIndexByPntr(const AppSettings* settings, const void* settingPntr)
+uxx GetAppSettingIndexByPntr(const AppSettings* settings, const void* settingPntr)
 {
 	for (uxx sIndex = 0; sIndex < settings->count; sIndex++)
 	{
@@ -111,86 +111,86 @@ inline uxx GetAppSettingIndexByPntr(const AppSettings* settings, const void* set
 	return UINTXX_MAX;
 }
 
-inline Str8* GetAppSettingPntrStr8(AppSettings* settings, uxx settingIndex)
+Str8* GetAppSettingPntrStr8(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_String);
 	return (Str8*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
-inline bool* GetAppSettingPntrBool(AppSettings* settings, uxx settingIndex)
+bool* GetAppSettingPntrBool(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_Bool);
 	return (bool*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
-inline u32* GetAppSettingPntrU32(AppSettings* settings, uxx settingIndex)
+u32* GetAppSettingPntrU32(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_U32);
 	return (u32*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
-inline u64* GetAppSettingPntrU64(AppSettings* settings, uxx settingIndex)
+u64* GetAppSettingPntrU64(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_U64);
 	return (u64*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
-inline i32* GetAppSettingPntrI32(AppSettings* settings, uxx settingIndex)
+i32* GetAppSettingPntrI32(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_I32);
 	return (i32*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
-inline i64* GetAppSettingPntrI64(AppSettings* settings, uxx settingIndex)
+i64* GetAppSettingPntrI64(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_I64);
 	return (i64*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
-inline r32* GetAppSettingPntrR32(AppSettings* settings, uxx settingIndex)
+r32* GetAppSettingPntrR32(AppSettings* settings, uxx settingIndex)
 {
 	NotNull(settings);
 	Assert(GetAppSettingTypeAtIndex(settingIndex) == AppSettingType_R32);
 	return (r32*)GetAppSettingPntrAtIndex(settings, settingIndex, nullptr);
 }
 
-inline Str8 GetAppSettingStr8(const AppSettings* settings, uxx settingIndex)
+Str8 GetAppSettingStr8(const AppSettings* settings, uxx settingIndex)
 {
 	Str8* pntr = GetAppSettingPntrStr8((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : Str8_Empty;
 }
-inline bool GetAppSettingBool(const AppSettings* settings, uxx settingIndex)
+bool GetAppSettingBool(const AppSettings* settings, uxx settingIndex)
 {
 	bool* pntr = GetAppSettingPntrBool((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : false;
 }
-inline u32 GetAppSettingU32(const AppSettings* settings, uxx settingIndex)
+u32 GetAppSettingU32(const AppSettings* settings, uxx settingIndex)
 {
 	u32* pntr = GetAppSettingPntrU32((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : 0;
 }
-inline u64 GetAppSettingU64(const AppSettings* settings, uxx settingIndex)
+u64 GetAppSettingU64(const AppSettings* settings, uxx settingIndex)
 {
 	u64* pntr = GetAppSettingPntrU64((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : 0;
 }
-inline i32 GetAppSettingI32(const AppSettings* settings, uxx settingIndex)
+i32 GetAppSettingI32(const AppSettings* settings, uxx settingIndex)
 {
 	i32* pntr = GetAppSettingPntrI32((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : 0;
 }
-inline i64 GetAppSettingI64(const AppSettings* settings, uxx settingIndex)
+i64 GetAppSettingI64(const AppSettings* settings, uxx settingIndex)
 {
 	i64* pntr = GetAppSettingPntrI64((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : 0;
 }
-inline r32 GetAppSettingR32(const AppSettings* settings, uxx settingIndex)
+r32 GetAppSettingR32(const AppSettings* settings, uxx settingIndex)
 {
 	r32* pntr = GetAppSettingPntrR32((AppSettings*)settings, settingIndex);
 	return (pntr != nullptr) ? *pntr : 0;
 }
 
-inline void SetAppSettingStr8(AppSettings* settings, uxx settingIndex, Str8 value)
+void SetAppSettingStr8(AppSettings* settings, uxx settingIndex, Str8 value)
 {
 	Str8* pntr = GetAppSettingPntrStr8(settings, settingIndex);
 	NotNull(pntr);
@@ -199,41 +199,41 @@ inline void SetAppSettingStr8(AppSettings* settings, uxx settingIndex, Str8 valu
 	if (!IsEmptyStr(*pntr)) { FreeStr8(settings->arena, pntr); }
 	*pntr = AllocStr8(settings->arena, value);
 }
-inline void SetAppSettingStr8Pntr(AppSettings* settings, Str8* settingPntr, Str8 value)
+void SetAppSettingStr8Pntr(AppSettings* settings, Str8* settingPntr, Str8 value)
 {
 	SetAppSettingStr8(settings, GetAppSettingIndexByPntr(settings, settingPntr), value);
 }
-inline void SetAppSettingBool(AppSettings* settings, uxx settingIndex, bool value)
+void SetAppSettingBool(AppSettings* settings, uxx settingIndex, bool value)
 {
 	bool* pntr = GetAppSettingPntrBool(settings, settingIndex);
 	NotNull(pntr);
 	*pntr = value;
 }
-inline void SetAppSettingU32(AppSettings* settings, uxx settingIndex, u32 value)
+void SetAppSettingU32(AppSettings* settings, uxx settingIndex, u32 value)
 {
 	u32* pntr = GetAppSettingPntrU32(settings, settingIndex);
 	NotNull(pntr);
 	*pntr = value;
 }
-inline void SetAppSettingU64(AppSettings* settings, uxx settingIndex, u64 value)
+void SetAppSettingU64(AppSettings* settings, uxx settingIndex, u64 value)
 {
 	u64* pntr = GetAppSettingPntrU64(settings, settingIndex);
 	NotNull(pntr);
 	*pntr = value;
 }
-inline void SetAppSettingI32(AppSettings* settings, uxx settingIndex, i32 value)
+void SetAppSettingI32(AppSettings* settings, uxx settingIndex, i32 value)
 {
 	i32* pntr = GetAppSettingPntrI32(settings, settingIndex);
 	NotNull(pntr);
 	*pntr = value;
 }
-inline void SetAppSettingI64(AppSettings* settings, uxx settingIndex, i64 value)
+void SetAppSettingI64(AppSettings* settings, uxx settingIndex, i64 value)
 {
 	i64* pntr = GetAppSettingPntrI64(settings, settingIndex);
 	NotNull(pntr);
 	*pntr = value;
 }
-inline void SetAppSettingR32(AppSettings* settings, uxx settingIndex, r32 value)
+void SetAppSettingR32(AppSettings* settings, uxx settingIndex, r32 value)
 {
 	r32* pntr = GetAppSettingPntrR32(settings, settingIndex);
 	NotNull(pntr);

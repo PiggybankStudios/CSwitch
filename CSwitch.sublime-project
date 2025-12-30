@@ -45,11 +45,13 @@
 				"build.bat",
 				"build.sh",
 				"build_config.h",
+				"build_script.c",
+				"shader_include.h",
 			],
 		},
 		{
 			"name": "Stb",
-			"path": "core\\third_party\\stb",
+			"path": "core/third_party/stb",
 			"file_include_patterns": [
 				"stb_image.h",
 				"stb_image_write.h",
@@ -61,7 +63,7 @@
 		},
 		{
 			"name": "Sokol",
-			"path": "core\\third_party\\sokol",
+			"path": "core/third_party/sokol",
 			"folder_exclude_patterns": [
 				".github",
 				"tests",
@@ -75,7 +77,7 @@
 		},
 		{
 			"name": "HandmadeMath",
-			"path": "core\\third_party\\handmade_math",
+			"path": "core/third_party/handmade_math",
 			"file_exclude_patterns": [
 				"LICENSE",
 				"README.md",
@@ -83,7 +85,7 @@
 		},
 		{
 			"name": "Clay",
-			"path": "core\\third_party\\clay",
+			"path": "core/third_party/clay",
 			"folder_exclude_patterns": [
 				".github",
 				"bindings",
@@ -99,11 +101,11 @@
 		},
 		{
 			"name": "cimgui",
-			"path": "core\\third_party\\cimgui",
+			"path": "core/third_party/cimgui",
 		},
 		{
 			"name": "miniz",
-			"path": "core\\third_party\\miniz",
+			"path": "core/third_party/miniz",
 			"file_exclude_patterns": [
 				"Changelog.md",
 				"readme.md",
@@ -112,15 +114,15 @@
 		},
 		{
 			"name": "Dear ImGui",
-			"path": "core\\third_party\\imgui",
+			"path": "core/third_party/imgui",
 		},
 		{
 			"name": "FreeType",
-			"path": "core\\third_party\\freetype",
+			"path": "core/third_party/freetype",
 		},
 		{
 			"name": "PlutoSVG",
-			"path": "core\\third_party\\plutosvg",
+			"path": "core/third_party/plutosvg",
 		},
 	],
 	"settings":
@@ -564,6 +566,14 @@
 			"ModifierKey_Control",
 			"ModifierKey_None",
 			"ModifierKey_Shift",
+			"MouseCursorShape_Count",
+			"MouseCursorShape_Default",
+			"MouseCursorShape_IBeam",
+			"MouseCursorShape_Point",
+			"MouseCursorShape_ResizeDiagNwSe",
+			"MouseCursorShape_ResizeDiagSwNe",
+			"MouseCursorShape_ResizeHori",
+			"MouseCursorShape_ResizeVert",
 			"NOTIFICATION_APPEAR_ANIM_TIME",
 			"NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT",
 			"NOTIFICATION_BETWEEN_MARGIN",
@@ -1595,6 +1605,7 @@
 			"const char* GetKeyStr(Key key)",
 			"const char* GetModifierKeyShortStr(ModifierKey enumValue)",
 			"const char* GetModifierKeyStr(ModifierKey enumValue)",
+			"const char* GetMouseCursorShapeStr(MouseCursorShape enumValue)",
 			"const char* GetParsingTokenTypeStr(ParsingTokenType enumValue)",
 			"const char* GetPopupDialogResultStr(PopupDialogResult enumValue)",
 			"const char* GetStandardPeopleName(uxx nameIndex)",
@@ -1973,6 +1984,7 @@
 			"Key",
 			"LineParser",
 			"ModifierKey",
+			"MouseCursorShape",
 			"Mutex",
 			"Notification",
 			"NotificationQueue",
