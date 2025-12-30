@@ -482,14 +482,17 @@ sapp_desc sokol_main(int argc, char* argv[])
 	FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AllowFreeWithoutSize);
 	// FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AddPaddingForDebug);
 	
-	#if TARGET_IS_WINDOWS
-	Assert(argc >= 1); //First argument on windows is always the path to our .exe
-	ParseProgramArgs(stdHeap, (uxx)argc-1, &argv[1], &programArgs);
-	#else
+	char printBuffer[256];
+	BufferPrintLine_D(printBuffer, "There %s %llu program argument%s", PluralEx(argc, "is", "are"), (uxx)argc, Plural(argc, "s"));
+	for (uxx aIndex = 0; aIndex < (uxx)argc; aIndex++)
+	{
+		BufferPrintLine_D(printBuffer, "Arg[%llu]: \"%s\"", aIndex, argv[aIndex]);
+	}
+	
 	//TODO: Is the above true for other platforms??
-	//TODO: We are getting a warning in clang unless we make an explicit cast: warning: passing 'char **' to parameter of type 'const char **' discards qualifiers in nested pointer types
-	ParseProgramArgs(stdHeap, (uxx)argc, (const char**)&argv[0], &programArgs);
-	#endif
+	Assert(argc >= 1); //First argument on Windows and Linux (Ubuntu tested) is always the path to our executable
+	//NOTE: We are getting a warning in clang unless we make an explicit cast: warning: passing 'char **' to parameter of type 'const char **' discards qualifiers in nested pointer types
+	ParseProgramArgs(stdHeap, (uxx)argc-1, (const char**)&argv[1], &programArgs);
 	
 	v2 windowSize = DEFAULT_WINDOW_SIZE;
 	Str8 sizeStr = FindNamedProgramArgStr(&programArgs, StrLit("size"), StrLit("s"), Str8_Empty);

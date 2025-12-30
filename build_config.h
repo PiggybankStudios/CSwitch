@@ -32,12 +32,14 @@ Description:
 #define BUILD_INTO_SINGLE_UNIT  1
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
 #define BUILD_SHADERS 0
+
 // Builds dll_main.c into pig_core.dll and pig_core.lib
 #define BUILD_PIG_CORE_DLL      0
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
 #define BUILD_APP_EXE  1
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
 #define BUILD_APP_DLL  0
+
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
 
