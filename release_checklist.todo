@@ -14,7 +14,28 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] TODO: Another linux distro VM
 
 # Test History
-	@ Date - Version Number - Result and Time Taken (per Platform)
+	@ Date - OS - Version Number - Result and Time Taken (per Platform)
+	[ ] Dec 31st 2025 - Ubuntu1 (Laptop) - 0.8 - 31 minutes
+		[ ] 60fps average but red line in framerate graph is below expected line
+		[ ] Open File doesn't work (as expected), notification shows appropriately
+		[ ] TODO: Ctrl+O to open file doesn't give helpful message about why it's unsupported on Linux
+		[ ] Frame hitch when opening confirmation dialog for "Reset File"? Or maybe just frame hitching every 1 second or so. Maybe file watching is slow?
+		[ ] TODO: Add an option to disable auto-reloading of file (to reduce on file watch perf cost)
+		[ ] Can't open custom theme because missing support for "Open File" dialog
+		[ ] If a custom theme is loaded the theme doesn't bake properly.
+		[ ] TODO: Should we clear the custom theme if the bake fails? The user is likely unable to see anything if it failed so they can't clear the theme (except by deleting or modifying settings.txt manually)
+		[ ] TODO: "Clear Recent Files" doesn't have a tooltip
+		[ ] TODO: "Are you sure you want to clear all 1 recent file entry" is weird english
+		[ ] TODO: Max UI scale is not stopped by reasonable limits based on window size
+		[ ] Application icon doesn't show properly in taskbar on left side
+		[ ] TODO: Should the window title be something truncated like in the Recent Files list? Or maybe file name part first then full path in parenthesis?
+		[ ] 20-30fps when zoomed out and showing all options in cswitch build_config.h
+		[ ] TODO: No lower limit on window size
+		[ ] 12-15% CPU usage while idle
+		[ ] TODO: If the file contains multiple of the same define name then Clay throws an ID error when trying to display duplicate buttons IDs
+		[ ] TODO: The error notification about Open File not working stops sometimes?
+		[ ] TODO: Quotes command-line arguments are not handled properly
+		[ ] TODO: "-top" cmd-line arg is ignored with no notification on Linux
 	[ ] -
 
 # Checklist (Should be performed once on each platform)
@@ -43,7 +64,7 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] Ctrl+Plus/Minus and Ctrl+Scroll to scale UI (to max and min scale, shouldn't crash, shouldn't horrendously fail to layout)
 	[ ] PageUp/PageDown and Home/End to scroll up/down with keyboard
 	[ ] Click and drag scrollbar
-	[ ] Click in scroll gutter to jump up/down by pages
+	[ ] Click in scroll gutter to jump up/down to a particular position
 	[ ] Does application icon show properly in File Explorer and in taskbar?
 	[ ] Does window title change when opening different files and changing tabs?
 	[ ] Maximize and Minimize application, shouldn't crash or cause any issues
@@ -65,4 +86,6 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] Lock the computer while CSwitch is running, and then sign back in, shouldn't crash or cause graphical issues
 	[ ] On Laptop: Try changing desktops rapidly until the graphics driver crashes?
 	[ ] Pass a file path on the command-line as an argument
-	[ ] Pass the "-size=300,300" argument (and "-top" on Windows)
+	[ ] Pass an invalid file path on the command-line as an argument
+	[ ] Pass a file path with quotes on the command-line as an argument (ideally one with spaces that would warrant the quotes)
+	[ ] Pass the "-size=300,600" argument (and "-top" on Windows)
