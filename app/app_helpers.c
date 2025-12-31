@@ -460,7 +460,7 @@ void AppSaveRecentFilesList()
 	
 	
 	OsFile fileHandle = ZEROED;
-	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Create, false, &fileHandle))
+	if (OsOpenFile(scratch, savePath, OsOpenFileMode_Write, false, &fileHandle))
 	{
 		VarArrayLoop(&app->recentFiles, rIndex)
 		{

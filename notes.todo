@@ -52,6 +52,7 @@
 	[ ] Add support for dragging a tab from one instance of CSwitch to the other
 	[ ] Add an button to auto-size the window to perfect fit the contents of the current tab
 	[ ] If we have 2 versions of CSwitch running and there are changes to settings.txt or recent_files.txt format than they will conflict with eachother destructively
+	[ ] When doing Alt+Tab to change programs on Windows, the alt key is held down indefinitely (make "(F)ile" and "(V)iew" text show until we press Alt again)
 	[ ] 
 
 # Finished List:
