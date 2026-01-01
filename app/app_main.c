@@ -84,6 +84,7 @@ THREAD_POOL_WORK_ITEM_FUNC_DEF(TestWorkItem)
 	PrintLine_D("%.*s STARTED by %.*s...", StrPrint(allocatedStr), StrPrint(threadName));
 	for (uxx i = 0; i < numIterations; i++)
 	{
+		if (thread->stopRequested) { return Result_Stopped; }
 		PrintLine_D("%.*s worked (%llu/%llu) by %.*s...", StrPrint(allocatedStr), i+1, numIterations, StrPrint(threadName));
 		OsSleepMs(1000);
 	}
@@ -1732,6 +1733,9 @@ EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 	ScratchBegin2(scratch3, scratch, scratch2);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
 	
+	#if TARGET_IS_WINDOWS
+	FreeThreadPool(&app->threadPool);
+	#endif
 	#if BUILD_WITH_IMGUI
 	igSaveIniSettingsToDisk(app->imgui->io->IniFilename);
 	#endif

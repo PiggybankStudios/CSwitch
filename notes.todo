@@ -8,6 +8,11 @@
 	[ ] Sublime shortcut to open CSwitch on Linux
 	[ ] Does the application depend on any other things being installed on Linux?
 @ All
+	[ ] Add support for multi-threading
+		[X] Thread creation
+		[X] ThreadPool with WorkQueue
+		[ ] ThreadPool on Linux
+	[ ] Save program state to file using ThreadPool and safe file overwrite operations
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
