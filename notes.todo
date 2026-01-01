@@ -1,8 +1,20 @@
 
 # TODO List:
 @ Release!
-	[ ] App icon embed on Linux
+	[ ] Ubuntu application icon support? (works on Mint)
 	[ ] Disable thread pool on Windows release
+	[ ] Ctrl+O explanatory notification message
+	[ ] Add option to disable auto-reloading of file when changed externally
+	( ) Custom theme overrides causes theme baking to fail on Linux?
+	[ ] Clear the custom theme if the baking fails on startup
+	[ ] Add a tooltip to "Clear Recent Files"
+	[ ] Change wording on "Are you sure you want to clear all 1 recent file entry?"
+	[ ] Lower the max UI scale based on the window resolution so we can't have insane scales
+	[ ] Add a lower limit to window size
+	[?] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
+	( ) File with multiple defines of the same name should be handled gracefully
+	[ ] Handle quotes around command-line arguments properly
+	[ ] Notification for "-top" command-line argument not working on Linux
 	[ ] Install a fresh Ubuntu distribution in VirtualBox
 	[ ] Install another linux distribution in VirtualBox
 	[ ] Sublime shortcut to open CSwitch on Linux
