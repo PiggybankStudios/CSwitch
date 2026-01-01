@@ -252,7 +252,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	ClearPointer(appData);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
 	
-	#if TARGET_IS_WINDOWS
+	#if THREAD_POOL_TEST
 	InitThreadPool(stdHeap, StrLit("TestThreadPool"), true, true, Gigabytes(4), &app->threadPool);
 	AddThreadToPool(&app->threadPool);
 	AddThreadToPool(&app->threadPool);
@@ -459,7 +459,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |  Handle Finished WorkItems   |
 	// +==============================+
-	#if TARGET_IS_WINDOWS
+	#if THREAD_POOL_TEST
 	ThreadPoolWorkItem* finishedWorkItem = nullptr;
 	while ((finishedWorkItem = GetFinishedThreadPoolWorkItem(&app->threadPool)) != nullptr)
 	{
@@ -616,7 +616,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |       Thread Pool Test       |
 	// +==============================+
-	#if TARGET_IS_WINDOWS
+	#if THREAD_POOL_TEST
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, true))
 	{
 		WorkSubject subject = ZEROED;
@@ -1025,7 +1025,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 				FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
 				Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
-				ClayId btnId = ToClayId(btnIdStr);
+				ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
 				rec optionRec = GetClayElementDrawRec(btnId);
 				if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
 				{
@@ -1150,11 +1150,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						{
 							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
 							{
-								#if TARGET_IS_WINDOWS
 								shouldOpenFile = true;
+								#if TARGET_IS_WINDOWS
 								app->isFileMenuOpen = false;
-								#else
-								Notify_W("Open File dialog is not implemented on Linux currently! Please use drag-and-drop or pass the file path as a command-line argument!");
 								#endif
 							} Clay__CloseElement();
 							
@@ -1178,14 +1176,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										} Clay__CloseElement();
 									}
 									
-									if (ClayBtn("Clear Recent Files", "", "", app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
+									Str8 clearRecentFilesTooltipStr = PrintInArenaStr(uiArena, "Remove %llu path%s from the \"Recent Files\" list", app->recentFiles.length, Plural(app->recentFiles.length, "s"));
+									if (ClayBtnStr(StrLit("Clear Recent Files"), Str8_Empty, clearRecentFilesTooltipStr, app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
 									{
 										OpenPopupDialog(stdHeap, &app->popup,
-											ScratchPrintStr("Are you sure you want to clear all %llu recent file entr%s", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
+											ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
 											AppClearRecentFilesPopupCallback, nullptr
 										);
 										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
-										AddPopupButton(&app->popup, 2, StrLit("Delete"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+										AddPopupButton(&app->popup, 2, StrLit("Clear Recent Files"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
@@ -1514,21 +1513,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									
 									if (option->type == FileOptionType_Bool)
 									{
-										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->valueBool, isOptionSelected))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, oIndex, option->abbreviation, option->valueBool, isOptionSelected))
 										{
 											ToggleOption(app->currentTab, option);
 										}
 									}
 									else if (option->type == FileOptionType_CommentDefine)
 									{
-										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, option->isUncommented, isOptionSelected))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, oIndex, option->abbreviation, option->isUncommented, isOptionSelected))
 										{
 											ToggleOption(app->currentTab, option);
 										}
 									}
 									else
 									{
-										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, option->abbreviation, false, isOptionSelected))
+										if (ClaySmallOptionBtn(optionsContainerId, buttonWidth, option->name, oIndex, option->abbreviation, false, isOptionSelected))
 										{
 											ToggleOption(app->currentTab, option);
 										}
@@ -1546,21 +1545,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									if (option->type == FileOptionType_Bool)
 									{
 										//NOTE: We have to put a copy of valueStr in uiArena because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-										if (ClayOptionBtn(optionsContainerId, option->name, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool, isOptionSelected))
+										if (ClayOptionBtn(optionsContainerId, option->name, oIndex, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool, isOptionSelected))
 										{
 											ToggleOption(app->currentTab, option);
 										}
 									}
 									else if (option->type == FileOptionType_CommentDefine)
 									{
-										if (ClayOptionBtn(optionsContainerId, option->name, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
+										if (ClayOptionBtn(optionsContainerId, option->name, oIndex, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
 										{
 											ToggleOption(app->currentTab, option);
 										}
 									}
 									else
 									{
-										if (ClayOptionBtn(optionsContainerId, option->name, option->name, StrLit("-"), false, isOptionSelected))
+										if (ClayOptionBtn(optionsContainerId, option->name, oIndex, option->name, StrLit("-"), false, isOptionSelected))
 										{
 											ToggleOption(app->currentTab, option);
 										}
@@ -1694,6 +1693,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (shouldOpenFile || shouldOpenThemeFile)
 	{
+		#if TARGET_IS_WINDOWS
 		Str8 selectedPath = Str8_Empty;
 		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
 		if (openResult == Result_Success)
@@ -1712,6 +1712,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
 		else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
+		#else //!TARGET_IS_WINDOWS
+		Notify_W("Open File dialog is not implemented on Linux currently! Please use drag-and-drop or pass the file path as a command-line argument!");
+		#endif
 	}
 	
 	ScratchEnd(scratch);
@@ -1733,7 +1736,7 @@ EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 	ScratchBegin2(scratch3, scratch, scratch2);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
 	
-	#if TARGET_IS_WINDOWS
+	#if THREAD_POOL_TEST
 	FreeThreadPool(&app->threadPool);
 	#endif
 	#if BUILD_WITH_IMGUI

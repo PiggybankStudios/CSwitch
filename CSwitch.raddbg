@@ -1,5 +1,6 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "core/base/base_notifications_impl.h"
 recent_file: path: "core/os/os_thread_pool.h"
 recent_file: path: "core/os/os_virtual_mem.h"
 recent_file: path: "core/mem/mem_arena.h"
@@ -19,22 +20,23 @@ target:
   executable: "_build/cswitch.exe"
   working_directory: _data
   enabled: 1
+  arguments: "-top"
 }
 theme: "VS (Dark)"
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66202459905668
+  timestamp: 66202644678500
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66202459904734
+  timestamp: 66202640349425
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66202459906635
+  timestamp: 66202644679447
 }
 debug_info:
 {

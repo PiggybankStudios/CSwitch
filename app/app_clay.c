@@ -288,11 +288,11 @@ bool ClayBtn(const char* btnText, const char* hotkeyStr, const char* tooltipStr,
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)
+bool ClayOptionBtn(ClayId containerId, Str8 idStr, uxx optionIndex, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
-	ClayId btnId = ToClayId(btnIdStr);
+	ClayId btnId = ToClayIdEx(btnIdStr, optionIndex);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 	
@@ -352,11 +352,11 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, Str8 nameStr, Str8 valueStr, 
 	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
 }
 
-bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, Str8 abbreviation, bool enabled, bool isSelected)
+bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, uxx optionIndex, Str8 abbreviation, bool enabled, bool isSelected)
 {
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
-	ClayId btnId = ToClayId(btnIdStr);
+	ClayId btnId = ToClayIdEx(btnIdStr, optionIndex);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
 	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
 
