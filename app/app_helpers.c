@@ -270,7 +270,7 @@ bool AppCreateFonts()
 		bakeResult = TryBakeFontAtlas(&newUiFont, app->uiFontSize, UI_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
 		if (bakeResult != Result_Success && bakeResult != Result_Partial)
 		{
-			Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
+			Assert(bakeResult == Result_Success || bakeResult == Result_Partial || bakeResult == Result_NotEnoughSpace);
 			FreeFont(&newUiFont);
 			return false;
 		}
@@ -317,7 +317,7 @@ bool AppCreateFonts()
 		bakeResult = TryBakeFontAtlas(&newMainFont, app->mainFontSize, MAIN_FONT_STYLE, 128, 1024, ArrayCount(fontCharRanges), &fontCharRanges[0]);
 		if (bakeResult != Result_Success && bakeResult != Result_Partial)
 		{
-			Assert(bakeResult == Result_Success || bakeResult == Result_Partial);
+			Assert(bakeResult == Result_Success || bakeResult == Result_Partial || bakeResult == Result_NotEnoughSpace);
 			FreeFont(&newMainFont);
 			FreeFont(&newUiFont);
 			return false;
@@ -363,14 +363,20 @@ bool AppChangeFontSize(bool increase)
 {
 	if (increase)
 	{
-		app->uiFontSize += 1;
-		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-		app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
-		if (!AppCreateFonts())
+		NotNull(appIn);
+		//NOTE: This max is likely too large if the window is fullscreen but when the window is small it will make sure the font size doesn't get so large that the UI breaks down
+		r32 maxFontSize = MinR32((r32)appIn->screenSize.Width/12.0f, (r32)appIn->screenSize.Height/12.0f);
+		if (app->uiFontSize < maxFontSize)
 		{
-			app->uiFontSize -= 1;
-			app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+			app->uiFontSize += 1;
 			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+			app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+			if (!AppCreateFonts())
+			{
+				app->uiFontSize -= 1;
+				app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+				app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+			}
 		}
 		return true;
 	}

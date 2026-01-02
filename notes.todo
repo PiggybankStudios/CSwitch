@@ -10,7 +10,7 @@
 	[X] Add option to disable auto-reloading of file when changed externally
 	( ) Custom theme overrides causes theme baking to fail on Linux?
 	[X] Clear the custom theme if the baking fails on startup
-	[ ] Lower the max UI scale based on the window resolution so we can't have insane scales
+	[X] Lower the max UI scale based on the window resolution so we can't have insane scales
 	(X) File with multiple defines of the same name should be handled gracefully
 	[ ] Handle quotes around command-line arguments properly
 	[ ] Ubuntu application icon support? (works on Mint)
