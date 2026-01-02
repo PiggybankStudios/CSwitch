@@ -325,7 +325,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 		SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
 		SaveAppSettings();
 	}
-	AppBakeTheme();
+	AppBakeTheme(true);
 	
 	InitVarArray(RecentFile, &app->recentFiles, stdHeap);
 	AppLoadRecentFilesList();
@@ -499,7 +499,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			WriteLine_D("Default theme file write time changed. Auto-reloading!");
 			if (AppTryLoadDefaultTheme(false)) { Notify_D("Reloaded default theme"); }
 			else { Notify_W("Failed to reload default theme!"); }
-			AppBakeTheme();
+			AppBakeTheme(false);
 			
 			refreshScreen = true;
 		}
@@ -509,7 +509,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			ClearFileWatchChanged(&app->fileWatches, app->userThemeFileWatchId);
 			WriteLine_D("User theme file write time changed. Auto-reloading!");
 			AppLoadUserTheme();
-			AppBakeTheme();
+			AppBakeTheme(false);
 			refreshScreen = true;
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
@@ -708,7 +708,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		app->currentThemeMode = otherThemeMode;
 		SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
 		SaveAppSettings();
-		AppBakeTheme();
+		AppBakeTheme(false);
 	}
 	
 	// +==============================+
@@ -1238,7 +1238,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								app->currentThemeMode = otherThemeMode;
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
 								SaveAppSettings();
-								AppBakeTheme();
+								AppBakeTheme(false);
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
@@ -1295,7 +1295,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
 								SaveAppSettings();
 								AppLoadUserTheme();
-								AppBakeTheme();
+								AppBakeTheme(false);
 							} Clay__CloseElement();
 							
 							#if DEBUG_BUILD
@@ -1713,7 +1713,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				if (AppLoadUserTheme())
 				{
 					SaveAppSettings();
-					AppBakeTheme();
+					AppBakeTheme(true);
 				}
 			}
 		}

@@ -636,8 +636,8 @@ bool AppLoadUserTheme()
 			else
 			{
 				NotifyPrint_E("Couldn't parse theme file: %s", GetResultStr(parseResult));
+				FreeThemeDefinition(&newUserTheme);
 			}
-			FreeThemeDefinition(&newUserTheme);
 		}
 	}
 	else
@@ -648,12 +648,13 @@ bool AppLoadUserTheme()
 	return loadedSuccessfully;
 }
 
-void AppBakeTheme()
+void AppBakeTheme(bool clearUserThemeIfBakeFails)
 {
 	ScratchBegin(scratch);
 	
 	ThemeDefinition combinedTheme = ZEROED;
-	if (!IsEmptyStr(app->settings.userThemePath))
+	bool haveUserThemeOverrides = (!IsEmptyStr(app->settings.userThemePath) && app->userThemeOverrides.arena != nullptr);
+	if (haveUserThemeOverrides)
 	{
 		InitThemeDefinition(scratch, &combinedTheme, MaxUXX(app->defaultTheme.entries.length, app->userThemeOverrides.entries.length));
 		CombineThemeDefinitions(&app->defaultTheme, &app->userThemeOverrides, &combinedTheme);
@@ -672,6 +673,13 @@ void AppBakeTheme()
 	else
 	{
 		NotifyPrint_E("Failed to bake theme: %s", GetResultStr(bakeResult));
+		if (clearUserThemeIfBakeFails && haveUserThemeOverrides)
+		{
+			SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
+			FreeThemeDefinition(&app->userThemeOverrides);
+			SaveAppSettings();
+			AppBakeTheme(false);
+		}
 	}
 	
 	ScratchEnd(scratch);

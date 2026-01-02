@@ -472,6 +472,10 @@ bool AddThemeDefEntryPntr(ThemeDefinition* theme, const ThemeDefEntry* entryPntr
 	{
 		return AddThemeDefEntryReference(theme, entryPntr->mode, entryPntr->state, entryPntr->key, entryPntr->referenceKey);
 	}
+	else if (entryPntr->type == ThemeDefEntryType_Function)
+	{
+		return AddThemeDefEntryFunction(theme, entryPntr->mode, entryPntr->state, entryPntr->key, entryPntr->function, entryPntr->functionArgCount, &entryPntr->functionArgValues[0]);
+	}
 	else { Assert(false); return false; }
 }
 

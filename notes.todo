@@ -9,7 +9,7 @@
 	[X] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
 	[X] Add option to disable auto-reloading of file when changed externally
 	( ) Custom theme overrides causes theme baking to fail on Linux?
-	[ ] Clear the custom theme if the baking fails on startup
+	[X] Clear the custom theme if the baking fails on startup
 	[ ] Lower the max UI scale based on the window resolution so we can't have insane scales
 	(X) File with multiple defines of the same name should be handled gracefully
 	[ ] Handle quotes around command-line arguments properly
@@ -24,6 +24,7 @@
 		[X] ThreadPool with WorkQueue
 		[ ] ThreadPool on Linux
 	[ ] Save program state to file using ThreadPool and safe file overwrite operations
+	[ ] If the user theme file is invalid when CSwitch opens it doesn't clear the user theme but it also doesn't watch it for changes to trigger reload
 	[ ] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
 	[ ] Add deduplication to the notification system. Also maybe a backoff of some kind to keep any kind of notification loop from spamming notifications constantly
 	( ) Figure out how to render while resizing when using D3D11!

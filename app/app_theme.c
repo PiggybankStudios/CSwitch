@@ -252,14 +252,17 @@ Result BakeTheme(ThemeDefinition* themeDef, ThemeMode mode, BakedTheme* themeOut
 					}
 					else
 					{
-						NotifyPrint_E("Baking Theme that is missing an entry for \"%.*s\" %s", StrPrint(enumValueName), GetThemeStateStr(themeState));
+						NotifyPrint_E("Baked Theme is missing an entry for \"%.*s\" %s", StrPrint(enumValueName), GetThemeStateStr(themeState));
 						themeOut->entries[cIndex].colors[sIndex] = Black;
+						result = Result_MissingItems;
+						break;
 					}
 				}
 			}
+			if (result != Result_None) { break; }
 		}
 		
-		result = Result_Success;
+		if (result == Result_None) { result = Result_Success; }
 	}
 	
 	return result;
