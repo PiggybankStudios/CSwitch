@@ -6,8 +6,8 @@
 	[X] Add a tooltip to "Clear Recent Files"
 	[X] Change wording on "Are you sure you want to clear all 1 recent file entry?"
 	[X] Notification for "-top" command-line argument not working on Linux
-	[?] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
-	[ ] Add option to disable auto-reloading of file when changed externally
+	[X] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
+	[X] Add option to disable auto-reloading of file when changed externally
 	( ) Custom theme overrides causes theme baking to fail on Linux?
 	[ ] Clear the custom theme if the baking fails on startup
 	[ ] Lower the max UI scale based on the window resolution so we can't have insane scales

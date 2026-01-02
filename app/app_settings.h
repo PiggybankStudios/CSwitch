@@ -24,7 +24,8 @@ Description:
 	X(Bool, bool, "SmoothScrollingDisabled", smoothScrollingDisabled, false) \
 	X(Bool, bool, "OptionTooltipsDisabled", optionTooltipsDisabled, false)   \
 	X(String, Str8, "ThemeMode", themeMode, StrLit("Dark"))                  \
-	X(String, Str8, "UserThemePath", userThemePath, StrLit(""))
+	X(String, Str8, "UserThemePath", userThemePath, StrLit(""))              \
+	X(Bool, bool, "DontAutoReloadFile", dontAutoReloadFile, false)
 
 typedef enum AppSettingType AppSettingType;
 enum AppSettingType

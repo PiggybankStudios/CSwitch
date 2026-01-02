@@ -381,16 +381,19 @@ void AppReloadFileTab(uxx tabIndex)
 bool AppCheckForFileChanges()
 {
 	bool didAnyFileChange = false;
-	VarArrayLoop(&app->tabs, tIndex)
+	if (!app->settings.dontAutoReloadFile)
 	{
-		VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
-		if (HasFileWatchChangedWithDelay(&app->fileWatches, tab->fileWatchId, FILE_RELOAD_DELAY))
+		VarArrayLoop(&app->tabs, tIndex)
 		{
-			ClearFileWatchChanged(&app->fileWatches, tab->fileWatchId);
-			PrintLine_N("File[%llu] changed externally! Reloading...", (u64)tIndex);
-			AppReloadFileTab(tIndex);
-			didAnyFileChange = true;
-			break; //NOTE: We only reload a single file a frame, because reload may fail and remove the tab from the array, so continuing iteration is dangerous
+			VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
+			if (HasFileWatchChangedWithDelay(&app->fileWatches, tab->fileWatchId, FILE_RELOAD_DELAY))
+			{
+				ClearFileWatchChanged(&app->fileWatches, tab->fileWatchId);
+				PrintLine_N("File[%llu] changed externally! Reloading...", tIndex);
+				AppReloadFileTab(tIndex);
+				didAnyFileChange = true;
+				break; //NOTE: We only reload a single file a frame, because reload may fail and remove the tab from the array, so continuing iteration is dangerous
+			}
 		}
 	}
 	return didAnyFileChange;

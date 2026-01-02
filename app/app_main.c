@@ -1208,6 +1208,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
 							} Clay__CloseElement();
 							
+							//TODO: Add an icon for this option
+							if (ClayBtnStr(ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"), Str8_Empty, StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes"), (app->tabs.length > 0), nullptr))
+							{
+								app->settings.dontAutoReloadFile = !app->settings.dontAutoReloadFile;
+								SaveAppSettings();
+							} Clay__CloseElement();
+							
 							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
 							{
 								AppCloseFileTab(app->currentTabIndex);
