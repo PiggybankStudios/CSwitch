@@ -1165,7 +1165,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										RecentFile* recentFile = VarArrayGet(RecentFile, &app->recentFiles, rIndex-1);
 										Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
 										bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
-										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), recentFile->path, !isOpenFile && recentFile->fileExists, nullptr))
+										Str8 tooltipStr = PrintInArenaStr(uiArena, "%.*s%s", StrPrint(recentFile->path), recentFile->fileExists ? "" : " (MISSING)");
+										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), tooltipStr, !isOpenFile && recentFile->fileExists, nullptr))
 										{
 											FileTab* newTab = AppOpenFileTab(recentFile->path);
 											if (newTab != nullptr)

@@ -319,41 +319,46 @@ void UpdateFileTabOptions(FileTab* tab)
 //NOTE: This function automatically sets the tab as the currentTab (it will also focus an existing tab if the file is already open)
 FileTab* AppOpenFileTab(FilePath filePath)
 {
-	FileTab* existingTab = AppFindTabForPath(filePath);
+	ScratchBegin(scratch);
+	FileTab* result = nullptr;
+	
+	FilePath fullPath = OsGetFullPath(scratch, filePath);
+	FileTab* existingTab = AppFindTabForPath(fullPath);
 	if (existingTab != nullptr)
 	{
 		uxx existingTabIndex = 0;
 		bool foundTabIndex = VarArrayGetIndexOf(FileTab, &app->tabs, existingTab, &existingTabIndex);
 		Assert(foundTabIndex);
 		AppChangeTab(existingTabIndex);
-		return existingTab;
+		result = existingTab;
+	}
+	else
+	{
+		Str8 fileContents = Str8_Empty;
+		bool openResult = OsReadTextFile(fullPath, stdHeap, &fileContents);
+		if (!openResult) { NotifyPrint_W("Failed to open file at \"%.*s\"", StrPrint(fullPath)); return nullptr; }
+		
+		FileTab* newTab = VarArrayAdd(FileTab, &app->tabs);
+		NotNull(newTab);
+		ClearPointer(newTab);
+		newTab->selectedOptionIndex = -1;
+		newTab->fileContents = fileContents;
+		newTab->originalFileContents = AllocStr8(stdHeap, newTab->fileContents);
+		newTab->isFileChangedFromOriginal = false;
+		newTab->filePath = AllocStr8(stdHeap, fullPath);
+		InitVarArray(FileOption, &newTab->fileOptions, stdHeap);
+		
+		UpdateFileTabOptions(newTab);
+		
+		newTab->fileWatchId = AddFileWatch(&app->fileWatches, newTab->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
+		
+		AppChangeTab(app->tabs.length-1);
+		result = newTab;
 	}
 	
-	Str8 fileContents = Str8_Empty;
-	bool openResult = OsReadTextFile(filePath, stdHeap, &fileContents);
-	if (!openResult) { NotifyPrint_W("Failed to open file at \"%.*s\"", StrPrint(filePath)); return nullptr; }
-	
-	FileTab* newTab = VarArrayAdd(FileTab, &app->tabs);
-	NotNull(newTab);
-	ClearPointer(newTab);
-	newTab->selectedOptionIndex = -1;
-	//TODO: Should we maybe check if the file is already open in an existing tab?
-	// if (app->isFileOpen) { AppCloseFile(); }
-	newTab->fileContents = fileContents;
-	newTab->originalFileContents = AllocStr8(stdHeap, newTab->fileContents);
-	newTab->isFileChangedFromOriginal = false;
-	newTab->filePath = AllocStr8(stdHeap, filePath);
-	InitVarArray(FileOption, &newTab->fileOptions, stdHeap);
-	
-	UpdateFileTabOptions(newTab);
-	
-	newTab->fileWatchId = AddFileWatch(&app->fileWatches, newTab->filePath, CHECK_FILE_WRITE_TIME_PERIOD);
-	
-	AppChangeTab(app->tabs.length-1);
-	
-	AppRememberRecentFile(filePath);
-	
-	return newTab;
+	if (result != nullptr) { AppRememberRecentFile(fullPath); }
+	ScratchEnd(scratch);
+	return result;
 }
 
 void AppReloadFileTab(uxx tabIndex)

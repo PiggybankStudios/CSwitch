@@ -496,7 +496,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 	}
 	#endif
 	
-	//TODO: Is the above true for other platforms??
+	//TODO: Is the below true for other platforms??
 	Assert(argc >= 1); //First argument on Windows and Linux (Ubuntu tested) is always the path to our executable
 	//NOTE: We are getting a warning in clang unless we make an explicit cast: warning: passing 'char **' to parameter of type 'const char **' discards qualifiers in nested pointer types
 	ParseProgramArgs(stdHeap, (uxx)argc-1, (const char**)&argv[1], &programArgs);

@@ -116,14 +116,14 @@
 			"name": "Dear ImGui",
 			"path": "core/third_party/imgui",
 		},
-		{
-			"name": "FreeType",
-			"path": "core/third_party/freetype",
-		},
-		{
-			"name": "PlutoSVG",
-			"path": "core/third_party/plutosvg",
-		},
+		// {
+		// 	"name": "FreeType",
+		// 	"path": "core/third_party/freetype",
+		// },
+		// {
+		// 	"name": "PlutoSVG",
+		// 	"path": "core/third_party/plutosvg",
+		// },
 	],
 	"settings":
 	{
