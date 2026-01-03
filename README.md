@@ -9,11 +9,11 @@ A simple project to turn on/off defines in a C/C++ header file quickly. This pro
 5. Clicking a button will toggle the value between 1 and 0, or true and false (and immediately write to the file)
 
 # Screenshots
-![Screenshot 1](/_media/screenshot8.png)
+![Screenshot 1](/_media/screenshot9.png)
 
-![Screenshot 2](/_media/screenshot7.png)
+![Screenshot 2](/_media/screenshot10.png)
 
-![Screenshot 3](/_media/screenshot6.png)
+![Screenshot 3](/_media/screenshot12.png)
 
 # Hotkeys
 - **Ctrl+W** = Close Current Tab
