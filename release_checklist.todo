@@ -18,25 +18,31 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] Dec 31st 2025 - Ubuntu1 (Laptop) - 0.8 - 31 minutes
 		[ ] 60fps average but red line in framerate graph is below expected line
 		[ ] Open File doesn't work (as expected), notification shows appropriately
-		[X] TODO: Ctrl+O to open file doesn't give helpful message about why it's unsupported on Linux
+		[X] TODO Ctrl+O to open file doesn't give helpful message about why it's unsupported on Linux
 		[ ] Frame hitch when opening confirmation dialog for "Reset File"? Or maybe just frame hitching every 1 second or so. Maybe file watching is slow?
-		[X] TODO: Add an option to disable auto-reloading of file (to reduce on file watch perf cost)
+		[X] TODO Add an option to disable auto-reloading of file (to reduce on file watch perf cost)
 		[ ] Can't open custom theme because missing support for "Open File" dialog
 		[X] If a custom theme is loaded the theme doesn't bake properly.
-		[X] TODO: Should we clear the custom theme if the bake fails? The user is likely unable to see anything if it failed so they can't clear the theme (except by deleting or modifying settings.txt manually)
-		[X] TODO: "Clear Recent Files" doesn't have a tooltip
-		[X] TODO: "Are you sure you want to clear all 1 recent file entry" is weird english
-		[X] TODO: Max UI scale is not stopped by reasonable limits based on window size
+		[X] TODO Should we clear the custom theme if the bake fails? The user is likely unable to see anything if it failed so they can't clear the theme (except by deleting or modifying settings.txt manually)
+		[X] TODO "Clear Recent Files" doesn't have a tooltip
+		[X] TODO "Are you sure you want to clear all 1 recent file entry" is weird english
+		[X] TODO Max UI scale is not stopped by reasonable limits based on window size
 		[-] Application icon doesn't show properly in taskbar on left side
-		[X] TODO: Should the window title be something truncated like in the Recent Files list? Or maybe file name part first then full path in parenthesis?
+		[X] TODO Should the window title be something truncated like in the Recent Files list? Or maybe file name part first then full path in parenthesis?
 		[ ] 20-30fps when zoomed out and showing all options in cswitch build_config.h
-		[X] TODO: No lower limit on window size
+		[X] TODO No lower limit on window size
 		[ ] 12-15% CPU usage while idle
-		[X] TODO: If the file contains multiple of the same define name then Clay throws an ID error when trying to display duplicate buttons IDs
-		[X] TODO: The error notification about Open File not working stops sometimes?
-		[X] TODO: Quotes command-line arguments are not handled properly
-		[X] TODO: "-top" cmd-line arg is ignored with no notification on Linux
-	[ ] -
+		[X] TODO If the file contains multiple of the same define name then Clay throws an ID error when trying to display duplicate buttons IDs
+		[X] TODO The error notification about Open File not working stops sometimes?
+		[X] TODO Quotes command-line arguments are not handled properly
+		[X] TODO "-top" cmd-line arg is ignored with no notification on Linux
+	[ ] Jan 2nd 2026 - LinuxMintClean (Desktop) - 0.8 RC2 - 20 minutes
+		[ ] "0" and "1" value text is sometimes misaligned on the right
+		[ ] "Ctrl+E" doesn't work exactly how I expect. Should we update recent files ordering when closing a file?
+		[ ] Large hitch when opening confirmation dialog still
+		( ) Option tooltips are broken?
+		[ ] 25-30% CPU usage while idle?
+		[ ] 
 
 # Checklist (Should be performed once on each platform)
 	[ ] Change build_config.h: BUILD_INTO_SINGLE_UNIT, BUNDLE_RESOURCES, USE_BUNDLED_RESOURCES, !DEBUG_BUILD, BUILD_SHADERS, !PROFILING_ENABLED
@@ -45,7 +51,7 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] F6 to open framerate graph, make sure the framerate is reasonable
 	[ ] File -> Open File (also test Ctrl+O)
 	[ ] Ctrl+Tab and Ctrl+Shift+Tab to change tabs
-	[ ] Ctrl+W and Middle Click to close file
+	[ ] Ctrl+W and Middle Click to close file, Ctrl+E to re-open file(s)
 	[ ] Reset file (Confirm dialog should work properly, try Cancel as well!)
 	[ ] Close all files
 	[ ] Open Recent File, restart CSwitch to make sure it's persisting
@@ -61,10 +67,12 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 		[ ] Topbar (F11 and ESC) //shouldn't persist
 		[ ] Custom Theme (open, light/dark mode, restart, clear, and try opening invalid theme)
 	[ ] Make sure tooltips show up on all things and are not missing characters or incorrectly formatted/possitioned
-	[ ] Ctrl+Plus/Minus and Ctrl+Scroll to scale UI (to max and min scale, shouldn't crash, shouldn't horrendously fail to layout)
+	[ ] Ctrl+Plus/Minus, Ctrl+Scroll and Ctrl+0 to scale UI (to max and min scale, shouldn't crash, shouldn't horrendously fail to layout)
 	[ ] PageUp/PageDown and Home/End to scroll up/down with keyboard
 	[ ] Click and drag scrollbar
 	[ ] Click in scroll gutter to jump up/down to a particular position
+	[ ] Arrow Up/Down to move keyboard selection. Enter to toggle options.
+	[ ] Hold Down to rapidly move to options (shouldn't loop around the end/beginning unless you repress the arrow key)
 	[ ] Does application icon show properly in File Explorer and in taskbar?
 	[ ] Does window title change when opening different files and changing tabs?
 	[ ] Maximize and Minimize application, shouldn't crash or cause any issues
