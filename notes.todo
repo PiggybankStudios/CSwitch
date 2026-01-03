@@ -8,16 +8,17 @@
 	[X] Notification for "-top" command-line argument not working on Linux
 	[X] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
 	[X] Add option to disable auto-reloading of file when changed externally
-	( ) Custom theme overrides causes theme baking to fail on Linux?
+	(X) Custom theme overrides causes theme baking to fail on Linux?
+	(X) Command-line arguments with quotes and spaces don't work on Linux?
 	[X] Clear the custom theme if the baking fails on startup
 	[X] Lower the max UI scale based on the window resolution so we can't have insane scales
 	(X) File with multiple defines of the same name should be handled gracefully
 	[X] Handle quotes around command-line arguments properly
 	[ ] Ubuntu application icon support? (works on Mint)
-	[ ] Install a fresh Ubuntu distribution in VirtualBox
-	[ ] Install another linux distribution in VirtualBox
-	[ ] Sublime shortcut to open CSwitch on Linux
-	[ ] Does the application depend on any other things being installed on Linux?
+	[X] Install a fresh Ubuntu distribution in VirtualBox
+	[X] Install another linux distribution in VirtualBox
+	[X] Sublime shortcut to open CSwitch on Linux
+	[X] Does the application depend on any other things being installed on Linux?
 @ All
 	[ ] Add support for multi-threading
 		[X] Thread creation
@@ -31,6 +32,7 @@
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
+	[ ] Should we save our "recent_files.txt" and "settings.txt" to "~/.config/C_Switch" instead of "~/.C_Switch"?
 	[!] "Open File" dialog on Linux
 	[ ] Recent Files list should be based on full path of the file, not on relative path
 	[ ] If the most recently opened file doesn't exist we should open the next most recent file? Right now we throw a warning notification
