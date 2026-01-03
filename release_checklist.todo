@@ -42,7 +42,7 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 		[ ] Large hitch when opening confirmation dialog still
 		( ) Option tooltips are broken?
 		[ ] 25-30% CPU usage while idle?
-		[ ] 
+	[ ] 
 
 # Checklist (Should be performed once on each platform)
 	[ ] Change build_config.h: BUILD_INTO_SINGLE_UNIT, BUNDLE_RESOURCES, USE_BUNDLED_RESOURCES, !DEBUG_BUILD, BUILD_SHADERS, !PROFILING_ENABLED

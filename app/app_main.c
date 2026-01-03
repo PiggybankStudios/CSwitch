@@ -1649,7 +1649,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			}
 			#endif
 			
-			app->testTooltipId = SoftRegisterTooltip(&app->tooltips, app->testTooltipId, Str8_Empty, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
+			app->testTooltipId = SoftRegisterTooltip(&app->tooltips, app->testTooltipId, Str8_Empty, 0, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 			
 			RegisteredTooltip* hoverTooltip = TryFindRegisteredTooltip(&app->tooltips, app->tooltips.hoverTooltipId);
 			Str8 hoverTooltipStr = (hoverTooltip != nullptr) ? hoverTooltip->displayStr : Str8_Empty;

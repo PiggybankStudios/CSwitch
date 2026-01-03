@@ -26,17 +26,17 @@ theme: "VS (Dark)"
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch.pdb"
-  timestamp: 66202813125898
+  timestamp: 66202877051839
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/pig_core.pdb"
-  timestamp: 66202811784418
+  timestamp: 66202877050927
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/_build/cswitch_app.pdb"
-  timestamp: 66202813126897
+  timestamp: 66202877052801
 }
 debug_info:
 {
