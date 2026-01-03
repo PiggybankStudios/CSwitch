@@ -40,8 +40,10 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 		[ ] "0" and "1" value text is sometimes misaligned on the right
 		[ ] "Ctrl+E" doesn't work exactly how I expect. Should we update recent files ordering when closing a file?
 		[ ] Large hitch when opening confirmation dialog still
-		( ) Option tooltips are broken?
+		(X) Option tooltips are broken?
 		[ ] 25-30% CPU usage while idle?
+	[ ] Jan 3rd 2026 - Windows 10 (Desktop) - 0.8 RC3 - 12 minutes
+		[ ] No new concerns
 	[ ] 
 
 # Checklist (Should be performed once on each platform)
@@ -49,7 +51,7 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] Compile the executable, move it to the Programs folder (or any empty folder), check to make sure it has executable permissions, start the program from explorer
 	[ ] Drag and drop to open file
 	[ ] F6 to open framerate graph, make sure the framerate is reasonable
-	[ ] File -> Open File (also test Ctrl+O)
+	[ ] File -> Open... (also test Ctrl+O)
 	[ ] Ctrl+Tab and Ctrl+Shift+Tab to change tabs
 	[ ] Ctrl+W and Middle Click to close file, Ctrl+E to re-open file(s)
 	[ ] Reset file (Confirm dialog should work properly, try Cancel as well!)
