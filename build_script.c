@@ -161,6 +161,7 @@ int main(int argc, char* argv[])
 	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
 	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
 	bool BUILD_WITH_FREETYPE      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
+	bool BUILD_WITH_GTK           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
 	
 	free(buildConfigContents.chars);
 	
@@ -212,7 +213,7 @@ int main(int argc, char* argv[])
 	CliArgList clang_LinuxOrOsxFlags       = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
 	CliArgList cl_CommonLinkerFlags        = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_CommonLibraries       = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
-	CliArgList clang_LinuxCommonLibraries  = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP);
+	CliArgList clang_LinuxCommonLibraries  = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP, BUILD_WITH_GTK);
 	CliArgList clang_OsxCommonLibraries    = ZEROED; Fill_clang_OsxCommonLibraries(&clang_OsxCommonLibraries, BUILD_WITH_SOKOL_APP);
 	CliArgList cl_PigCoreLibraries         = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
 	CliArgList clang_PigCoreLinuxLibraries = ZEROED; Fill_clang_PigCoreLinuxLibraries(&clang_PigCoreLinuxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
