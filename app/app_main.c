@@ -1151,7 +1151,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
 							{
 								shouldOpenFile = true;
-								#if TARGET_IS_WINDOWS
+								#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
 								app->isFileMenuOpen = false;
 								#endif
 							} Clay__CloseElement();
@@ -1701,7 +1701,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (shouldOpenFile || shouldOpenThemeFile)
 	{
-		#if TARGET_IS_WINDOWS || TARGET_IS_LINUX
+		#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
 		Str8 selectedPath = Str8_Empty;
 		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
 		if (openResult == Result_Success)
