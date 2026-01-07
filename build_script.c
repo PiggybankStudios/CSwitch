@@ -210,7 +210,7 @@ int main(int argc, char* argv[])
 	CliArgList clang_LangCFlags            = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
 	CliArgList clang_LangCppFlags          = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
 	CliArgList clang_LangObjectiveCFlags   = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
-	CliArgList clang_LinuxOrOsxFlags       = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD);
+	CliArgList clang_LinuxOrOsxFlags       = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD, BUILD_WITH_GTK);
 	CliArgList cl_CommonLinkerFlags        = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
 	CliArgList clang_CommonLibraries       = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
 	CliArgList clang_LinuxCommonLibraries  = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP, BUILD_WITH_GTK);

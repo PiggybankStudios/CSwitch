@@ -1701,7 +1701,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (shouldOpenFile || shouldOpenThemeFile)
 	{
-		#if TARGET_IS_WINDOWS
+		#if TARGET_IS_WINDOWS || TARGET_IS_LINUX
 		Str8 selectedPath = Str8_Empty;
 		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
 		if (openResult == Result_Success)
@@ -1720,8 +1720,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
 		else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
-		#else //!TARGET_IS_WINDOWS
-		Notify_W("Open File dialog is not implemented on Linux currently! Please use drag-and-drop or pass the file path as a command-line argument!");
+		#else //!(TARGET_IS_WINDOWS || TARGET_IS_LINUX)
+		Notify_W("Open File dialog is not implemented on OSX currently! Please use drag-and-drop or pass the file path as a command-line argument!");
 		#endif
 	}
 	
