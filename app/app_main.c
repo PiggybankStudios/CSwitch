@@ -1699,30 +1699,44 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |   Handle Open File Dialog    |
 	// +==============================+
-	if (shouldOpenFile || shouldOpenThemeFile)
+	if ((shouldOpenFile || shouldOpenThemeFile) && app->openFileDialog.arena == nullptr)
 	{
 		#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
-		Str8 selectedPath = Str8_Empty;
-		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
-		if (openResult == Result_Success)
-		{
-			PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
-			if (shouldOpenFile) { AppOpenFileTab(selectedPath); }
-			else if (shouldOpenThemeFile)
-			{
-				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, selectedPath);
-				if (AppLoadUserTheme())
-				{
-					SaveAppSettings();
-					AppBakeTheme(true);
-				}
-			}
-		}
-		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
-		else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
+		app->openFileDialogIsForTheme = shouldOpenThemeFile;
+		OsDoOpenFileDialogAsync(stdHeap, true, &app->openFileDialog);
+		NotNull(app->openFileDialog.arena);
 		#else //!(TARGET_IS_WINDOWS || TARGET_IS_LINUX)
 		Notify_W("Open File dialog is not implemented on OSX currently! Please use drag-and-drop or pass the file path as a command-line argument!");
 		#endif
+	}
+	if (app->openFileDialog.arena != nullptr)
+	{
+		Result openResult = OsCheckOpenFileDialogAsyncHandle(&app->openFileDialog);
+		Assert(openResult != Result_None);
+		if (openResult != Result_Ongoing)
+		{
+			if (openResult == Result_Success)
+			{
+				PrintLine_I("Opened \"%.*s\"", StrPrint(app->openFileDialog.chosenFilePath));
+				if (app->openFileDialogIsForTheme)
+				{
+					SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, app->openFileDialog.chosenFilePath);
+					if (AppLoadUserTheme())
+					{
+						SaveAppSettings();
+						AppBakeTheme(true);
+					}
+				}
+				else
+				{
+					AppOpenFileTab(app->openFileDialog.chosenFilePath);
+				}
+			}
+			else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
+			else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
+			
+			OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
+		}
 	}
 	
 	ScratchEnd(scratch);

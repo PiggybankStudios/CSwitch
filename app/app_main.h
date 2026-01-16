@@ -231,6 +231,8 @@ struct AppData
 	NotificationQueue notificationQueue;
 	Texture notificationIconsTexture;
 	TooltipRegistry tooltips;
+	bool openFileDialogIsForTheme;
+	OsOpenFileDialogHandle openFileDialog;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
