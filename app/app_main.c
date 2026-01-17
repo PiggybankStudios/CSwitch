@@ -661,11 +661,18 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
+	#if DEBUG_BUILD
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_D, true))
+	{
+		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
+		PrintLineAt(level, "This is a %s level output!", GetDbgLevelStr(level));
+	}
+	#endif
 	
 	// +========================================+
 	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
