@@ -1766,6 +1766,7 @@ EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 	#endif
 	
 	AppSaveRecentFilesList();
+	OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);

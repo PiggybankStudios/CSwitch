@@ -359,10 +359,49 @@ int main(int argc, char* argv[])
 		}
 		if (BUILD_LINUX)
 		{
-			//TODO: Implement Linux version!
+			PrintLine("\n[Building %s for Linux...]", FILENAME_TRACY_SO);
+			
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/third_party/tracy/TracyClient.cpp");
+			AddArgNt(&cmd, CLANG_INCLUDE_DIR, "[ROOT]/core/third_party/tracy");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TRACY_SO);
+			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
+			AddArg(&cmd, CLANG_fPIC);
+			AddArgNt(&cmd, CLANG_DEFINE, "TRACY_ENABLE");
+			AddArgNt(&cmd, CLANG_DEFINE, "TRACY_EXPORTS");
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCppFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_SHADOWING); // declaration shadows a local variable
+			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_MISSING_FIELD_INITIALIZERS); // missing field 'extra' initializer
+			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH); // unannotated fall-through between switch labels
+			
+			#if BUILDING_ON_LINUX
+			Str8 clangExe = StrLit(EXE_CLANG);
+			#else
+			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
+			chdir(FOLDERNAME_LINUX);
+			cmd.rootDirPath = StrLit("../..");
+			#endif
+			
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
+			AssertFileExist(StrLit(FILENAME_TRACY_SO), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_TRACY_SO);
+			
+			#if !BUILDING_ON_LINUX
+			chdir("..");
+			#endif
 		}
 	}
-	if (PROFILING_ENABLED) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB); }
+	if (PROFILING_ENABLED)
+	{
+		AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB);
+		AddArgNt(&clang_PigCoreLinuxLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_SO);
+	}
 	
 	// +--------------------------------------------------------------+
 	// |                       Bundle Resources                       |
@@ -857,6 +896,7 @@ int main(int argc, char* argv[])
 		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_SO), dataFolder, true); }
 		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder, true); }
 		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppSo, dataFolder, true); }
+		if (PROFILING_ENABLED) { CopyFileToFolder(StrLit(FILENAME_TRACY_SO), dataFolder, true); }
 		#endif
 	}
 	
