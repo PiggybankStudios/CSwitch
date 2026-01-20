@@ -92,6 +92,44 @@ THREAD_POOL_WORK_ITEM_FUNC_DEF(TestWorkItem)
 	return Result_Success;
 }
 
+// DWORD TestThreadMain(LPVOID contextPntr)
+OS_THREAD_FUNC_DEF(TestThreadMain)
+{
+	NotNull(contextPntr);
+	u64* seedPntr = (u64*)contextPntr;
+	RandomSeries random;
+	InitRandomSeriesDefault(&random);
+	SeedRandomSeriesU64(&random, *seedPntr);
+	
+	
+	#if SCRATCH_ARENAS_THREAD_LOCAL
+	TracyCZoneN(Zone_ScratchInit, "ScratchInit", true);
+	InitScratchArenasVirtual(Gigabytes(4));
+	TracyCZoneEnd(Zone_ScratchInit);
+	#endif
+	
+	ScratchBegin(scratch);
+	OsSetThreadName(scratch, PrintInArenaStr(scratch, "Thread(%llu)", *seedPntr));
+	while (true)
+	{
+		TracyCZoneN(Zone_DebugOutput, "DebugOutput", true);
+		DbgLevel level = (DbgLevel)GetRandU32Range(&random, 1, DbgLevel_Count);
+		PrintLineAt(level, "This is a %s level threaded output!", GetDbgLevelStr(level));
+		TracyCZoneEnd(Zone_DebugOutput);
+		
+		TracyCZoneN(Zone_Sleep, "Sleep", true);
+		OsSleepMs(1000);
+		TracyCZoneEnd(Zone_Sleep);
+	}
+	ScratchEnd(scratch);
+	
+	#if SCRATCH_ARENAS_THREAD_LOCAL
+	FreeScratchArenasVirtual();
+	#endif
+	
+	OsThreadReturn(0, nullptr);
+}
+
 // +==============================+
 // |           DllMain            |
 // +==============================+
@@ -671,6 +709,26 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		PrintLineAt(level, "This is a %s level output!", GetDbgLevelStr(level));
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, true))
+	{
+		ThreadId threadId = OsGetCurrentThreadId();
+		Str8 threadName = GetStandardPeopleFirstName((u64)threadId);
+		PrintLine_D("Thread ID: %llu \"%.*s\"%s", (u64)threadId, StrPrint(threadName), OsIsMainThread() ? " (Main)" : "");
+		if (!app->testThread.isFilled)
+		{
+			app->threadRandomSeed = GetRandU64(&app->random);
+			PrintLine_D("Starting new thread with seed %llu...", app->threadRandomSeed);
+			app->testThread = OsCreateThread(TestThreadMain, &app->threadRandomSeed, true);
+			Assert(app->testThread.isFilled);
+			PrintLine_I("Started thread %llu!", (u64)app->testThread.id);
+		}
+		else
+		{
+			PrintLine_W("Stopping thread %llu...", (u64)app->testThread.id);
+			OsCloseThread(&app->testThread);
+			WriteLine_D("Stopped!");
+		}
 	}
 	#endif
 	

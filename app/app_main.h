@@ -262,6 +262,8 @@ struct AppData
 	#if TARGET_IS_WINDOWS
 	ThreadPool threadPool;
 	#endif
+	u64 threadRandomSeed;
+	OsThreadHandle testThread;
 };
 
 #endif //  _APP_MAIN_H

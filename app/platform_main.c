@@ -465,8 +465,12 @@ void PlatSappEvent(const sapp_event* event)
 
 sapp_desc sokol_main(int argc, char* argv[])
 {
+	#if TARGET_HAS_THREADING
+	//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
+	MainThreadId = OsGetCurrentThreadId();
+	#endif
+	
 	#if PROFILING_ENABLED
-	TracyCSetThreadName("main");
 	Str8 projectName = StrLit(PROJECT_READABLE_NAME_STR);
 	TracyCAppInfo(projectName.chars, projectName.length);
 	#endif
@@ -486,6 +490,11 @@ sapp_desc sokol_main(int argc, char* argv[])
 	InitArenaStdHeap(&platformData->stdHeapAllowFreeWithoutSize);
 	FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AllowFreeWithoutSize);
 	// FlagSet(platformData->stdHeapAllowFreeWithoutSize.flags, ArenaFlag_AddPaddingForDebug);
+	
+	#if TARGET_HAS_THREADING
+	//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
+	OsSetThreadName(stdHeap, StrLit("Main"));
+	#endif
 	
 	#if 0
 	char printBuffer[256];
