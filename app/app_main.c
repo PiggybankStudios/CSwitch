@@ -112,10 +112,13 @@ OS_THREAD_FUNC_DEF(TestThreadMain)
 	OsSetThreadName(scratch, PrintInArenaStr(scratch, "Thread(%llu)", *seedPntr));
 	while (true)
 	{
-		TracyCZoneN(Zone_DebugOutput, "DebugOutput", true);
-		DbgLevel level = (DbgLevel)GetRandU32Range(&random, 1, DbgLevel_Count);
-		PrintLineAt(level, "This is a %s level threaded output!", GetDbgLevelStr(level));
-		TracyCZoneEnd(Zone_DebugOutput);
+		LockMutexBlockWithTracyZone(&app->testMutex, TIMEOUT_FOREVER, Zone_LockMutex, "LockMutex")
+		{
+			TracyCZoneN(Zone_DebugOutput, "DebugOutput", true);
+			DbgLevel level = (DbgLevel)GetRandU32Range(&random, 1, DbgLevel_Count);
+			PrintLineAt(level, "This is a %s level threaded output!", GetDbgLevelStr(level));
+			TracyCZoneEnd(Zone_DebugOutput);
+		}
 		
 		TracyCZoneN(Zone_Sleep, "Sleep", true);
 		OsSleepMs(1000);
@@ -482,6 +485,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
 	TracyCZoneN(_funcZone, "AppUpdate", true);
 	
+	if (app->testThread.isFilled)
+	{
+		TracyCZoneN(Zone_LockTestMutex, "LockMutex", true);
+		bool lockSuccess = LockMutex(&app->testMutex, TIMEOUT_FOREVER);
+		Assert(lockSuccess);
+		TracyCZoneEnd(Zone_LockTestMutex);
+	}
+	
 	TracyCZoneN(Zone_Update, "Update", true);
 	app->notificationQueue.currentProgramTime = appIn->programTime;
 	UpdateFileWatches(&app->fileWatches);
@@ -567,6 +578,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		
 		if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
 		{
+			if (app->testThread.isFilled)
+			{
+				TracyCZoneN(Zone_UnlockTestMutex, "UnlockMutex", true);
+				UnlockMutex(&app->testMutex);
+				TracyCZoneEnd(Zone_UnlockTestMutex);
+			}
 			ScratchEnd(scratch);
 			ScratchEnd(scratch2);
 			ScratchEnd(scratch3);
@@ -699,6 +716,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
+	// +==============================+
+	// |   Debug Only Test Hotkeys    |
+	// +==============================+
 	#if DEBUG_BUILD
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{
@@ -717,6 +737,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		PrintLine_D("Thread ID: %llu \"%.*s\"%s", (u64)threadId, StrPrint(threadName), OsIsMainThread() ? " (Main)" : "");
 		if (!app->testThread.isFilled)
 		{
+			InitMutex(&app->testMutex);
 			app->threadRandomSeed = GetRandU64(&app->random);
 			PrintLine_D("Starting new thread with seed %llu...", app->threadRandomSeed);
 			app->testThread = OsCreateThread(TestThreadMain, &app->threadRandomSeed, true);
@@ -725,9 +746,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		else
 		{
+			UnlockMutex(&app->testMutex);
 			PrintLine_W("Stopping thread %llu...", (u64)app->testThread.id);
 			OsCloseThread(&app->testThread);
 			WriteLine_D("Stopped!");
+			LockMutex(&app->testMutex, TIMEOUT_FOREVER);
+			DestroyMutex(&app->testMutex);
 		}
 	}
 	#endif
@@ -1802,6 +1826,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			
 			OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
 		}
+	}
+	
+	if (app->testThread.isFilled)
+	{
+		TracyCZoneN(Zone_UnlockTestMutex, "UnlockMutex", true);
+		UnlockMutex(&app->testMutex);
+		TracyCZoneEnd(Zone_UnlockTestMutex);
 	}
 	
 	ScratchEnd(scratch);

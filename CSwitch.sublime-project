@@ -1099,6 +1099,7 @@
 			"#define InitBktArrayWithInitial(type, arrayPntr, arenaPntr, defaultBucketSize, initialCountNeeded)",
 			"#define InitVarArray(type, arrayPntr, arena)",
 			"#define InitVarArrayWithInitial(type, arrayPntr, arena, initialCountNeeded)",
+			"#define LockMutexBlockWithTracyZone(mutexPntr, timeout, zoneName, zoneDisplayStr)",
 			"#define MakeBox(x, y, z, width, height, depth)",
 			"#define MakeBoxV(bottomLeftBack, size)",
 			"#define MakeBoxV_Const(bottomLeftBack, size)",

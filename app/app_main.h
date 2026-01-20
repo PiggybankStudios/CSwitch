@@ -264,6 +264,7 @@ struct AppData
 	#endif
 	u64 threadRandomSeed;
 	OsThreadHandle testThread;
+	Mutex testMutex;
 };
 
 #endif //  _APP_MAIN_H
