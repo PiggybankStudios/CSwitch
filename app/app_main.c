@@ -92,6 +92,37 @@ THREAD_POOL_WORK_ITEM_FUNC_DEF(TestWorkItem)
 	return Result_Success;
 }
 
+// +==============================+
+// |          AtomicTest          |
+// +==============================+
+// Result AtomicTest(ThreadPoolThread* thread, plex ThreadPoolWorkItem* workItem)
+THREAD_POOL_WORK_ITEM_FUNC_DEF(AtomicTest)
+{
+	uxx numIterations0 = workItem->subject.id0;
+	uxx numIterations1 = workItem->subject.id1;
+	uxx numIterations2 = workItem->subject.id2;
+	AtomicBundle* bundle = GetStructInWorkSubject(AtomicBundle, &workItem->subject, 0);
+	Str8 workItemName = GetStandardPeopleFirstName(workItem->id);
+	if (!AtomicRead(&bundle->begin))
+	{
+		PrintLine_N("Thread %llu is waiting to do %.*s...", thread->id, StrPrint(workItemName));
+		while (!AtomicRead(&bundle->begin)) { if (thread->stopRequested) { return Result_Stopped; } }
+	}
+	PrintLine_N("Thread %llu is doing %.*s (%llu, %llu, %llu iterations)", thread->id, StrPrint(workItemName), numIterations0, numIterations1, numIterations2);
+	for (uxx iter = 0; iter < numIterations0 || iter < numIterations1 || iter < numIterations2; iter++)
+	{
+		if (thread->stopRequested) { return Result_Stopped; }
+		if (iter < numIterations0) { AtomicIncrement(&bundle->int0); }
+		if (iter < numIterations1) { i64 oldValue = AtomicExchange(&bundle->int1, (i64)iter); PrintLine_D("%.*s[%llu/%llu] Exchanged %lld->%llu", StrPrint(workItemName), iter, numIterations1, oldValue, iter); }
+		if (iter < numIterations2) { AtomicAdd(&bundle->int2, (u16)(numIterations2%3)); }
+	}
+	PrintLine_N("Thread %llu is done with %.*s!", thread->id, StrPrint(workItemName));
+	return Result_Success;
+}
+
+// +==============================+
+// |        TestThreadMain        |
+// +==============================+
 // DWORD TestThreadMain(LPVOID contextPntr)
 OS_THREAD_FUNC_DEF(TestThreadMain)
 {
@@ -512,7 +543,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	ThreadPoolWorkItem* finishedWorkItem = nullptr;
 	while ((finishedWorkItem = GetFinishedThreadPoolWorkItem(&app->threadPool)) != nullptr)
 	{
-		PrintLine_O("%.*s FINISHED: %s", StrPrint(finishedWorkItem->subject.string0), GetResultStr(finishedWorkItem->result));
+		PrintLine_O("%llu FINISHED: %s", finishedWorkItem->id, GetResultStr(finishedWorkItem->result));
 		FreeThreadPoolWorkItem(&app->threadPool, finishedWorkItem);
 	}
 	#endif
@@ -672,8 +703,29 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |       Thread Pool Test       |
 	// +==============================+
 	#if THREAD_POOL_TEST
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_R, true))
+	{
+		PrintLine_D("Atomics values = %d, %lld, %u", AtomicRead(&app->atomicBundle.int0), AtomicRead(&app->atomicBundle.int1), AtomicRead(&app->atomicBundle.int2));
+	}
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_B, true))
+	{
+		bool starting = !AtomicRead(&app->atomicBundle.begin);
+		AtomicWrite(&app->atomicBundle.begin, starting);
+		PrintLine_I("%s atomic tests!", starting ? "Starting" : "Stopping");
+	}
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, true))
 	{
+		#if 1
+		WorkSubject subject = ZEROED;
+		subject.id0 = GetRandU32Range(&app->random, 3, 16);
+		subject.id1 = GetRandU32Range(&app->random, 3, 16);
+		subject.id2 = GetRandU32Range(&app->random, 3, 16);
+		subject.slice0.pntr = &app->atomicBundle;
+		subject.slice0.length = sizeof(app->atomicBundle);
+		ThreadPoolWorkItem* newItem = AddWorkItemToThreadPool(&app->threadPool, AtomicTest, &subject);
+		NotNull(newItem);
+		PrintLine_D("Queued %llu,%llu,%llu as item %llu", subject.id0, subject.id1, subject.id2, newItem->id);
+		#else
 		WorkSubject subject = ZEROED;
 		subject.id0 = GetRandU32Range(&app->random, 3, 16);
 		// Str8* allocatedStr = AllocStructInWorkSubject(Str8, stdHeap, &subject, 0);
@@ -695,6 +747,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		ThreadPoolWorkItem* newItem = AddWorkItemToThreadPool(&app->threadPool, TestWorkItem, &subject);
 		NotNull(newItem);
 		PrintLine_D("Queued %.*s as item %llu", StrPrint(allocatedStr), newItem->id);
+		#endif
 	}
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_K, true))
 	{

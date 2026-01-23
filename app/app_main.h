@@ -7,6 +7,15 @@ Date:   02\25\2025
 #ifndef _APP_MAIN_H
 #define _APP_MAIN_H
 
+typedef plex AtomicBundle AtomicBundle;
+plex AtomicBundle
+{
+	abool begin;
+	ai32 int0;
+	ai64 int1;
+	au16 int2;
+};
+
 typedef enum FileOptionType FileOptionType;
 enum FileOptionType
 {
@@ -259,12 +268,13 @@ struct AppData
 	
 	SpriteSheet testSheet;
 	
-	#if TARGET_IS_WINDOWS
+	#if THREAD_POOL_TEST
 	ThreadPool threadPool;
 	#endif
 	u64 threadRandomSeed;
 	OsThreadHandle testThread;
 	Mutex testMutex;
+	AtomicBundle atomicBundle;
 };
 
 #endif //  _APP_MAIN_H
