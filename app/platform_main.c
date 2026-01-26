@@ -528,6 +528,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.event_cb = PlatSappEvent,
 		.width = RoundR32i(windowSize.Width),
 		.height = RoundR32i(windowSize.Height),
+		.min_width = 100,
+		.min_height = 200,
 		.swap_interval = 1, //16ms aka 60fps
 		.window_title = "Loading...",
 		.icon.sokol_default = false,
