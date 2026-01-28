@@ -50,7 +50,7 @@ REQUEST_QUIT_DEF(Plat_RequestQuit)
 // +==============================+
 GET_SOKOL_SWAPCHAIN_DEF(Plat_GetSokolSwapchain)
 {
-	return GetSokolAppSwapchain();
+	return GetSokolGfxSwapchain();
 }
 
 // +==============================+

@@ -335,7 +335,7 @@ void PlatSappInit(void)
 		// .wgpu_disable_bindgroups_cache = ?; //bool  // set to true to disable the WebGPU backend BindGroup cache
 		// .wgpu_bindgroups_cache_size = ?; //int      // number of slots in the WebGPU bindgroup cache (must be 2^N)
 		// .allocator = ?; //sg_allocator TODO: Fill this out!
-		.environment = CreateSokolAppEnvironment(),
+		.environment = GetSokolGfxEnvironment(),
 		.logger.func = SokolLogCallback,
 	});
 	InitGfxSystem(stdHeap, &gfx);
