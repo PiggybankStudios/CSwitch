@@ -26,7 +26,7 @@
 		[X] ThreadPool on Linux
 	[ ] Save program state to file using ThreadPool and safe file overwrite operations
 	[ ] If the user theme file is invalid when CSwitch opens it doesn't clear the user theme but it also doesn't watch it for changes to trigger reload
-	[ ] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
+	[-] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
 		[ ] NOTE: Seems line XSizeHints aren't respected on most Linux Window Managers / Desktop Environments
 	[ ] Add deduplication to the notification system. Also maybe a backoff of some kind to keep any kind of notification loop from spamming notifications constantly
 	( ) Figure out how to render while resizing when using D3D11!
