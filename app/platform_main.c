@@ -417,6 +417,7 @@ void PlatSappEvent(const sapp_event* event)
 		);
 	}
 	
+	#if 0
 	if (event->type == SAPP_EVENTTYPE_KEY_DOWN || event->type == SAPP_EVENTTYPE_KEY_UP)
 	{
 		Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
@@ -426,6 +427,7 @@ void PlatSappEvent(const sapp_event* event)
 	{
 		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_%s%s", Get_SAPP_EVENTTYPE_Str(event->type), handledEvent ? " (Handled)" : "");
 	}
+	#endif
 	
 	if (!handledEvent)
 	{
