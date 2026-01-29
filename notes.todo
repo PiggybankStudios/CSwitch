@@ -23,17 +23,18 @@
 	[ ] Add support for multi-threading
 		[X] Thread creation
 		[X] ThreadPool with WorkQueue
-		[ ] ThreadPool on Linux
+		[X] ThreadPool on Linux
 	[ ] Save program state to file using ThreadPool and safe file overwrite operations
 	[ ] If the user theme file is invalid when CSwitch opens it doesn't clear the user theme but it also doesn't watch it for changes to trigger reload
-	[ ] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
+	[-] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
+		[ ] NOTE: Seems line XSizeHints aren't respected on most Linux Window Managers / Desktop Environments
 	[ ] Add deduplication to the notification system. Also maybe a backoff of some kind to keep any kind of notification loop from spamming notifications constantly
 	( ) Figure out how to render while resizing when using D3D11!
 	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
 	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
-	[ ] Should we save our "recent_files.txt" and "settings.txt" to "~/.config/C_Switch" instead of "~/.C_Switch"?
-	[!] "Open File" dialog on Linux
+	[X] Should we save our "recent_files.txt" and "settings.txt" to "~/.config/C_Switch" instead of "~/.C_Switch"?
+	[X] "Open File" dialog on Linux
 	[ ] Recent Files list should be based on full path of the file, not on relative path
 	[ ] If the most recently opened file doesn't exist we should open the next most recent file? Right now we throw a warning notification
 	[ ] Implement ColorDarken and ColorLighten

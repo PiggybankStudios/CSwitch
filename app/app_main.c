@@ -1388,11 +1388,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"), true, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
 							{
-								#if TARGET_IS_WINDOWS
 								platform->SetWindowTopmost(!appIn->isWindowTopmost);
-								#else
-								Notify_W("Topmost toggling is only implemented for Windows.\nOn some Linux distributions you can toggle this yourself by right-clicking on the window topbar  ");
-								#endif
 							} Clay__CloseElement();
 							
 							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight]))

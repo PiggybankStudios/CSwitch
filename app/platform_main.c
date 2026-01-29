@@ -335,7 +335,7 @@ void PlatSappInit(void)
 		// .wgpu_disable_bindgroups_cache = ?; //bool  // set to true to disable the WebGPU backend BindGroup cache
 		// .wgpu_bindgroups_cache_size = ?; //int      // number of slots in the WebGPU bindgroup cache (must be 2^N)
 		// .allocator = ?; //sg_allocator TODO: Fill this out!
-		.environment = CreateSokolAppEnvironment(),
+		.environment = GetSokolGfxEnvironment(),
 		.logger.func = SokolLogCallback,
 	});
 	InitGfxSystem(stdHeap, &gfx);
@@ -346,12 +346,7 @@ void PlatSappInit(void)
 	#endif
 	
 	bool topmostFlagValue = FindNamedProgramArgBoolEx(&programArgs, StrLit("top"), StrLit("topmost"), false, 0);
-	#if (false && TARGET_IS_WINDOWS)
 	Plat_SetWindowTopmost(topmostFlagValue);
-	#else
-	//TODO: This notification comes too early, before the application has the GlobalNotificationQueue registered. So it doesn't show up visually. Maybe we should parse this argument later?
-	if (topmostFlagValue == true) { Notify_W("Topmost is not available on the current platform! Ignoring command-line argument!"); }
-	#endif
 	
 	platformData->appMemoryPntr = platformData->appApi.AppInit(platformInfo, platform);
 	NotNull(platformData->appMemoryPntr);
@@ -571,6 +566,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.event_cb = PlatSappEvent,
 		.width = RoundR32i(windowSize.Width),
 		.height = RoundR32i(windowSize.Height),
+		// .min_width = 100, //TODO: Can we implement this somehow on X11? And get the implementation from GLFW for Win32
+		// .min_height = 200, //TODO: Can we implement this somehow on X11? And get the implementation from GLFW for Win32
 		.swap_interval = 1, //16ms aka 60fps
 		.window_title = "Loading...",
 		.icon.sokol_default = false,

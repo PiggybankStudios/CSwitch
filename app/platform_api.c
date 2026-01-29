@@ -50,7 +50,7 @@ REQUEST_QUIT_DEF(Plat_RequestQuit)
 // +==============================+
 GET_SOKOL_SWAPCHAIN_DEF(Plat_GetSokolSwapchain)
 {
-	return GetSokolAppSwapchain();
+	return GetSokolGfxSwapchain();
 }
 
 // +==============================+
@@ -131,27 +131,36 @@ SET_WINDOW_TOPMOST_DEF(Plat_SetWindowTopmost)
 	NotNull(platformData);
 	NotNull(platformData->oldAppInput);
 	NotNull(platformData->currentAppInput);
-	#if TARGET_IS_WINDOWS
 	if (platformData->currentAppInput->isWindowTopmost != topmost)
 	{
-		HWND windowHandle = (HWND)Plat_GetNativeWindowHandle();
-		BOOL setResult = SetWindowPos(
-			windowHandle, //hWnd
-			topmost ? HWND_TOPMOST : HWND_NOTOPMOST, //hWndInsertAfter
-			0, //X,
-			0, //Y,
-			0, //cx,
-			0, //cy,
-			SWP_NOMOVE | SWP_NOSIZE //uFlags
-		);
-		Assert(setResult != 0);
+		PrintLine_D("%s Topmost!", topmost ? "Enabling" : "Disabling");
+		sapp_set_topmost(topmost);
 		//Change the value in both old and current AppInput so the application immediately sees the value change in the AppInput it has a handle to
 		platformData->currentAppInput->isWindowTopmost = topmost;
 		platformData->oldAppInput->isWindowTopmost = topmost;
 	}
-	#else
-	AssertMsg(topmost == false, "Topmost behavior is only available on Windows!");
-	#endif
+	
+	// #if TARGET_IS_WINDOWS
+	// if (platformData->currentAppInput->isWindowTopmost != topmost)
+	// {
+	// 	HWND windowHandle = (HWND)Plat_GetNativeWindowHandle();
+	// 	BOOL setResult = SetWindowPos(
+	// 		windowHandle, //hWnd
+	// 		topmost ? HWND_TOPMOST : HWND_NOTOPMOST, //hWndInsertAfter
+	// 		0, //X,
+	// 		0, //Y,
+	// 		0, //cx,
+	// 		0, //cy,
+	// 		SWP_NOMOVE | SWP_NOSIZE //uFlags
+	// 	);
+	// 	Assert(setResult != 0);
+	// 	//Change the value in both old and current AppInput so the application immediately sees the value change in the AppInput it has a handle to
+	// 	platformData->currentAppInput->isWindowTopmost = topmost;
+	// 	platformData->oldAppInput->isWindowTopmost = topmost;
+	// }
+	// #else
+	// AssertMsg(topmost == false, "Topmost behavior is only available on Windows!");
+	// #endif
 }
 
 #endif //BUILD_WITH_SOKOL_APP
