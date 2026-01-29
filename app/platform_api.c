@@ -13,16 +13,16 @@ Description:
 GET_NATIVE_WINDOW_HANDLE_DEF(Plat_GetNativeWindowHandle)
 {
 	const void* result = nullptr;
-	#if TARGET_IS_WINDOWS
+	#if (TARGET_IS_WINDOWS && BUILD_WITH_SOKOL_APP)
 	{
-		#if BUILD_WITH_SOKOL_APP
 		result = sapp_win32_get_hwnd();
-		#else
-		AssertMsg(false, "Plat_GetNativeWindowHandle doesn't have an implementation for the current window library!");
-		#endif
+	}
+	#elif (TARGET_IS_LINUX && BUILD_WITH_SOKOL_APP)
+	{
+		result = sapp_x11_get_window();
 	}
 	#else
-	AssertMsg(false, "Plat_GetNativeWindowHandle doesn't have an implementation for the current TARGET!");
+	AssertMsg(false, "Plat_GetNativeWindowHandle doesn't have an implementation for the current TARGET/Windowing Library!");
 	#endif
 	return result;
 }
@@ -139,28 +139,6 @@ SET_WINDOW_TOPMOST_DEF(Plat_SetWindowTopmost)
 		platformData->currentAppInput->isWindowTopmost = topmost;
 		platformData->oldAppInput->isWindowTopmost = topmost;
 	}
-	
-	// #if TARGET_IS_WINDOWS
-	// if (platformData->currentAppInput->isWindowTopmost != topmost)
-	// {
-	// 	HWND windowHandle = (HWND)Plat_GetNativeWindowHandle();
-	// 	BOOL setResult = SetWindowPos(
-	// 		windowHandle, //hWnd
-	// 		topmost ? HWND_TOPMOST : HWND_NOTOPMOST, //hWndInsertAfter
-	// 		0, //X,
-	// 		0, //Y,
-	// 		0, //cx,
-	// 		0, //cy,
-	// 		SWP_NOMOVE | SWP_NOSIZE //uFlags
-	// 	);
-	// 	Assert(setResult != 0);
-	// 	//Change the value in both old and current AppInput so the application immediately sees the value change in the AppInput it has a handle to
-	// 	platformData->currentAppInput->isWindowTopmost = topmost;
-	// 	platformData->oldAppInput->isWindowTopmost = topmost;
-	// }
-	// #else
-	// AssertMsg(topmost == false, "Topmost behavior is only available on Windows!");
-	// #endif
 }
 
 #endif //BUILD_WITH_SOKOL_APP
