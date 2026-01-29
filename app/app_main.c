@@ -773,6 +773,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde, false))
+	{
+		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+	}
 	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
@@ -812,7 +816,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
 	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
 		{
@@ -830,7 +834,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// | F6 Toggles Performance Graph |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F6, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F6, false) && appIn->isFocused)
 	{
 		app->showPerfGraph = !app->showPerfGraph;
 	}
@@ -838,7 +842,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |       Handle F9 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F9, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F9, false) && appIn->isFocused)
 	{
 		ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
 			? ThemeMode_Debug
@@ -856,7 +860,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F10 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10, false) && appIn->isFocused)
 	{
 		app->settings.smallButtons = !app->settings.smallButtons;
 		SaveAppSettings();
@@ -865,7 +869,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F11 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11, false) && appIn->isFocused)
 	{
 		app->minimalModeEnabled = !app->minimalModeEnabled;
 	}
@@ -873,7 +877,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle Escape Key       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape, false) && appIn->isFocused)
 	{
 		if (app->popup.isOpen)
 		{
@@ -897,15 +901,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==================================================+
 	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
 	// +==================================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		AppChangeFontSize(true);
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		AppChangeFontSize(false);
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
@@ -917,7 +921,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |   Handle Ctrl+ScrollWheel    |
 	// +==============================+
-	if (IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->mouse.scrollDelta.Y != 0)
+	if (IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->mouse.scrollDelta.Y != 0 && appIn->mouse.isOverWindow)
 	{
 		AppChangeFontSize(appIn->mouse.scrollDelta.Y > 0);
 	}
@@ -925,7 +929,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +================================+
 	// | Handle Alt+F and Alt+V Hotkeys |
 	// +================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt) && appIn->isFocused)
 	{
 		app->isFileMenuOpen = !app->isFileMenuOpen;
 		if (app->isFileMenuOpen)
@@ -934,7 +938,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			app->keepFileMenuOpenUntilMouseOver = true;
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt) && appIn->isFocused)
 	{
 		app->isViewMenuOpen = !app->isViewMenuOpen;
 		if (app->isViewMenuOpen)
@@ -949,7 +953,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	bool shouldOpenFile = false;
 	bool shouldOpenThemeFile = false;
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		shouldOpenFile = true;
 	}
@@ -957,7 +961,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
 	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		if (app->tabs.length > 1)
 		{
@@ -975,7 +979,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+E Hotkey     |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 		{
@@ -990,31 +994,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+T Hotkey     |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
 	{
 		platform->SetWindowTopmost(!appIn->isWindowTopmost);
 	}
-	
-	// +==============================+
-	// |     Handle Tilde Hotkey      |
-	// +==============================+
-	#if DEBUG_BUILD
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde, false))
-	{
-		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
-	}
-	#endif
 	
 	// +======================================+
 	// | Handle Home/End and PageUp/PageDown  |
 	// +======================================+
 	//TODO: These should probably move the app->currentTab->selectedOptionIndex if app->usingKeyboardToSelect
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home, false) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, false))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, false) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
@@ -1023,7 +1017,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			optionsListScrollData.scrollTarget->Y = -maxScroll;
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp, true))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp, true) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
@@ -1032,7 +1026,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown, true))
+	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown, true) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
@@ -1045,10 +1039,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +====================================+
 	// | Handle Arrow Keys to Select Option |
 	// +====================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true) ||
-		IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true) ||
-		IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true) ||
-		IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
+	if (appIn->isFocused &&
+		(IsKeyboardKeyPressed(&appIn->keyboard, Key_Left,  true) ||
+		 IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true) ||
+		 IsKeyboardKeyPressed(&appIn->keyboard, Key_Up,    true) ||
+		 IsKeyboardKeyPressed(&appIn->keyboard, Key_Down,  true)))
 	{
 		app->usingKeyboardToSelect = true;
 		if (app->currentTab != nullptr)
@@ -1196,7 +1191,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	
 	if (app->usingKeyboardToSelect && IsKeyboardKeyPressed(&appIn->keyboard, Key_Enter, false) &&
-		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0)
+		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0 &&
+		appIn->isFocused)
 	{
 		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
 		if (selectedOption->type == FileOptionType_Bool)
@@ -1287,7 +1283,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						.border = { .color=GetThemeColor(TopbarBorder), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
-						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
+						bool showMenuHotkeys = (IsKeyboardKeyDown(&appIn->keyboard, Key_Alt) && appIn->isFocused);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
 							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))

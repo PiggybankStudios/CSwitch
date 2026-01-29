@@ -371,6 +371,39 @@ void PlatSappCleanup(void)
 	ShutdownSokolGraphics();
 }
 
+const char* Get_SAPP_EVENTTYPE_Str(sapp_event_type eventType)
+{
+	switch (eventType)
+	{
+		case SAPP_EVENTTYPE_INVALID:           return "INVALID";
+		case SAPP_EVENTTYPE_KEY_DOWN:          return "KEY_DOWN";
+		case SAPP_EVENTTYPE_KEY_UP:            return "KEY_UP";
+		case SAPP_EVENTTYPE_CHAR:              return "CHAR";
+		case SAPP_EVENTTYPE_MOUSE_DOWN:        return "MOUSE_DOWN";
+		case SAPP_EVENTTYPE_MOUSE_UP:          return "MOUSE_UP";
+		case SAPP_EVENTTYPE_MOUSE_SCROLL:      return "MOUSE_SCROLL";
+		case SAPP_EVENTTYPE_MOUSE_MOVE:        return "MOUSE_MOVE";
+		case SAPP_EVENTTYPE_MOUSE_ENTER:       return "MOUSE_ENTER";
+		case SAPP_EVENTTYPE_MOUSE_LEAVE:       return "MOUSE_LEAVE";
+		case SAPP_EVENTTYPE_TOUCHES_BEGAN:     return "TOUCHES_BEGAN";
+		case SAPP_EVENTTYPE_TOUCHES_MOVED:     return "TOUCHES_MOVED";
+		case SAPP_EVENTTYPE_TOUCHES_ENDED:     return "TOUCHES_ENDED";
+		case SAPP_EVENTTYPE_TOUCHES_CANCELLED: return "TOUCHES_CANCELLED";
+		case SAPP_EVENTTYPE_RESIZED:           return "RESIZED";
+		case SAPP_EVENTTYPE_ICONIFIED:         return "ICONIFIED";
+		case SAPP_EVENTTYPE_RESTORED:          return "RESTORED";
+		case SAPP_EVENTTYPE_FOCUSED:           return "FOCUSED";
+		case SAPP_EVENTTYPE_UNFOCUSED:         return "UNFOCUSED";
+		case SAPP_EVENTTYPE_SUSPENDED:         return "SUSPENDED";
+		case SAPP_EVENTTYPE_RESUMED:           return "RESUMED";
+		case SAPP_EVENTTYPE_QUIT_REQUESTED:    return "QUIT_REQUESTED";
+		case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  return "CLIPBOARD_PASTED";
+		case SAPP_EVENTTYPE_FILES_DROPPED:     return "FILES_DROPPED";
+		case SAPP_EVENTTYPE_RESIZE_RENDER:     return "RESIZE_RENDER";
+		default: return UNKNOWN_STR;
+	}
+}
+
 void PlatSappEvent(const sapp_event* event)
 {
 	TracyCZoneN(_funcZone, "PlatSappEvent", true);
@@ -387,6 +420,16 @@ void PlatSappEvent(const sapp_event* event)
 			nullptr, //TODO: Add touch support?
 			sapp_mouse_locked()
 		);
+	}
+	
+	if (event->type == SAPP_EVENTTYPE_KEY_DOWN || event->type == SAPP_EVENTTYPE_KEY_UP)
+	{
+		Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
+		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_KEY_%s %s", event->type == SAPP_EVENTTYPE_KEY_DOWN ? "DOWN" : "UP", GetKeyStr(primaryKey));
+	}
+	else if (event->type != SAPP_EVENTTYPE_MOUSE_MOVE)
+	{
+		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_%s%s", Get_SAPP_EVENTTYPE_Str(event->type), handledEvent ? " (Handled)" : "");
 	}
 	
 	if (!handledEvent)
