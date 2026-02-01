@@ -488,21 +488,3 @@ void ToggleOption(FileTab* tab, FileOption* option)
 		//TODO: Implement me!
 	}
 }
-
-// +==================================+
-// | AppResetCurrentFilePopupCallback |
-// +==================================+
-// void AppResetCurrentFilePopupCallback(PopupDialogResult result, PopupDialog* dialog, PopupDialogButton* selectedButton, void* contextPntr)
-POPUP_DIALOG_CALLBACK_DEF(AppResetCurrentFilePopupCallback)
-{
-	UNUSED(dialog); UNUSED(selectedButton); UNUSED(contextPntr);
-	if (result == PopupDialogResult_Yes && app->currentTab != nullptr)
-	{
-		bool writeSuccess = OsWriteTextFile(app->currentTab->filePath, app->currentTab->originalFileContents);
-		if (!writeSuccess) { NotifyPrint_E("Failed to write to file at \"%.*s\"!", StrPrint(app->currentTab->filePath)); }
-		else
-		{
-			AppReloadFileTab(app->currentTabIndex);
-		}
-	}
-}

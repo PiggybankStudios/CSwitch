@@ -23,8 +23,8 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
 	ClayId btnId = ToClayId(btnIdStr);
 	ClayId menuId = ToClayId(menuIdStr);
-	bool isBtnHovered = IsMouseOverClay(btnId);
-	bool isHovered = (isBtnHovered || IsMouseOverClay(menuId));
+	bool isBtnHovered = (appIn->mouse.isOverWindow && IsMouseOverClay(btnId));
+	bool isHovered = (appIn->mouse.isOverWindow && (isBtnHovered || IsMouseOverClay(menuId)));
 	ThemeState btnThemeState = *isOpenPntr ? ThemeState_Open : (isBtnHovered ? ThemeState_Hovered : ThemeState_Default);
 	Color32 backgroundColor = GetThemeColorEx(TopbarBtnBack, btnThemeState);
 	Color32 borderColor = GetThemeColorEx(TopbarBtnBorder, btnThemeState);
@@ -55,7 +55,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			})
 		);
 	}
-	if (IsMouseOverClay(btnId) && MouseLeftClicked()) { *isOpenPntr = !*isOpenPntr; }
+	if (appIn->mouse.isOverWindow && IsMouseOverClay(btnId) && MouseLeftClicked()) { *isOpenPntr = !*isOpenPntr; }
 	if (*isOpenPntr == true && isHovered && *keepOpenUntilMouseoverPntr) { *keepOpenUntilMouseoverPntr = false; } //once we are closed or the mouse is over, clear this flag, mouse leaving now will constitute closing
 	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr && !isSubmenuOpen) { *isOpenPntr = false; }
 	if (*isOpenPntr)
@@ -108,9 +108,9 @@ bool ClayTopSubmenu(const char* idStr, const char* btnText, bool isParentOpen, b
 	ClayId btnId = ToClayId(btnIdStr);
 	ClayId menuId = ToClayId(menuIdStr);
 	ClayId menuListId = ToClayId(menuListIdStr);
-	bool isBtnHovered = IsMouseOverClay(btnId);
+	bool isBtnHovered = (appIn->mouse.isOverWindow && IsMouseOverClay(btnId));
 	bool isBtnPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
-	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
+	bool isMenuHovered = (appIn->mouse.isOverWindow && (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId)));
 	bool isHovered = (isBtnHovered || isMenuHovered);
 	ThemeState btnThemeState = isBtnPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : (*isOpenPntr ? ThemeState_Open : ThemeState_Default));
 	Color32 backgroundColor = GetThemeColorEx(DropdownBtnBack,   btnThemeState);
@@ -154,7 +154,7 @@ bool ClayTopSubmenu(const char* idStr, const char* btnText, bool isParentOpen, b
 		);
 	}
 	if (!isParentOpen) { *isOpenPntr = false; *keepOpenUntilMouseoverPntr = false; }
-	if (isParentOpen && IsMouseOverClay(btnId) && MouseLeftClicked())
+	if (isParentOpen && appIn->mouse.isOverWindow && IsMouseOverClay(btnId) && MouseLeftClicked())
 	{
 		*isOpenPntr = !*isOpenPntr;
 		*keepOpenUntilMouseoverPntr = *isOpenPntr;
@@ -205,7 +205,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	Str8 hotkeyIdStr = PrintInArenaStr(scratch, "%.*s_Hotkey", StrPrint(idStr));
 	ClayId btnId = ToClayId(fullIdStr);
 	ClayId hotkeyId = ToClayId(hotkeyIdStr);
-	bool isHovered = IsMouseOverClay(btnId);
+	bool isHovered = (appIn->mouse.isOverWindow && IsMouseOverClay(btnId));
 	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 	
 	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default));
@@ -324,7 +324,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, uxx optionIndex, Str8 nameStr
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
 	ClayId btnId = ToClayIdEx(btnIdStr, optionIndex);
-	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
+	bool isHovered = (appIn->mouse.isOverWindow && IsMouseOverClayInContainer(containerId, btnId));
 	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 	
 	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
@@ -388,7 +388,7 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, uxx opt
 	ScratchBegin(scratch);
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
 	ClayId btnId = ToClayIdEx(btnIdStr, optionIndex);
-	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
+	bool isHovered = (appIn->mouse.isOverWindow && IsMouseOverClayInContainer(containerId, btnId));
 	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 
 	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
@@ -455,7 +455,7 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 	}
 	
 	bool isScrollbarVisible = (scrollData.found && scrollbarSizePercent < 1.0f);
-	bool isHovered = IsMouseOverClay(scrollbarId);
+	bool isHovered = (appIn->mouse.isOverWindow && IsMouseOverClay(scrollbarId));
 	
 	if (isScrollbarVisible)
 	{
@@ -499,14 +499,14 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 		
 		if (!state->isDragging)
 		{
-			if (IsMouseOverClay(scrollbarId) && MouseLeftClicked())
+			if (appIn->mouse.isOverWindow && IsMouseOverClay(scrollbarId) && MouseLeftClicked())
 			{
 				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
 				state->isDragging = true;
 				state->isDraggingSmooth = false;
 				state->grabOffset = Sub(appIn->mouse.position, scrollbarDrawRec.TopLeft);
 			}
-			else if (IsMouseOverClay(gutterId) && MouseLeftClicked())
+			else if (appIn->mouse.isOverWindow && IsMouseOverClay(gutterId) && MouseLeftClicked())
 			{
 				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
 				state->isDragging = true;

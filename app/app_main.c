@@ -35,6 +35,7 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_commands.h"
 #include "app_theme_funcs.h"
 #include "app_theme.h"
 #include "app_icons.h"
@@ -72,6 +73,7 @@ static Arena* stdHeap = nullptr;
 #include "app_helpers.c"
 #include "app_tab.c"
 #include "app_clay.c"
+#include "app_commands.c"
 
 // +==============================+
 // |         TestWorkItem         |
@@ -540,6 +542,39 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		refreshScreen = true;
 	}
 	
+	// +==============================+
+	// |   Handle Open File Dialog    |
+	// +==============================+
+	if (app->openFileDialog.arena != nullptr)
+	{
+		Result openResult = OsCheckOpenFileDialogAsyncHandle(&app->openFileDialog);
+		Assert(openResult != Result_None);
+		if (openResult != Result_Ongoing)
+		{
+			if (openResult == Result_Success)
+			{
+				PrintLine_I("Opened \"%.*s\"", StrPrint(app->openFileDialog.chosenFilePath));
+				if (app->openFileDialogIsForTheme)
+				{
+					SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, app->openFileDialog.chosenFilePath);
+					if (AppLoadUserTheme())
+					{
+						SaveAppSettings();
+						AppBakeTheme(true);
+					}
+				}
+				else
+				{
+					AppOpenFileTab(app->openFileDialog.chosenFilePath);
+				}
+			}
+			else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
+			else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
+			
+			OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
+		}
+	}
+	
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
 	// +====================================+
@@ -756,7 +791,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	#if DEBUG_BUILD
 	if (WasKeyComboPressed(ModifierKey_None, Key_Tilde, false))
 	{
-		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+		RunAppCommand(AppCommand_ToggleClayDebug);
 	}
 	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
@@ -799,11 +834,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_W, false))
 	{
-		platform->RequestQuit();
+		RunAppCommand(AppCommand_CloseWindow);
 	}
 	if (appIn->isFocused && app->currentTab != nullptr && WasKeyComboPressed(ModifierKey_Control, Key_W, false))
 	{
-		AppCloseFileTab(app->currentTabIndex);
+		RunAppCommand(AppCommand_CloseTab);
 	}
 	
 	// +==============================+
@@ -811,7 +846,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (WasKeyPressed(Key_F6, false) && appIn->isFocused)
 	{
-		app->showPerfGraph = !app->showPerfGraph;
+		RunAppCommand(AppCommand_TogglePerfGraph);
 	}
 	
 	// +==============================+
@@ -819,17 +854,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (WasKeyPressed(Key_F9, false) && appIn->isFocused)
 	{
-		ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
-			? ThemeMode_Debug
-			: ((app->currentThemeMode == ThemeMode_Dark)
-				? ThemeMode_Light
-				: ThemeMode_Dark
-			)
-		);
-		app->currentThemeMode = otherThemeMode;
-		SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
-		SaveAppSettings();
-		AppBakeTheme(false);
+		RunAppCommand(AppCommand_ToggleLightMode);
 	}
 	
 	// +==============================+
@@ -837,8 +862,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (WasKeyPressed(Key_F10, false) && appIn->isFocused)
 	{
-		app->settings.smallButtons = !app->settings.smallButtons;
-		SaveAppSettings();
+		RunAppCommand(AppCommand_ToggleSmallButtons);
 	}
 	
 	// +==============================+
@@ -846,7 +870,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (WasKeyPressed(Key_F11, false) && appIn->isFocused)
 	{
-		app->minimalModeEnabled = !app->minimalModeEnabled;
+		RunAppCommand(AppCommand_ToggleTopbar);
 	}
 	
 	// +==============================+
@@ -854,23 +878,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (WasKeyPressed(Key_Escape, false) && appIn->isFocused)
 	{
-		if (app->popup.isOpen)
-		{
-			ClosePopupDialog(&app->popup, nullptr);
-		}
-		else if (app->isFileMenuOpen)
-		{
-			app->isFileMenuOpen = false;
-			app->isOpenRecentSubmenuOpen = false;
-		}
-		else if (app->isViewMenuOpen)
-		{
-			app->isViewMenuOpen = false;
-		}
-		else if (app->minimalModeEnabled)
-		{
-			app->minimalModeEnabled = false;
-		}
+		RunAppCommand(AppCommand_ClosePopupOrMenu);
 	}
 	
 	// +==================================================+
@@ -878,19 +886,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==================================================+
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_Plus, true))
 	{
-		AppChangeFontSize(true);
+		RunAppCommand(AppCommand_IncreaseUiScale);
 	}
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_Minus, true))
 	{
-		AppChangeFontSize(false);
+		RunAppCommand(AppCommand_DecreaseUiScale);
 	}
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_0, false))
 	{
-		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
-		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-		app->uiScale = 1.0f;
-		bool fontBakeSuccess = AppCreateFonts();
-		Assert(fontBakeSuccess);
+		RunAppCommand(AppCommand_ResetUiScale);
 	}
 	
 	// +==============================+
@@ -898,7 +902,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (IsKeyDownRaw(Key_Control) && appIn->mouse.scrollDelta.Y != 0 && appIn->mouse.isOverWindow)
 	{
-		AppChangeFontSize(appIn->mouse.scrollDelta.Y > 0);
+		RunAppCommand((appIn->mouse.scrollDelta.Y > 0) ? AppCommand_IncreaseUiScale : AppCommand_DecreaseUiScale);
 	}
 	
 	// +================================+
@@ -906,46 +910,31 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +================================+
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Alt, Key_F, false))
 	{
-		app->isFileMenuOpen = !app->isFileMenuOpen;
-		if (app->isFileMenuOpen)
-		{
-			app->isViewMenuOpen = false;
-			app->keepFileMenuOpenUntilMouseOver = true;
-		}
+		RunAppCommand(AppCommand_OpenFileMenu);
 	}
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Alt, Key_V, false))
 	{
-		app->isViewMenuOpen = !app->isViewMenuOpen;
-		if (app->isViewMenuOpen)
-		{
-			app->isFileMenuOpen = false;
-			app->keepViewMenuOpenUntilMouseOver = true;
-		}
+		RunAppCommand(AppCommand_OpenViewMenu);
 	}
 	
 	// +==============================+
 	// |     Handle Ctrl+O Hotkey     |
 	// +==============================+
-	bool shouldOpenFile = false;
-	bool shouldOpenThemeFile = false;
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_O, false))
 	{
-		shouldOpenFile = true;
+		RunAppCommand(AppCommand_OpenFile);
 	}
 	
 	// +========================================+
 	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
 	// +========================================+
-	if (appIn->isFocused && app->tabs.length > 1 && (WasKeyComboPressed(ModifierKey_Control, Key_Tab, true) || WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_Tab, true)))
+	if (appIn->isFocused && app->tabs.length > 1 && WasKeyComboPressed(ModifierKey_Control, Key_Tab, true))
 	{
-		if (IsKeyDownRaw(Key_Shift))
-		{
-			AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1);
-		}
-		else
-		{
-			AppChangeTab((app->currentTabIndex+1) % app->tabs.length);
-		}
+		RunAppCommand(AppCommand_NextTab);
+	}
+	if (appIn->isFocused && app->tabs.length > 1 && WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_Tab, true))
+	{
+		RunAppCommand(AppCommand_PreviousTab);
 	}
 	
 	// +==============================+
@@ -953,14 +942,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_E, false))
 	{
-		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
-		{
-			VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex-1);
-			if (recentFile->fileExists && AppFindTabForPath(recentFile->path) == nullptr)
-			{
-				if (AppOpenFileTab(recentFile->path) != nullptr) { break; }
-			}
-		}
+		RunAppCommand(AppCommand_ReopenRecentFile);
 	}
 	
 	// +==============================+
@@ -968,7 +950,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_T, false))
 	{
-		platform->SetWindowTopmost(!appIn->isWindowTopmost);
+		RunAppCommand(AppCommand_ToggleTopmost);
 	}
 	
 	// +======================================+
@@ -977,35 +959,19 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	//TODO: These should probably move the app->currentTab->selectedOptionIndex if app->usingKeyboardToSelect
 	if (WasKeyPressed(Key_Home, false) && appIn->isFocused)
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
+		RunAppCommand(AppCommand_ScrollToTop);
 	}
 	if (WasKeyPressed(Key_End, false) && appIn->isFocused)
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found)
-		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-			optionsListScrollData.scrollTarget->Y = -maxScroll;
-		}
+		RunAppCommand(AppCommand_ScrollToBottom);
 	}
 	if (WasKeyPressed(Key_PageUp, true) && appIn->isFocused)
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found)
-		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
-		}
+		RunAppCommand(AppCommand_ScrollUpPage);
 	}
 	if (WasKeyPressed(Key_PageDown, true) && appIn->isFocused)
 	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found)
-		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
-		}
+		RunAppCommand(AppCommand_ScrollDownPage);
 	}
 	
 	// +====================================+
@@ -1013,6 +979,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +====================================+
 	if (appIn->isFocused)
 	{
+		//TODO: we need to pass along whether it was a OS-level repeat somehow to RunAppCommand
 		bool downPressed  = WasKeyPressed(Key_Down,  false);
 		bool upPressed    = WasKeyPressed(Key_Up,    false);
 		bool leftPressed  = WasKeyPressed(Key_Left,  false);
@@ -1021,147 +988,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		bool upPressedOrRepeated    = (upPressed    || WasKeyPressed(Key_Up,    true));
 		bool leftPressedOrRepeated  = (leftPressed  || WasKeyPressed(Key_Left,  true));
 		bool rightPressedOrRepeated = (rightPressed || WasKeyPressed(Key_Right, true));
-		if (downPressedOrRepeated || upPressedOrRepeated || leftPressedOrRepeated || rightPressedOrRepeated)
-		{
-			app->usingKeyboardToSelect = true;
-			if (app->currentTab != nullptr)
-			{
-				bool movedSelection = false;
-				
-				if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
-				{
-					//TODO: Could we somehow choose the option thats near the middle of the screen?
-					app->currentTab->selectedOptionIndex = 0;
-					movedSelection = true;
-				}
-				else if (app->currentTab->selectedOptionIndex >= 0)
-				{
-					if (app->settings.smallButtons)
-					{
-						r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
-						u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
-						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
-						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
-						if (numColumns <= 0) { numColumns = 1; }
-						i32 numRows = CeilDivI32((i32)app->currentTab->fileOptions.length, numColumns);
-						
-						if (upPressedOrRepeated)
-						{
-							if (app->currentTab->selectedOptionIndex >= numColumns)
-							{
-								app->currentTab->selectedOptionIndex -= numColumns;
-								movedSelection = true;
-							}
-							else if (upPressed)
-							{
-								app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
-								movedSelection = true;
-							}
-						}
-						if (downPressedOrRepeated)
-						{
-							if (((i32)app->currentTab->selectedOptionIndex / numColumns) < numRows-1)
-							{
-								app->currentTab->selectedOptionIndex += numColumns;
-								if ((uxx)app->currentTab->selectedOptionIndex >= app->currentTab->fileOptions.length)
-								{
-									app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-								}
-								movedSelection = true;
-							}
-							else if (downPressed)
-							{
-								app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
-								movedSelection = true;
-							}
-						}
-						if (leftPressedOrRepeated)
-						{
-							if (app->currentTab->selectedOptionIndex > 0)
-							{
-								app->currentTab->selectedOptionIndex--;
-								movedSelection = true;
-							}
-							else if (leftPressed)
-							{
-								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-								movedSelection = true;
-							}
-						}
-						if (rightPressedOrRepeated)
-						{
-							if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
-							{
-								app->currentTab->selectedOptionIndex++;
-								movedSelection = true;
-							}
-							else if (rightPressed)
-							{
-								app->currentTab->selectedOptionIndex = 0;
-								movedSelection = true;
-							}
-						}
-					}
-					else
-					{
-						if (upPressedOrRepeated)
-						{
-							if (app->currentTab->selectedOptionIndex > 0)
-							{
-								app->currentTab->selectedOptionIndex--;
-								movedSelection = true;
-							}
-							else if (WasKeyPressed(Key_Up, false))
-							{
-								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-								movedSelection = true;
-							}
-						}
-						if (downPressedOrRepeated)
-						{
-							if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
-							{
-								app->currentTab->selectedOptionIndex++;
-								movedSelection = true;
-							}
-							else if (WasKeyPressed(Key_Down, false))
-							{
-								app->currentTab->selectedOptionIndex = 0;
-								movedSelection = true;
-							}
-						}
-					}
-				}
-				
-				// Auto-scroll up/down to the newly selected option if needed
-				if (movedSelection && app->currentTab->selectedOptionIndex >= 0)
-				{
-					rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-					Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-					FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
-					Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
-					ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
-					rec optionRec = GetClayElementDrawRec(btnId);
-					if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
-					{
-						r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
-						r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
-						r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
-						r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
-						if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
-						{
-							viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
-						}
-						else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
-						{
-							viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
-						}
-					}
-				}
-			}
-		}
+		if (downPressedOrRepeated)  { RunAppCommand(AppCommand_SelectMoveDown);  }
+		if (upPressedOrRepeated)    { RunAppCommand(AppCommand_SelectMoveUp);    }
+		if (leftPressedOrRepeated)  { RunAppCommand(AppCommand_SelectMoveLeft);  }
+		if (rightPressedOrRepeated) { RunAppCommand(AppCommand_SelectMoveRight); }
 	}
-	else if (MouseLeftClickedRaw() ||
+	if (MouseLeftClickedRaw() ||
 		MouseRightClickedRaw() ||
 		MouseMiddleClickedRaw() ||
 		(appIn->mouse.isOverWindow && !AreSimilarV2(appIn->mouse.scrollDelta, V2_Zero, DEFAULT_R32_TOLERANCE)))
@@ -1169,15 +1001,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		app->usingKeyboardToSelect = false;
 	}
 	
-	if (app->usingKeyboardToSelect && WasKeyPressed(Key_Enter, false) &&
+	if ( appIn->isFocused && app->usingKeyboardToSelect &&
 		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0 &&
-		appIn->isFocused)
+		WasKeyPressed(Key_Enter, false))
 	{
-		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
-		if (selectedOption->type == FileOptionType_Bool)
-		{
-			ToggleOption(app->currentTab, selectedOption);
-		}
+		RunAppCommand(AppCommand_ChooseSelection);
 	}
 	
 	// if (app->currentTab == nullptr)
@@ -1269,6 +1097,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						.border = { .color=GetThemeColor(TopbarBorder), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
+						// +==============================+
+						// |          File Menu           |
+						// +==============================+
 						bool showMenuHotkeys = (IsKeyDown(Key_Alt) && appIn->isFocused);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
@@ -1279,10 +1110,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_OpenFile))
 							{
-								shouldOpenFile = true;
-								#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
+								RunAppCommand(AppCommand_OpenFile);
 								app->isFileMenuOpen = false;
-								#endif
 							} Clay__CloseElement();
 							
 							if (app->recentFiles.length > 0)
@@ -1356,12 +1185,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								(app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal),
 								AppIcon_ResetFile))
 							{
-								OpenPopupDialog(stdHeap, &app->popup,
-									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
-									AppResetCurrentFilePopupCallback, nullptr
-								);
-								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
-								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+								RunAppCommand(AppCommand_ResetFile);
+								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("ReloadingEnabledBtn"),
@@ -1371,8 +1196,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								(app->tabs.length > 0),
 								AppIcon_None)) //TODO: Add an icon for this option
 							{
-								app->settings.dontAutoReloadFile = !app->settings.dontAutoReloadFile;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleFileReloading);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIcon("CloseFileBtn",
@@ -1382,7 +1206,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								(app->currentTab != nullptr),
 								AppIcon_CloseFile))
 							{
-								AppCloseFileTab(app->currentTabIndex);
+								RunAppCommand(AppCommand_CloseTab);
+								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIcon("CloseWindowBtn",
@@ -1392,7 +1217,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_CloseWindow))
 							{
-								platform->RequestQuit();
+								RunAppCommand(AppCommand_CloseWindow);
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
@@ -1400,6 +1225,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Clay__CloseElement();
 						} Clay__CloseElement();
 						
+						// +==============================+
+						// |          View Menu           |
+						// +==============================+
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
 							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
@@ -1416,10 +1244,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_LightDark))
 							{
-								app->currentThemeMode = otherThemeMode;
-								SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
-								SaveAppSettings();
-								AppBakeTheme(false);
+								RunAppCommand(AppCommand_ToggleLightMode);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("SmallButtonsBtn"),
@@ -1429,8 +1254,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_SmallBtn))
 							{
-								app->settings.smallButtons = !app->settings.smallButtons;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleSmallButtons);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("TopmostBtn"),
@@ -1440,7 +1264,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled))
 							{
-								platform->SetWindowTopmost(!appIn->isWindowTopmost);
+								RunAppCommand(AppCommand_ToggleTopmost);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("ClipNamesBtn"),
@@ -1450,8 +1274,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight))
 							{
-								app->settings.clipNamesLeft = !app->settings.clipNamesLeft;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleClipSide);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("SmoothScrollingBtn"),
@@ -1461,8 +1284,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_SmoothScroll))
 							{
-								app->settings.smoothScrollingDisabled = !app->settings.smoothScrollingDisabled;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleSmoothScrolling);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("TooltipsBtn"),
@@ -1472,8 +1294,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_Tooltip))
 							{
-								app->settings.optionTooltipsDisabled = !app->settings.optionTooltipsDisabled;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleOptionTooltips);
 							} Clay__CloseElement();
 							
 							if (ClayBtnAppIconStr(StrLit("HideTopbarBtn"),
@@ -1497,7 +1318,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_StarFile))
 							{
-								shouldOpenThemeFile = true;
+								RunAppCommand(AppCommand_OpenCustomTheme);
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
@@ -1509,10 +1330,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								!IsEmptyStr(app->settings.userThemePath),
 								AppIcon_CloseFile))
 							{
-								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
-								SaveAppSettings();
-								AppLoadUserTheme();
-								AppBakeTheme(false);
+								RunAppCommand(AppCommand_ClearCustomTheme);
 							} Clay__CloseElement();
 							
 							#if DEBUG_BUILD
@@ -1523,8 +1341,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_Debug))
 							{
-								Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+								RunAppCommand(AppCommand_ToggleClayDebug);
 							} Clay__CloseElement();
+							
 							if (ClayBtnAppIconStr(StrLit("SleepBtn"),
 								ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"),
 								Str8_Empty, //hotkey
@@ -1532,8 +1351,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_None))
 							{
-								app->sleepingDisabled = !app->sleepingDisabled;
+								RunAppCommand(AppCommand_ToggleSleeping);
 							} Clay__CloseElement();
+							
 							if (ClayBtnAppIconStr(StrLit("FrameIndicatorBtn"),
 								ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"),
 								Str8_Empty, //hotkey
@@ -1541,7 +1361,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								true, //isEnabled
 								AppIcon_None))
 							{
-								app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
+								RunAppCommand(AppCommand_ToggleFrameIndicator);
 							} Clay__CloseElement();
 							#endif //DEBUG_BUILD
 							
@@ -1911,49 +1731,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	app->prevUpdateMs =
 		OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime) +
 		OsTimeDiffMsR32(beforeRenderTime, afterRenderTime);
-	
-	// +==============================+
-	// |   Handle Open File Dialog    |
-	// +==============================+
-	if ((shouldOpenFile || shouldOpenThemeFile) && app->openFileDialog.arena == nullptr)
-	{
-		#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
-		app->openFileDialogIsForTheme = shouldOpenThemeFile;
-		OsDoOpenFileDialogAsync(stdHeap, true, &app->openFileDialog);
-		NotNull(app->openFileDialog.arena);
-		#else //!(TARGET_IS_WINDOWS || TARGET_IS_LINUX)
-		Notify_W("Open File dialog is not implemented on OSX currently! Please use drag-and-drop or pass the file path as a command-line argument!");
-		#endif
-	}
-	if (app->openFileDialog.arena != nullptr)
-	{
-		Result openResult = OsCheckOpenFileDialogAsyncHandle(&app->openFileDialog);
-		Assert(openResult != Result_None);
-		if (openResult != Result_Ongoing)
-		{
-			if (openResult == Result_Success)
-			{
-				PrintLine_I("Opened \"%.*s\"", StrPrint(app->openFileDialog.chosenFilePath));
-				if (app->openFileDialogIsForTheme)
-				{
-					SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, app->openFileDialog.chosenFilePath);
-					if (AppLoadUserTheme())
-					{
-						SaveAppSettings();
-						AppBakeTheme(true);
-					}
-				}
-				else
-				{
-					AppOpenFileTab(app->openFileDialog.chosenFilePath);
-				}
-			}
-			else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
-			else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
-			
-			OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
-		}
-	}
 	
 	if (app->testThread.isFilled)
 	{
