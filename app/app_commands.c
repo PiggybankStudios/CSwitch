@@ -448,6 +448,7 @@ void RunAppCommand(AppCommand command)
 					if (app->settings.smallButtons)
 					{
 						CALC_SMALL_OPTION_GRID_SPECS(optionsAreaWidth, buttonMargin, buttonWidth, numColumns, numRows);
+						UNUSED(numRows);
 						
 						if (app->currentTab->selectedOptionIndex >= numColumns)
 						{

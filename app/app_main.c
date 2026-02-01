@@ -1061,7 +1061,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.Y = 0; }
 		
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, appIn->elapsedMs, false, clayMouseScrollInput, false);
-		SpriteSheet* iconsSheet = &app->appIconsSheet;
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseDownRaw(MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
@@ -1399,7 +1398,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)) } } }) {}
 						}
 						
-						#if DEBUG_BUILD
 						if (app->enableFrameUpdateIndicator)
 						{
 							//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
@@ -1420,7 +1418,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								}
 							}
 						}
-						#endif
 					}
 				}
 				

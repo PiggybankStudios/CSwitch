@@ -262,9 +262,7 @@ struct AppData
 	
 	//User Options
 	bool sleepingDisabled;
-	#if DEBUG_BUILD
 	bool enableFrameUpdateIndicator;
-	#endif
 	bool minimalModeEnabled;
 	
 	#if THREAD_POOL_TEST
