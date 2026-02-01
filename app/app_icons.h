@@ -55,27 +55,27 @@ const char* GetAppIconStr(AppIcon enumValue)
 		default: return "Unknown";
 	}
 }
-const char* GetAppIconPath(AppIcon enumValue)
+const char* GetAppIconSheetCellName(AppIcon enumValue)
 {
 	switch (enumValue)
 	{
-		case AppIcon_OpenFile:            return "resources/image/open_file.png";
-		case AppIcon_OpenRecent:          return "resources/image/recent.png";
-		case AppIcon_Trash:               return "resources/image/trash.png";
-		case AppIcon_ResetFile:           return "resources/image/reset_file.png";
-		case AppIcon_CloseFile:           return "resources/image/close_file.png";
-		case AppIcon_SmallBtn:            return "resources/image/small_btn.png";
-		case AppIcon_TopmostEnabled:      return "resources/image/topmost_on.png";
-		case AppIcon_TopmostDisabled:     return "resources/image/topmost_off.png";
-		case AppIcon_ClipLeft:            return "resources/image/clip_left.png";
-		case AppIcon_ClipRight:           return "resources/image/clip_right.png";
-		case AppIcon_SmoothScroll:        return "resources/image/smooth_scroll.png";
-		case AppIcon_Tooltip:             return "resources/image/tooltip.png";
-		case AppIcon_Topbar:              return "resources/image/topbar.png";
-		case AppIcon_Debug:               return "resources/image/debug.png";
-		case AppIcon_CloseWindow:         return "resources/image/close_window.png";
-		case AppIcon_LightDark:           return "resources/image/light_dark.png";
-		case AppIcon_StarFile:            return "resources/image/star_file.png";
+		case AppIcon_OpenFile:            return "open_file";
+		case AppIcon_OpenRecent:          return "recent";
+		case AppIcon_Trash:               return "trash";
+		case AppIcon_ResetFile:           return "reset_file";
+		case AppIcon_CloseFile:           return "close_file";
+		case AppIcon_SmallBtn:            return "small_btn";
+		case AppIcon_TopmostEnabled:      return "topmost_on";
+		case AppIcon_TopmostDisabled:     return "topmost_off";
+		case AppIcon_ClipLeft:            return "clip_left";
+		case AppIcon_ClipRight:           return "clip_right";
+		case AppIcon_SmoothScroll:        return "smooth_scroll";
+		case AppIcon_Tooltip:             return "tooltip";
+		case AppIcon_Topbar:              return "topbar";
+		case AppIcon_Debug:               return "debug";
+		case AppIcon_CloseWindow:         return "close_window";
+		case AppIcon_LightDark:           return "light_dark";
+		case AppIcon_StarFile:            return "star_file";
 		default: return nullptr;
 	}
 }

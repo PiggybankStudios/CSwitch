@@ -346,17 +346,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();
 	
-	for (uxx iIndex = 1; iIndex < AppIcon_Count; iIndex++)
-	{
-		AppIcon iconEnum = (AppIcon)iIndex;
-		const char* iconPath = GetAppIconPath(iconEnum);
-		if (iconPath != nullptr)
-		{
-			ImageData iconImageData = LoadImageData(scratch, iconPath);
-			app->icons[iIndex] = InitTexture(stdHeap, MakeStr8Nt(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
-			Assert(app->icons[iIndex].error == Result_Success);
-		}
-	}
+	LoadAppIcons();
 	
 	InitRandomSeriesDefault(&app->random);
 	SeedRandomSeriesU64(&app->random, OsGetCurrentTimestamp(false));
@@ -442,20 +432,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	Assert(initResult == TRUE);
 	app->tooltipWindowHandle = NULL;
 	#endif
-	
-	app->testSheet = LoadSpriteSheet(stdHeap, StrLit("testSheet"), FilePathLit("resources/image/notifications_2x2.png"), true);
-	if (app->testSheet.error == Result_Success)
-	{
-		PrintLine_E("Loaded testSheet: grid=%dx%d cell=%dx%d texture=%dx%d",
-			app->testSheet.gridWidth, app->testSheet.gridHeight,
-			app->testSheet.cellWidth, app->testSheet.cellHeight,
-			app->testSheet.texture.Width, app->testSheet.texture.Height
-		);
-	}
-	else
-	{
-		PrintLine_E("Failed to parse SpriteSheet: %s", GetResultStr(app->testSheet.error));
-	}
 	
 	app->sleepingDisabled = false; //DEBUG_BUILD
 	
@@ -1257,6 +1233,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.Y = 0; }
 		
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, appIn->elapsedMs, false, clayMouseScrollInput, false);
+		SpriteSheet* iconsSheet = &app->appIconsSheet;
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseDownRaw(MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
@@ -1295,7 +1272,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						bool showMenuHotkeys = (IsKeyDown(Key_Alt) && appIn->isFocused);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
-							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
+							if (ClayBtnAppIcon("OpenFileBtn",
+								"Open" UNICODE_ELLIPSIS_STR,
+								"Ctrl+O",
+								"Open a file",
+								true, //isEnabled
+								AppIcon_OpenFile))
 							{
 								shouldOpenFile = true;
 								#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
@@ -1305,7 +1287,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (app->recentFiles.length > 0)
 							{
-								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, &app->icons[AppIcon_OpenRecent]))
+								if (ClayTopSubmenu("OpenRecentSubmenu",
+									"Open Recent " UNICODE_RIGHT_ARROW_STR,
+									app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver,
+									&app->appIconsSheet.texture,
+									GetSheetCellRec(&app->appIconsSheet, app->appIconSheetCell[AppIcon_OpenRecent])))
 								{
 									for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 									{
@@ -1313,7 +1299,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
 										bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
 										Str8 tooltipStr = PrintInArenaStr(uiArena, "%.*s%s", StrPrint(recentFile->path), recentFile->fileExists ? "" : " (MISSING)");
-										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), tooltipStr, !isOpenFile && recentFile->fileExists, nullptr))
+										if (ClayBtnStrEx(recentFile->path,
+											AllocStr8(uiArena, displayPath),
+											StrLit(""), //hotkey
+											tooltipStr,
+											!isOpenFile && recentFile->fileExists,
+											nullptr, Rec_Zero))
 										{
 											FileTab* newTab = AppOpenFileTab(recentFile->path);
 											if (newTab != nullptr)
@@ -1325,7 +1316,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									}
 									
 									Str8 clearRecentFilesTooltipStr = PrintInArenaStr(uiArena, "Remove %llu path%s from the \"Recent Files\" list", app->recentFiles.length, Plural(app->recentFiles.length, "s"));
-									if (ClayBtnStr(StrLit("Clear Recent Files"), Str8_Empty, clearRecentFilesTooltipStr, app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
+									if (ClayBtnAppIconStr(StrLit("ClearRecentBtn"),
+										StrLit("Clear Recent Files"),
+										Str8_Empty, //hotkey
+										clearRecentFilesTooltipStr,
+										app->recentFiles.length > 0, //isEnabled
+										AppIcon_Trash))
 									{
 										OpenPopupDialog(stdHeap, &app->popup,
 											ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
@@ -1343,10 +1339,22 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							}
 							else
 							{
-								if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
+								if (ClayBtnAppIcon("OpenRecentBtn",
+									"Open Recent " UNICODE_RIGHT_ARROW_STR,
+									"", //hotkey
+									"", //tootltip
+									false, //isEnabled
+									AppIcon_OpenRecent))
+								{
+								} Clay__CloseElement();
 							}
 							
-							if (ClayBtn("Reset File", "", "Reset file to how it was when first opened", (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), &app->icons[AppIcon_ResetFile]))
+							if (ClayBtnAppIcon("ResetFileBtn",
+								"Reset File",
+								"", //hotkey
+								"Reset file to how it was when first opened",
+								(app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal),
+								AppIcon_ResetFile))
 							{
 								OpenPopupDialog(stdHeap, &app->popup,
 									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
@@ -1356,16 +1364,36 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
 							} Clay__CloseElement();
 							
-							//TODO: Add an icon for this option
-							if (ClayBtnStr(ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"), Str8_Empty, StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes"), (app->tabs.length > 0), nullptr))
+							if (ClayBtnAppIconStr(StrLit("ReloadingEnabledBtn"),
+								ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"),
+								Str8_Empty, //hotkey
+								StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes"),
+								(app->tabs.length > 0),
+								AppIcon_None)) //TODO: Add an icon for this option
 							{
 								app->settings.dontAutoReloadFile = !app->settings.dontAutoReloadFile;
 								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
+							if (ClayBtnAppIcon("CloseFileBtn",
+								"Close File",
+								"Ctrl+W",
+								"Close the current file tab",
+								(app->currentTab != nullptr),
+								AppIcon_CloseFile))
 							{
 								AppCloseFileTab(app->currentTabIndex);
+							} Clay__CloseElement();
+							
+							if (ClayBtnAppIcon("CloseWindowBtn",
+								"Close Window",
+								"Ctrl+Shift+W",
+								"", //tooltip
+								true, //isEnabled
+								AppIcon_CloseWindow))
+							{
+								platform->RequestQuit();
+								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							Clay__CloseElement();
@@ -1381,7 +1409,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									: ThemeMode_Dark
 								)
 							);
-							if (ClayBtnStr(ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), StrLit("F9"), StrLit("Toggle between dark and light mode"), true, &app->icons[AppIcon_LightDark]))
+							if (ClayBtnAppIconStr(StrLit("LightModeBtn"),
+								ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)),
+								StrLit("F9"),
+								StrLit("Toggle between dark and light mode"),
+								true, //isEnabled
+								AppIcon_LightDark))
 							{
 								app->currentThemeMode = otherThemeMode;
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
@@ -1389,36 +1422,66 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								AppBakeTheme(false);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
+							if (ClayBtnAppIconStr(StrLit("SmallButtonsBtn"),
+								ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"),
+								StrLit("F10"),
+								StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"),
+								true, //isEnabled
+								AppIcon_SmallBtn))
 							{
 								app->settings.smallButtons = !app->settings.smallButtons;
 								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"), true, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
+							if (ClayBtnAppIconStr(StrLit("TopmostBtn"),
+								ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"),
+								StrLit("Ctrl+T"),
+								StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"),
+								true, //isEnabled
+								appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled))
 							{
 								platform->SetWindowTopmost(!appIn->isWindowTopmost);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+							if (ClayBtnAppIconStr(StrLit("ClipNamesBtn"),
+								ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"),
+								Str8_Empty, //hotkey
+								StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"),
+								true, //isEnabled
+								app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight))
 							{
 								app->settings.clipNamesLeft = !app->settings.clipNamesLeft;
 								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"), true, &app->icons[AppIcon_SmoothScroll]))
+							if (ClayBtnAppIconStr(StrLit("SmoothScrollingBtn"),
+								ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"),
+								Str8_Empty, //hotkey
+								StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"),
+								true, //isEnabled
+								AppIcon_SmoothScroll))
 							{
 								app->settings.smoothScrollingDisabled = !app->settings.smoothScrollingDisabled;
 								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"), true, &app->icons[AppIcon_Tooltip]))
+							if (ClayBtnAppIconStr(StrLit("TooltipsBtn"),
+								ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"),
+								Str8_Empty, //hotkey
+								StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"),
+								true, //isEnabled
+								AppIcon_Tooltip))
 							{
 								app->settings.optionTooltipsDisabled = !app->settings.optionTooltipsDisabled;
 								SaveAppSettings();
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"), true, &app->icons[AppIcon_Topbar]))
+							if (ClayBtnAppIconStr(StrLit("HideTopbarBtn"),
+								ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"),
+								StrLit("F11"),
+								StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"),
+								true, //isEnabled
+								AppIcon_Topbar))
 							{
 								app->minimalModeEnabled = !app->minimalModeEnabled;
 							} Clay__CloseElement();
@@ -1427,14 +1490,24 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
 								: StrLit("current: -");
 							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, &app->icons[AppIcon_StarFile]))
+							if (ClayBtnAppIconStr(StrLit("OpenThemeBtn"),
+								StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR),
+								Str8_Empty, //hotkey
+								openThemeTooltipStr,
+								true, //isEnabled
+								AppIcon_StarFile))
 							{
 								shouldOpenThemeFile = true;
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), &app->icons[AppIcon_CloseFile]))
+							if (ClayBtnAppIconStr(StrLit("ClearThemeBtn"),
+								StrLit("Clear Custom Theme"),
+								Str8_Empty, //hotkey
+								clearThemeTooltipStr,
+								!IsEmptyStr(app->settings.userThemePath),
+								AppIcon_CloseFile))
 							{
 								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
 								SaveAppSettings();
@@ -1443,25 +1516,34 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							} Clay__CloseElement();
 							
 							#if DEBUG_BUILD
-							if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("~"), StrLit("Toggles the debug sidebar for Clay"), true, &app->icons[AppIcon_Debug]))
+							if (ClayBtnAppIconStr(StrLit("ClayDebugBtn"),
+								ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"),
+								StrLit("~"),
+								StrLit("Toggles the debug sidebar for Clay"),
+								true, //isEnabled
+								AppIcon_Debug))
 							{
 								Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 							} Clay__CloseElement();
-							if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing"), true, nullptr))
+							if (ClayBtnAppIconStr(StrLit("SleepBtn"),
+								ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"),
+								Str8_Empty, //hotkey
+								StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing"),
+								true, //isEnabled
+								AppIcon_None))
 							{
 								app->sleepingDisabled = !app->sleepingDisabled;
 							} Clay__CloseElement();
-							if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate"), true, nullptr))
+							if (ClayBtnAppIconStr(StrLit("FrameIndicatorBtn"),
+								ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"),
+								Str8_Empty, //hotkey
+								StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate"),
+								true, //isEnabled
+								AppIcon_None))
 							{
 								app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
 							} Clay__CloseElement();
 							#endif //DEBUG_BUILD
-							
-							// if (ClayBtn("Close Window", "Ctrl+Shift+W", true, &app->icons[AppIcon_CloseWindow]))
-							// {
-							// 	platform->RequestQuit();
-							// 	app->isFileMenuOpen = false;
-							// } Clay__CloseElement();
 							
 							Clay__CloseElement();
 							Clay__CloseElement();
@@ -1782,15 +1864,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (app->currentTab == nullptr)
 		{
 			// DrawClayTextboxText(&app->testTextbox);
-			
-			#if 0
-			DrawSheetCell(&app->testSheet, MakeV2i(1, 0), MakeRec(10, 300, 64, 64), White);
-			DrawSheetCell(&app->testSheet, MakeV2i(0, 1), MakeRec(10, 364, 64, 64), White);
-			for (u64 index = 0; index < 128; index++)
-			{
-				DrawNamedSheetCell(&app->testSheet, StrLit("error"), MakeRec(10 + 2.0f*index, 428, 64, 64), ((index%2) == 0) ? MonokaiBlue : White);
-			}
-			#endif
 			
 			app->testTooltipId = SoftRegisterTooltip(&app->tooltips, app->testTooltipId, Str8_Empty, 0, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 			

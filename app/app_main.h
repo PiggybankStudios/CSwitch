@@ -209,7 +209,8 @@ struct AppData
 	r32 uiScale;
 	r32 mainFontSize;
 	PigFont mainFont;
-	Texture icons[AppIcon_Count];
+	v2i appIconSheetCell[AppIcon_Count];
+	SpriteSheet appIconsSheet;
 	
 	BakedTheme theme;
 	ThemeDefinition defaultTheme;
@@ -265,8 +266,6 @@ struct AppData
 	bool enableFrameUpdateIndicator;
 	#endif
 	bool minimalModeEnabled;
-	
-	SpriteSheet testSheet;
 	
 	#if THREAD_POOL_TEST
 	ThreadPool threadPool;

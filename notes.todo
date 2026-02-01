@@ -20,7 +20,8 @@
 	[X] Sublime shortcut to open CSwitch on Linux
 	[X] Does the application depend on any other things being installed on Linux?
 @ All
-	[!] Finish SpriteSheet support
+	[X] Finish SpriteSheet support
+	[X] Change to saving in `$HOME/.config/C_Switch`
 	[!] Add simple binding system (enum for commands, simple syntax in file)
 	[!] Make a spritesheet editor?
 	[ ] Add support for multi-threading

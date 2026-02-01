@@ -126,6 +126,24 @@ void LoadNotificationIcons()
 	}
 }
 
+void LoadAppIcons()
+{
+	ScratchBegin(scratch);
+	Slice imageFileContents = ReadAppResource(&app->resources, scratch, StrLit(APP_ICONS_TEXTURE_PATH), false);
+	Str8 metaFileContents = ReadAppResource(&app->resources, scratch, StrLit(APP_ICONS_METADATA_PATH), true);
+	app->appIconsSheet = InitSpriteSheet(stdHeap, StrLit("appIcons"), StrLit(APP_ICONS_TEXTURE_PATH), imageFileContents, metaFileContents);
+	Assert(app->appIconsSheet.error == Result_Success);
+	for (uxx iIndex = 1; iIndex < AppIcon_Count; iIndex++)
+	{
+		AppIcon enumValue = (AppIcon)iIndex;
+		Str8 cellName = MakeStr8Nt(GetAppIconSheetCellName(enumValue));
+		SpriteSheetCell* sheetCell = TryFindSheetCell(&app->appIconsSheet, cellName);
+		Assert(sheetCell != nullptr);
+		app->appIconSheetCell[iIndex] = sheetCell->cellPos;
+	}
+	ScratchEnd(scratch);
+}
+
 bool AppTryLoadDefaultTheme(bool assertOnFailure)
 {
 	TracyCZoneN(_funcZone, "LoadDefaultTheme", true);
@@ -276,6 +294,7 @@ bool AppCreateFonts()
 		}
 		FillFontKerningTable(&newUiFont);
 		
+		#if 0
 		FontAtlas* uiAtlas = GetDefaultFontAtlas(&newUiFont);
 		NotNull(uiAtlas);
 		PrintLine_D("UI Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
@@ -300,6 +319,7 @@ bool AppCreateFonts()
 				);
 			}
 		}
+		#endif
 		
 		MakeFontActive(&newUiFont, 128, 1024, 16, 0, 0);
 	}
@@ -324,6 +344,7 @@ bool AppCreateFonts()
 		}
 		FillFontKerningTable(&newMainFont);
 		
+		#if 0
 		FontAtlas* mainAtlas = GetDefaultFontAtlas(&newMainFont);
 		NotNull(mainAtlas);
 		PrintLine_D("Main Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
@@ -348,6 +369,7 @@ bool AppCreateFonts()
 				);
 			}
 		}
+		#endif
 		
 		MakeFontActive(&newMainFont, 128, 1024, 16, 0, 0);
 	}

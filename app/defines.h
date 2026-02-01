@@ -38,6 +38,9 @@ Date:   02\25\2025
 #define NOTIFICATION_ICONS_TEXTURE_PATH "resources/image/notifications_2x2.png"
 #define NOTIFICATION_ICONS_SIZE         24 //px
 
+#define APP_ICONS_TEXTURE_PATH  "resources/image/btn_icons_4x5.png"
+#define APP_ICONS_METADATA_PATH "resources/image/btn_icons_4x5.meta"
+
 #define DEFAULT_WINDOW_SIZE        MakeV2(360, 500)
 #define MIN_WINDOW_SIZE            MakeV2(50, 50)
 #define SCROLLBAR_WIDTH            10 //px (at uiScale=1.0f)

@@ -99,12 +99,12 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	return *isOpenPntr;
 }
 
-bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, Texture* icon)
+bool ClayTopSubmenu(const char* idStr, const char* btnText, bool isParentOpen, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, Texture* iconTexture, rec iconSourceRec)
 {
 	ScratchBegin(scratch);
-	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopSubmenu", btnText);
-	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopSubmenuMenu", btnText);
-	Str8 menuListIdStr = PrintInArenaStr(scratch, "%s_TopSubmenuMenuList", btnText);
+	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopSubmenu", idStr);
+	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopSubmenuMenu", idStr);
+	Str8 menuListIdStr = PrintInArenaStr(scratch, "%s_TopSubmenuMenuList", idStr);
 	ClayId btnId = ToClayId(btnIdStr);
 	ClayId menuId = ToClayId(menuIdStr);
 	ClayId menuListId = ToClayId(menuListIdStr);
@@ -127,9 +127,19 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	});
 	CLAY({ .layout = { .layoutDirection = CLAY_LEFT_TO_RIGHT, .childGap = TOPBAR_ICONS_PADDING, .padding = { .right = UI_U16(8) }, } })
 	{
-		if (icon != nullptr)
+		if (iconTexture != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), iconColor);
+			CLAY({
+				.layout = {
+					.sizing = {
+						.width = CLAY_SIZING_FIXED(UI_R32(TOPBAR_ICONS_SIZE)),
+						.height = CLAY_SIZING_FIXED(UI_R32(TOPBAR_ICONS_SIZE)),
+					},
+				},
+				.image = ToClayImageEx(iconTexture, iconSourceRec),
+				.backgroundColor = iconColor,
+				.userData = { .imageSourceRec = iconSourceRec },
+			}) {}
 		}
 		CLAY_TEXT(
 			MakeStr8Nt(btnText),
@@ -188,7 +198,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 }
 
 //Call Clay__CloseElement once after if statement
-bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* icon)
+bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* iconTexture, rec iconSourceRec)
 {
 	ScratchBegin(scratch);
 	Str8 fullIdStr = PrintInArenaStr(scratch, "%.*s_Btn", StrPrint(idStr));
@@ -232,9 +242,19 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 		},
 	})
 	{
-		if (icon != nullptr)
+		if (iconTexture != nullptr)
 		{
-			CLAY_ICON(icon, FillV2(TOPBAR_ICONS_SIZE * app->uiScale), iconColor);
+			CLAY({
+				.layout = {
+					.sizing = {
+						.width = CLAY_SIZING_FIXED(UI_R32(TOPBAR_ICONS_SIZE)),
+						.height = CLAY_SIZING_FIXED(UI_R32(TOPBAR_ICONS_SIZE)),
+					},
+				},
+				.image = ToClayImageEx(iconTexture, iconSourceRec),
+				.backgroundColor = iconColor,
+				.userData = { .imageSourceRec = iconSourceRec },
+			}) {}
 		}
 		CLAY_TEXT(
 			btnText,
@@ -278,13 +298,24 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	ScratchEnd(scratch);
 	return (isHovered && isEnabled && MouseLeftClicked());
 }
-bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* icon)
+bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* iconTexture, rec iconSourceRec)
 {
-	return ClayBtnStrEx(btnText, btnText, hotkeyStr, tooltipStr, isEnabled, icon);
+	return ClayBtnStrEx(btnText, btnText, hotkeyStr, tooltipStr, isEnabled, iconTexture, iconSourceRec);
 }
-bool ClayBtn(const char* btnText, const char* hotkeyStr, const char* tooltipStr, bool isEnabled, Texture* icon)
+bool ClayBtn(const char* btnText, const char* hotkeyStr, const char* tooltipStr, bool isEnabled, Texture* iconTexture, rec iconSourceRec)
 {
-	return ClayBtnStr(MakeStr8Nt(btnText), MakeStr8Nt(hotkeyStr), MakeStr8Nt(tooltipStr), isEnabled, icon);
+	return ClayBtnStr(MakeStr8Nt(btnText), MakeStr8Nt(hotkeyStr), MakeStr8Nt(tooltipStr), isEnabled, iconTexture, iconSourceRec);
+}
+bool ClayBtnAppIconStr(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, AppIcon appIcon)
+{
+	return ClayBtnStrEx(idStr, btnText, hotkeyStr, tooltipStr, isEnabled,
+		&app->appIconsSheet.texture,
+		appIcon != AppIcon_None ? GetSheetCellRec(&app->appIconsSheet, app->appIconSheetCell[appIcon]) : Rec_Zero
+	);
+}
+bool ClayBtnAppIcon(const char* idStr, const char* btnText, const char* hotkeyStr, const char* tooltipStr, bool isEnabled, AppIcon appIcon)
+{
+	return ClayBtnAppIconStr(MakeStr8Nt(idStr), MakeStr8Nt(btnText), MakeStr8Nt(hotkeyStr), MakeStr8Nt(tooltipStr), isEnabled, appIcon);
 }
 
 //Call Clay__CloseElement once after if statement
