@@ -236,12 +236,12 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		{
 			if (textbox->edit.cursorActive)
 			{
-				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift))
+				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, nullptr, Key_Shift))
 				{
 					if (textbox->edit.cursorEnd > 0)
 					{
 						textbox->edit.cursorEnd--;
-						if (!IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
+						if (!IsKeyboardKeyDown(&appIn->keyboard, nullptr, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
 					}
 				}
 				else
@@ -261,12 +261,12 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		{
 			if (textbox->edit.cursorActive)
 			{
-				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift))
+				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, nullptr, Key_Shift))
 				{
 					if (textbox->edit.cursorEnd < textbox->edit.str.length)
 					{
 						textbox->edit.cursorEnd++;
-						if (!IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
+						if (!IsKeyboardKeyDown(&appIn->keyboard, nullptr, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
 					}
 				}
 				else

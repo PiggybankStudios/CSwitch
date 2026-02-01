@@ -708,17 +708,17 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |       Thread Pool Test       |
 	// +==============================+
 	#if THREAD_POOL_TEST
-	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_R, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_R, true))
 	{
 		PrintLine_D("Atomics values = %d, %lld, %u", AtomicRead(&app->atomicBundle.int0), AtomicRead(&app->atomicBundle.int1), AtomicRead(&app->atomicBundle.int2));
 	}
-	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_B, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_B, true))
 	{
 		bool starting = !AtomicRead(&app->atomicBundle.begin);
 		AtomicWrite(&app->atomicBundle.begin, starting);
 		PrintLine_I("%s atomic tests!", starting ? "Starting" : "Stopping");
 	}
-	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_W, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_W, true))
 	{
 		#if 1
 		WorkSubject subject = ZEROED;
@@ -754,7 +754,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		PrintLine_D("Queued %.*s as item %llu", StrPrint(allocatedStr), newItem->id);
 		#endif
 	}
-	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_K, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_K, true))
 	{
 		bool stoppedAThread = false;
 		for (uxx tIndex = 0; tIndex < app->threadPool.threads.length; tIndex++)
@@ -778,21 +778,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
-	if (WasKeyPressed(Key_Tilde, false))
+	if (WasKeyComboPressed(ModifierKey_None, Key_Tilde, false))
 	{
 		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 	}
-	if (WasKeyPressed(Key_N, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
-	if (WasKeyPressed(Key_D, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_D, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		PrintLineAt(level, "This is a %s level output!", GetDbgLevelStr(level));
 	}
-	if (WasKeyPressed(Key_T, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_T, true))
 	{
 		ThreadId threadId = OsGetCurrentThreadId();
 		Str8 threadName = GetStandardPeopleFirstName((u64)threadId);
@@ -821,19 +821,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
 	// +========================================+
-	if (WasKeyPressed(Key_W, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_W, false))
 	{
-		if (IsKeyDownRaw(Key_Shift))
-		{
-			platform->RequestQuit();
-		}
-		else
-		{
-			if (app->currentTab != nullptr)
-			{
-				AppCloseFileTab(app->currentTabIndex);
-			}
-		}
+		platform->RequestQuit();
+	}
+	if (appIn->isFocused && app->currentTab != nullptr && WasKeyComboPressed(ModifierKey_Control, Key_W, false))
+	{
+		AppCloseFileTab(app->currentTabIndex);
 	}
 	
 	// +==============================+
@@ -906,15 +900,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==================================================+
 	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
 	// +==================================================+
-	if (WasKeyPressed(Key_Plus, true) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_Plus, true))
 	{
 		AppChangeFontSize(true);
 	}
-	if (WasKeyPressed(Key_Minus, true) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_Minus, true))
 	{
 		AppChangeFontSize(false);
 	}
-	if (WasKeyPressed(Key_0, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_0, false))
 	{
 		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
@@ -934,7 +928,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +================================+
 	// | Handle Alt+F and Alt+V Hotkeys |
 	// +================================+
-	if (WasKeyPressed(Key_F, false) && IsKeyDown(Key_Alt) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Alt, Key_F, false))
 	{
 		app->isFileMenuOpen = !app->isFileMenuOpen;
 		if (app->isFileMenuOpen)
@@ -943,7 +937,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			app->keepFileMenuOpenUntilMouseOver = true;
 		}
 	}
-	if (WasKeyPressed(Key_V, false) && IsKeyDown(Key_Alt) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Alt, Key_V, false))
 	{
 		app->isViewMenuOpen = !app->isViewMenuOpen;
 		if (app->isViewMenuOpen)
@@ -958,7 +952,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	bool shouldOpenFile = false;
 	bool shouldOpenThemeFile = false;
-	if (WasKeyPressed(Key_O, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_O, false))
 	{
 		shouldOpenFile = true;
 	}
@@ -966,25 +960,22 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
 	// +========================================+
-	if (WasKeyPressed(Key_Tab, true) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && app->tabs.length > 1 && (WasKeyComboPressed(ModifierKey_Control, Key_Tab, true) || WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_Tab, true)))
 	{
-		if (app->tabs.length > 1)
+		if (IsKeyDownRaw(Key_Shift))
 		{
-			if (IsKeyDownRaw(Key_Shift))
-			{
-				AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1);
-			}
-			else
-			{
-				AppChangeTab((app->currentTabIndex+1) % app->tabs.length);
-			}
+			AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1);
+		}
+		else
+		{
+			AppChangeTab((app->currentTabIndex+1) % app->tabs.length);
 		}
 	}
 	
 	// +==============================+
 	// |     Handle Ctrl+E Hotkey     |
 	// +==============================+
-	if (WasKeyPressed(Key_E, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_E, false))
 	{
 		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 		{
@@ -999,7 +990,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+T Hotkey     |
 	// +==============================+
-	if (WasKeyPressed(Key_T, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
+	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_T, false))
 	{
 		platform->SetWindowTopmost(!appIn->isWindowTopmost);
 	}
@@ -1257,11 +1248,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			&app->tooltips
 		);
 		
-		v2 scrollContainerInput = IsKeyDownRaw(Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
+		v2 clayMouseScrollInput = appIn->mouse.scrollDelta;
 		#if TARGET_IS_LINUX
-		scrollContainerInput = ScaleV2(scrollContainerInput, LINUX_SCROLL_WHEEL_SCALING);
+		clayMouseScrollInput = ScaleV2(clayMouseScrollInput, LINUX_SCROLL_WHEEL_SCALING);
 		#endif
-		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
+		if (IsKeyDownRaw(Key_Control)) { clayMouseScrollInput = V2_Zero; }
+		if (appInputHandling->mouse.scrollXHandled) { clayMouseScrollInput.X = 0; }
+		if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.Y = 0; }
+		
+		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, appIn->elapsedMs, false, clayMouseScrollInput, false);
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseDownRaw(MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);

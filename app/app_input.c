@@ -11,15 +11,17 @@ Description:
 
 #define AppInGlobalIsSet() (appIn != nullptr && appInputHandling != nullptr)
 
-#define IsKeyDown(key)                             (AppInGlobalIsSet() && IsKeyboardKeyDown(&appIn->keyboard,     &appInputHandling->keyboard, (key)))
-#define IsKeyUp(key)                               (AppInGlobalIsSet() && IsKeyboardKeyUp(&appIn->keyboard,       &appInputHandling->keyboard, (key)))
-#define WasKeyPressed(key, followOsRepeatingEvent) (AppInGlobalIsSet() && IsKeyboardKeyPressed(&appIn->keyboard,  &appInputHandling->keyboard, (key), (followOsRepeatingEvent)))
-#define WasKeyReleased(key)                        (AppInGlobalIsSet() && IsKeyboardKeyReleased(&appIn->keyboard, &appInputHandling->keyboard, (key)))
+#define IsKeyDown(key)                                             (AppInGlobalIsSet() && IsKeyboardKeyDown(&appIn->keyboard,                 &appInputHandling->keyboard, (key)))
+#define IsKeyUp(key)                                               (AppInGlobalIsSet() && IsKeyboardKeyUp(&appIn->keyboard,                   &appInputHandling->keyboard, (key)))
+#define WasKeyPressed(key, followOsRepeatingEvent)                 (AppInGlobalIsSet() && IsKeyboardKeyPressed(&appIn->keyboard,              &appInputHandling->keyboard, (key), (followOsRepeatingEvent)))
+#define WasKeyReleased(key)                                        (AppInGlobalIsSet() && IsKeyboardKeyReleased(&appIn->keyboard,             &appInputHandling->keyboard, (key)))
+#define WasKeyComboPressed(modifiers, key, followOsRepeatingEvent) (AppInGlobalIsSet() && IsKeyboardKeyPressedWithModifiers(&appIn->keyboard, &appInputHandling->keyboard, (modifiers), (key), (followOsRepeatingEvent)))
 
-#define IsKeyDownRaw(key)                             (AppInGlobalIsSet() && IsKeyboardKeyDown(&appIn->keyboard,     nullptr, (key)))
-#define IsKeyUpRaw(key)                               (AppInGlobalIsSet() && IsKeyboardKeyUp(&appIn->keyboard,       nullptr, (key)))
-#define WasKeyPressedRaw(key, followOsRepeatingEvent) (AppInGlobalIsSet() && IsKeyboardKeyPressed(&appIn->keyboard,  nullptr, (key), (followOsRepeatingEvent)))
-#define WasKeyReleasedRaw(key)                        (AppInGlobalIsSet() && IsKeyboardKeyReleased(&appIn->keyboard, nullptr, (key)))
+#define IsKeyDownRaw(key)                                             (AppInGlobalIsSet() && IsKeyboardKeyDown(&appIn->keyboard,                 nullptr, (key)))
+#define IsKeyUpRaw(key)                                               (AppInGlobalIsSet() && IsKeyboardKeyUp(&appIn->keyboard,                   nullptr, (key)))
+#define WasKeyPressedRaw(key, followOsRepeatingEvent)                 (AppInGlobalIsSet() && IsKeyboardKeyPressed(&appIn->keyboard,              nullptr, (key), (followOsRepeatingEvent)))
+#define WasKeyReleasedRaw(key)                                        (AppInGlobalIsSet() && IsKeyboardKeyReleased(&appIn->keyboard,             nullptr, (key)))
+#define WasKeyComboPressedRaw(modifiers, key, followOsRepeatingEvent) (AppInGlobalIsSet() && IsKeyboardKeyPressedWithModifiers(&appIn->keyboard, nullptr, (modifiers), (key), (followOsRepeatingEvent)))
 
 #define IsMouseDown(btn)      (AppInGlobalIsSet() && IsMouseBtnDown(&appIn->mouse,     &appInputHandling->mouse, (btn)))
 #define IsMouseUp(btn)        (AppInGlobalIsSet() && IsMouseBtnUp(&appIn->mouse,       &appInputHandling->mouse, (btn)))
