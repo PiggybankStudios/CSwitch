@@ -36,6 +36,7 @@ Description:
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
 #include "app_commands.h"
+#include "app_bindings.h"
 #include "app_theme_funcs.h"
 #include "app_theme.h"
 #include "app_icons.h"
@@ -74,6 +75,7 @@ static Arena* stdHeap = nullptr;
 #include "app_tab.c"
 #include "app_clay.c"
 #include "app_commands.c"
+#include "app_bindings.c"
 
 // +==============================+
 // |         TestWorkItem         |
@@ -381,6 +383,9 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileTab, &app->tabs, stdHeap);
+	
+	InitAppBindingSet(stdHeap, &app->bindings);
+	AddDefaultAppBindings(&app->bindings);
 	
 	InitThemeDefFuncArgInfos();
 	AppTryLoadDefaultTheme(true);
@@ -789,10 +794,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
-	if (WasKeyComboPressed(ModifierKey_None, Key_Tilde, false))
-	{
-		RunAppCommand(AppCommand_ToggleClayDebug);
-	}
 	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
@@ -829,73 +830,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
-	// +========================================+
-	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
-	// +========================================+
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_W, false))
-	{
-		RunAppCommand(AppCommand_CloseWindow);
-	}
-	if (appIn->isFocused && app->currentTab != nullptr && WasKeyComboPressed(ModifierKey_Control, Key_W, false))
-	{
-		RunAppCommand(AppCommand_CloseTab);
-	}
-	
 	// +==============================+
-	// | F6 Toggles Performance Graph |
+	// |   Handle Keyboard Bindings   |
 	// +==============================+
-	if (WasKeyPressed(Key_F6, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_TogglePerfGraph);
-	}
-	
-	// +==============================+
-	// |       Handle F9 Hotkey       |
-	// +==============================+
-	if (WasKeyPressed(Key_F9, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ToggleLightMode);
-	}
-	
-	// +==============================+
-	// |      Handle F10 Hotkey       |
-	// +==============================+
-	if (WasKeyPressed(Key_F10, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ToggleSmallButtons);
-	}
-	
-	// +==============================+
-	// |      Handle F11 Hotkey       |
-	// +==============================+
-	if (WasKeyPressed(Key_F11, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ToggleTopbar);
-	}
-	
-	// +==============================+
-	// |      Handle Escape Key       |
-	// +==============================+
-	if (WasKeyPressed(Key_Escape, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ClosePopupOrMenu);
-	}
-	
-	// +==================================================+
-	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
-	// +==================================================+
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_Plus, true))
-	{
-		RunAppCommand(AppCommand_IncreaseUiScale);
-	}
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_Minus, true))
-	{
-		RunAppCommand(AppCommand_DecreaseUiScale);
-	}
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_0, false))
-	{
-		RunAppCommand(AppCommand_ResetUiScale);
-	}
+	RunAppBindingCommands(&app->bindings);
 	
 	// +==============================+
 	// |   Handle Ctrl+ScrollWheel    |
@@ -905,107 +843,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		RunAppCommand((appIn->mouse.scrollDelta.Y > 0) ? AppCommand_IncreaseUiScale : AppCommand_DecreaseUiScale);
 	}
 	
-	// +================================+
-	// | Handle Alt+F and Alt+V Hotkeys |
-	// +================================+
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Alt, Key_F, false))
-	{
-		RunAppCommand(AppCommand_OpenFileMenu);
-	}
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Alt, Key_V, false))
-	{
-		RunAppCommand(AppCommand_OpenViewMenu);
-	}
-	
-	// +==============================+
-	// |     Handle Ctrl+O Hotkey     |
-	// +==============================+
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_O, false))
-	{
-		RunAppCommand(AppCommand_OpenFile);
-	}
-	
-	// +========================================+
-	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
-	// +========================================+
-	if (appIn->isFocused && app->tabs.length > 1 && WasKeyComboPressed(ModifierKey_Control, Key_Tab, true))
-	{
-		RunAppCommand(AppCommand_NextTab);
-	}
-	if (appIn->isFocused && app->tabs.length > 1 && WasKeyComboPressed(ModifierKey_Control|ModifierKey_Shift, Key_Tab, true))
-	{
-		RunAppCommand(AppCommand_PreviousTab);
-	}
-	
-	// +==============================+
-	// |     Handle Ctrl+E Hotkey     |
-	// +==============================+
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_E, false))
-	{
-		RunAppCommand(AppCommand_ReopenRecentFile);
-	}
-	
-	// +==============================+
-	// |     Handle Ctrl+T Hotkey     |
-	// +==============================+
-	if (appIn->isFocused && WasKeyComboPressed(ModifierKey_Control, Key_T, false))
-	{
-		RunAppCommand(AppCommand_ToggleTopmost);
-	}
-	
-	// +======================================+
-	// | Handle Home/End and PageUp/PageDown  |
-	// +======================================+
-	//TODO: These should probably move the app->currentTab->selectedOptionIndex if app->usingKeyboardToSelect
-	if (WasKeyPressed(Key_Home, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ScrollToTop);
-	}
-	if (WasKeyPressed(Key_End, false) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ScrollToBottom);
-	}
-	if (WasKeyPressed(Key_PageUp, true) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ScrollUpPage);
-	}
-	if (WasKeyPressed(Key_PageDown, true) && appIn->isFocused)
-	{
-		RunAppCommand(AppCommand_ScrollDownPage);
-	}
-	
-	// +====================================+
-	// | Handle Arrow Keys to Select Option |
-	// +====================================+
-	if (appIn->isFocused)
-	{
-		//TODO: we need to pass along whether it was a OS-level repeat somehow to RunAppCommand
-		bool downPressed  = WasKeyPressed(Key_Down,  false);
-		bool upPressed    = WasKeyPressed(Key_Up,    false);
-		bool leftPressed  = WasKeyPressed(Key_Left,  false);
-		bool rightPressed = WasKeyPressed(Key_Right, false);
-		bool downPressedOrRepeated  = (downPressed  || WasKeyPressed(Key_Down,  true));
-		bool upPressedOrRepeated    = (upPressed    || WasKeyPressed(Key_Up,    true));
-		bool leftPressedOrRepeated  = (leftPressed  || WasKeyPressed(Key_Left,  true));
-		bool rightPressedOrRepeated = (rightPressed || WasKeyPressed(Key_Right, true));
-		if (downPressedOrRepeated)  { RunAppCommand(AppCommand_SelectMoveDown);  }
-		if (upPressedOrRepeated)    { RunAppCommand(AppCommand_SelectMoveUp);    }
-		if (leftPressedOrRepeated)  { RunAppCommand(AppCommand_SelectMoveLeft);  }
-		if (rightPressedOrRepeated) { RunAppCommand(AppCommand_SelectMoveRight); }
-	}
+	// +==================================================+
+	// | Mouse Interaction Disables usingKeyboardToSelect |
+	// +==================================================+
 	if (MouseLeftClickedRaw() ||
 		MouseRightClickedRaw() ||
 		MouseMiddleClickedRaw() ||
 		(appIn->mouse.isOverWindow && !AreSimilarV2(appIn->mouse.scrollDelta, V2_Zero, DEFAULT_R32_TOLERANCE)))
 	{
 		app->usingKeyboardToSelect = false;
-	}
-	
-	if ( appIn->isFocused && app->usingKeyboardToSelect &&
-		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0 &&
-		WasKeyPressed(Key_Enter, false))
-	{
-		RunAppCommand(AppCommand_ChooseSelection);
 	}
 	
 	// if (app->currentTab == nullptr)

@@ -46,7 +46,7 @@ enum AppCommand
 	AppCommand_SelectMoveDown,
 	AppCommand_SelectMoveLeft,
 	AppCommand_SelectMoveRight,
-	AppCommand_ChooseSelection,
+	AppCommand_ToggleSelected,
 	AppCommand_Count,
 };
 
@@ -90,8 +90,24 @@ const char* GetAppCommandStr(AppCommand enumValue)
 		case AppCommand_SelectMoveDown:        return "SelectMoveDown";
 		case AppCommand_SelectMoveLeft:        return "SelectMoveLeft";
 		case AppCommand_SelectMoveRight:       return "SelectMoveRight";
-		case AppCommand_ChooseSelection:       return "ChooseSelection";
+		case AppCommand_ToggleSelected:        return "ToggleSelected";
 		default: return UNKNOWN_STR;
+	}
+}
+
+bool DoesAppCommandTriggerOnOsLevelKeyRepeatEvents(AppCommand command)
+{
+	switch (command)
+	{
+		case AppCommand_NextTab:         return true;
+		case AppCommand_PreviousTab:     return true;
+		case AppCommand_IncreaseUiScale: return true;
+		case AppCommand_DecreaseUiScale: return true;
+		case AppCommand_SelectMoveUp:    return true;
+		case AppCommand_SelectMoveDown:  return true;
+		case AppCommand_SelectMoveLeft:  return true;
+		case AppCommand_SelectMoveRight: return true;
+		default: return false;
 	}
 }
 

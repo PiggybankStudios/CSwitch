@@ -78,9 +78,6 @@ void RunAppCommand(AppCommand command)
 			{
 				ClosePopupDialog(&app->popup, nullptr);
 			}
-			else if (DismissNotification(&app->notificationQueue, appIn->programTime, false))
-			{
-			}
 			else if (app->isFileMenuOpen)
 			{
 				app->isFileMenuOpen = false;
@@ -90,9 +87,16 @@ void RunAppCommand(AppCommand command)
 			{
 				app->isViewMenuOpen = false;
 			}
+			else if (DismissNotification(&app->notificationQueue, appIn->programTime, false))
+			{
+			}
 			else if (app->minimalModeEnabled)
 			{
 				app->minimalModeEnabled = false;
+			}
+			else if (app->usingKeyboardToSelect)
+			{
+				app->usingKeyboardToSelect = false;
 			}
 		} break;
 		
@@ -293,7 +297,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		case AppCommand_NextTab:
 		{
-			if (app->tabs.length > 1 ) { AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1); }
+			if (app->tabs.length > 1) { AppChangeTab((app->currentTabIndex+1) % app->tabs.length); }
 		} break;
 		
 		// +==============================+
@@ -301,7 +305,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		case AppCommand_PreviousTab:
 		{
-			if (app->tabs.length > 1 ) { AppChangeTab((app->currentTabIndex+1) % app->tabs.length); }
+			if (app->tabs.length > 1) { AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1); }
 		} break;
 		
 		// +==============================+
@@ -588,9 +592,9 @@ void RunAppCommand(AppCommand command)
 		} break;
 		
 		// +==============================+
-		// |  AppCommand_ChooseSelection  |
+		// |  AppCommand_ToggleSelected   |
 		// +==============================+
-		case AppCommand_ChooseSelection:
+		case AppCommand_ToggleSelected:
 		{
 			if (app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0)
 			{

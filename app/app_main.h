@@ -244,6 +244,8 @@ struct AppData
 	bool openFileDialogIsForTheme;
 	OsOpenFileDialogHandle openFileDialog;
 	
+	AppBindingSet bindings;
+	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
 	

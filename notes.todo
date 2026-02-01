@@ -22,7 +22,9 @@
 @ All
 	[X] Finish SpriteSheet support
 	[X] Change to saving in `$HOME/.config/C_Switch`
-	[!] Add simple binding system (enum for commands, simple syntax in file)
+	[X] Start simple binding system (enum for commands, hardcoded binding init on startup)
+	[!] Deserialize bindings from a file with a simple syntax
+	[!] Show bindings in UI based on bindings in AppBindingSet
 	[!] Make a spritesheet editor?
 	[!] Sokol is giving us a MOUSE_ENTER event when the window initially opens, even when the mouse is not actually over the window
 	[ ] Add support for multi-threading
