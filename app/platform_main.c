@@ -146,6 +146,27 @@ void PlatUpdateAppInputTimingInfo(AppInput* appInput)
 	appInput->timeScale = (r32)appInput->timeScaleR64;
 }
 
+void PlatRefreshAppInputHandling(const AppInput* appInput, AppInputHandling* handling)
+{
+	handling->fullscreenChangeHandled = false;
+	handling->minimizedHandled = false;
+	handling->focusedHandled = false;
+	handling->screenSizeChangedHandled = false;
+	RefreshKeyboardStateHandling(&appInput->keyboard, &handling->keyboard);
+	RefreshMouseStateHandling(&appInput->mouse, &handling->mouse);
+	RefreshTouchscreenStateHandling(&appInput->touch, &handling->touch);
+	
+	if (handling->droppedFilePathsHandled.length < appInput->droppedFilePaths.length)
+	{
+		VarArrayAddMulti(bool, &handling->droppedFilePathsHandled, appInput->droppedFilePaths.length - handling->droppedFilePathsHandled.length);
+	}
+	VarArrayLoop(&handling->droppedFilePathsHandled, fIndex)
+	{
+		VarArrayLoopGet(bool, droppedFileHandled, &handling->droppedFilePathsHandled, fIndex);
+		*droppedFileHandled = false;
+	}
+}
+
 bool PlatDoUpdate(void)
 {
 	TracyCFrameMarkNamed("Game Loop");
@@ -243,7 +264,9 @@ bool PlatDoUpdate(void)
 	OsTime afterUpdateTime = OsGetTime();
 	platformInfo->updateMs = OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime);
 	
-	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
+	PlatRefreshAppInputHandling(oldAppInput, &platformData->appInputHandling);
+	
+	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput, &platformData->appInputHandling);
 	
 	TracyCZoneEnd(_funcZone);
 	return renderedFrame;
@@ -263,6 +286,8 @@ void PlatSappInit(void)
 	InitAppInput(&platformData->appInputs[1]);
 	platformData->currentAppInput = &platformData->appInputs[0];
 	platformData->oldAppInput = &platformData->appInputs[1];
+	ClearStruct(platformData->appInputHandling);
+	InitVarArray(bool, &platformData->appInputHandling.droppedFilePathsHandled, stdHeap);
 	
 	platformInfo = AllocType(PlatformInfo, stdHeap);
 	NotNull(platformInfo);

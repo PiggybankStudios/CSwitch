@@ -105,7 +105,7 @@ void UpdatePopupDialog(PopupDialog* dialog)
 		Str8 buttonClayIdStr = ScratchPrintStr("PopupDialogBtn[%llu]_%s", button->id, GetPopupDialogResultStr(button->result));
 		ClayId buttonClayId = ToClayId(buttonClayIdStr);
 		bool isButtonHovered = IsMouseOverClay(buttonClayId);
-		if (isButtonHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+		if (isButtonHovered && MouseLeftClicked())
 		{
 			dialog->result = button->result;
 			ClosePopupDialog(dialog, button);

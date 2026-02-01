@@ -55,7 +55,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 			})
 		);
 	}
-	if (IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left)) { *isOpenPntr = !*isOpenPntr; }
+	if (IsMouseOverClay(btnId) && MouseLeftClicked()) { *isOpenPntr = !*isOpenPntr; }
 	if (*isOpenPntr == true && isHovered && *keepOpenUntilMouseoverPntr) { *keepOpenUntilMouseoverPntr = false; } //once we are closed or the mouse is over, clear this flag, mouse leaving now will constitute closing
 	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr && !isSubmenuOpen) { *isOpenPntr = false; }
 	if (*isOpenPntr)
@@ -109,7 +109,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 	ClayId menuId = ToClayId(menuIdStr);
 	ClayId menuListId = ToClayId(menuListIdStr);
 	bool isBtnHovered = IsMouseOverClay(btnId);
-	bool isBtnPressed = (isBtnHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	bool isBtnPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
 	bool isMenuHovered = (IsMouseOverClay(menuId) || IsMouseOverClay(menuListId));
 	bool isHovered = (isBtnHovered || isMenuHovered);
 	ThemeState btnThemeState = isBtnPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : (*isOpenPntr ? ThemeState_Open : ThemeState_Default));
@@ -144,7 +144,7 @@ bool ClayTopSubmenu(const char* btnText, bool isParentOpen, bool* isOpenPntr, bo
 		);
 	}
 	if (!isParentOpen) { *isOpenPntr = false; *keepOpenUntilMouseoverPntr = false; }
-	if (isParentOpen && IsMouseOverClay(btnId) && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+	if (isParentOpen && IsMouseOverClay(btnId) && MouseLeftClicked())
 	{
 		*isOpenPntr = !*isOpenPntr;
 		*keepOpenUntilMouseoverPntr = *isOpenPntr;
@@ -196,7 +196,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 	ClayId btnId = ToClayId(fullIdStr);
 	ClayId hotkeyId = ToClayId(hotkeyIdStr);
 	bool isHovered = IsMouseOverClay(btnId);
-	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 	
 	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default));
 	Color32 backgroundColor   = GetThemeColorEx(DropdownBtnBack,   btnThemeState);
@@ -276,7 +276,7 @@ bool ClayBtnStrEx(Str8 idStr, Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, boo
 		}
 	}
 	ScratchEnd(scratch);
-	return (isHovered && isEnabled && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
+	return (isHovered && isEnabled && MouseLeftClicked());
 }
 bool ClayBtnStr(Str8 btnText, Str8 hotkeyStr, Str8 tooltipStr, bool isEnabled, Texture* icon)
 {
@@ -294,7 +294,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, uxx optionIndex, Str8 nameStr
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
 	ClayId btnId = ToClayIdEx(btnIdStr, optionIndex);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
-	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 	
 	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
 	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
@@ -349,7 +349,7 @@ bool ClayOptionBtn(ClayId containerId, Str8 idStr, uxx optionIndex, Str8 nameStr
 		}
 	}
 	ScratchEnd(scratch);
-	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
+	return (isHovered && MouseLeftClicked());
 }
 
 bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, uxx optionIndex, Str8 abbreviation, bool enabled, bool isSelected)
@@ -358,7 +358,7 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, uxx opt
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(idStr));
 	ClayId btnId = ToClayIdEx(btnIdStr, optionIndex);
 	bool isHovered = IsMouseOverClayInContainer(containerId, btnId);
-	bool isPressed = (isHovered && IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 
 	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
 	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
@@ -402,7 +402,7 @@ bool ClaySmallOptionBtn(ClayId containerId, r32 buttonWidth, Str8 idStr, uxx opt
 		);
 	}
 	ScratchEnd(scratch);
-	return (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left));
+	return (isHovered && MouseLeftClicked());
 }
 
 // Returns whether the scrollbar is currently displayed
@@ -468,28 +468,26 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 		
 		if (!state->isDragging)
 		{
-			if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+			if (IsMouseOverClay(scrollbarId) && MouseLeftClicked())
 			{
-				if (IsMouseOverClay(scrollbarId))
-				{
-					rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
-					state->isDragging = true;
-					state->isDraggingSmooth = false;
-					state->grabOffset = Sub(appIn->mouse.position, scrollbarDrawRec.TopLeft);
-				}
-				else if (IsMouseOverClay(gutterId))
-				{
-					rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
-					state->isDragging = true;
-					state->isDraggingSmooth = true;
-					state->grabOffset = MakeV2(scrollbarDrawRec.Width/2, scrollbarDrawRec.Height/2);
-				}
+				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
+				state->isDragging = true;
+				state->isDraggingSmooth = false;
+				state->grabOffset = Sub(appIn->mouse.position, scrollbarDrawRec.TopLeft);
+			}
+			else if (IsMouseOverClay(gutterId) && MouseLeftClicked())
+			{
+				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
+				state->isDragging = true;
+				state->isDraggingSmooth = true;
+				state->grabOffset = MakeV2(scrollbarDrawRec.Width/2, scrollbarDrawRec.Height/2);
 			}
 		}
 		
 		if (state->isDragging)
 		{
-			if (!IsMouseBtnDown(&appIn->mouse, MouseBtn_Left))
+			appInputHandling->mouse.btnHandled[MouseBtn_Left] = true;
+			if (!IsMouseDownRaw(MouseBtn_Left))
 			{
 				state->isDragging = false;
 			}

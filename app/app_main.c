@@ -47,6 +47,7 @@ Description:
 // +--------------------------------------------------------------+
 static AppData* app = nullptr;
 static AppInput* appIn = nullptr;
+static AppInputHandling* appInputHandling = nullptr;
 static Arena* uiArena = nullptr;
 
 #if !BUILD_INTO_SINGLE_UNIT //NOTE: The platform layer already has these globals
@@ -59,6 +60,7 @@ static Arena* stdHeap = nullptr;
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
 #include "main2d_shader.glsl.h"
+#include "app_input.c"
 #include "app_resources.c"
 #include "app_file_watch.c"
 #include "app_theme_funcs.c"
@@ -188,7 +190,7 @@ BOOL WINAPI DllMain(
 }
 #endif //(TARGET_IS_WINDOWS && !BUILD_INTO_SINGLE_UNIT)
 
-void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
+void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* input, AppInputHandling* inputHandling)
 {
 	#if !BUILD_INTO_SINGLE_UNIT
 	platformInfo = inPlatformInfo;
@@ -199,7 +201,8 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 	UNUSED(inPlatformInfo);
 	#endif
 	app = (AppData*)memoryPntr;
-	appIn = appInput;
+	appIn = input;
+	appInputHandling = inputHandling;
 	
 	#if NOTIFICATION_QUEUE_AVAILABLE
 	SetGlobalNotificationQueue((app != nullptr) ? &app->notificationQueue : nullptr);
@@ -322,7 +325,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	AppData* appData = AllocType(AppData, inPlatformInfo->platformStdHeap);
 	ClearPointer(appData);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr, nullptr);
 	
 	#if THREAD_POOL_TEST
 	InitThreadPool(stdHeap, StrLit("TestThreadPool"), true, true, Gigabytes(4), &app->threadPool);
@@ -454,6 +457,8 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 		PrintLine_E("Failed to parse SpriteSheet: %s", GetResultStr(app->testSheet.error));
 	}
 	
+	app->sleepingDisabled = false; //DEBUG_BUILD
+	
 	app->initialized = true;
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
@@ -472,7 +477,7 @@ EXPORT_FUNC APP_BEFORE_RELOAD_DEF(AppBeforeReload)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr, nullptr);
 	
 	WriteLine_W("App is preparing for DLL reload...");
 	//TODO: Anything that needs to be saved before the DLL reload should be done here
@@ -492,7 +497,7 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr, nullptr);
 	
 	WriteLine_I("New app DLL was loaded!");
 	app->shouldRenderAfterReload = true;
@@ -506,14 +511,14 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 // +==============================+
 // |          AppUpdate           |
 // +==============================+
-// bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
+// bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* input, AppInputHandling* inputHandling)
 EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 {
 	OsTime beforeUpdateTime = OsGetTime();
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, input, inputHandling);
 	TracyCZoneN(_funcZone, "AppUpdate", true);
 	
 	if (app->testThread.isFilled)
@@ -596,10 +601,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
 		if (app->notificationQueue.notifications.length > 0) { refreshScreen = true; }
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
-		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
-		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
-		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Middle) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Middle)) { refreshScreen = true; }
-		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyboardKeyDown(&appIn->keyboard, (Key)keyIndex) || IsKeyboardKeyReleased(&appIn->keyboard, (Key)keyIndex)) { refreshScreen = true; break; } }
+		if (WasMouseReleasedRaw(MouseBtn_Left) || IsMouseDownRaw(MouseBtn_Left)) { refreshScreen = true; }
+		if (WasMouseReleasedRaw(MouseBtn_Right) || IsMouseDownRaw(MouseBtn_Right)) { refreshScreen = true; }
+		if (WasMouseReleasedRaw(MouseBtn_Middle) || IsMouseDownRaw(MouseBtn_Middle)) { refreshScreen = true; }
+		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyDownRaw((Key)keyIndex) || WasKeyReleasedRaw((Key)keyIndex)) { refreshScreen = true; break; } }
 		if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
 		if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
 		if (app->shouldRenderAfterReload) { refreshScreen = true; app->shouldRenderAfterReload = false; }
@@ -651,7 +656,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// | Native Windows Tooltip Test  |
 	// +==============================+
 	#if 0
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false))
+	if (WasKeyPressed(Key_T, false))
 	{
 		HWND windowHandle = (HWND)platform->GetNativeWindowHandle();
 		if (app->tooltipWindowHandle == NULL)
@@ -703,17 +708,17 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |       Thread Pool Test       |
 	// +==============================+
 	#if THREAD_POOL_TEST
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_R, true))
+	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_R, true))
 	{
 		PrintLine_D("Atomics values = %d, %lld, %u", AtomicRead(&app->atomicBundle.int0), AtomicRead(&app->atomicBundle.int1), AtomicRead(&app->atomicBundle.int2));
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_B, true))
+	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_B, true))
 	{
 		bool starting = !AtomicRead(&app->atomicBundle.begin);
 		AtomicWrite(&app->atomicBundle.begin, starting);
 		PrintLine_I("%s atomic tests!", starting ? "Starting" : "Stopping");
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, true))
+	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_W, true))
 	{
 		#if 1
 		WorkSubject subject = ZEROED;
@@ -749,7 +754,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		PrintLine_D("Queued %.*s as item %llu", StrPrint(allocatedStr), newItem->id);
 		#endif
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_K, true))
+	if (!IsKeyDownRaw(Key_Control) && WasKeyPressed(Key_K, true))
 	{
 		bool stoppedAThread = false;
 		for (uxx tIndex = 0; tIndex < app->threadPool.threads.length; tIndex++)
@@ -773,21 +778,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde, false))
+	if (WasKeyPressed(Key_Tilde, false))
 	{
 		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
+	if (WasKeyPressed(Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_D, true))
+	if (WasKeyPressed(Key_D, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		PrintLineAt(level, "This is a %s level output!", GetDbgLevelStr(level));
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, true))
+	if (WasKeyPressed(Key_T, true))
 	{
 		ThreadId threadId = OsGetCurrentThreadId();
 		Str8 threadName = GetStandardPeopleFirstName((u64)threadId);
@@ -816,9 +821,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
 	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_W, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
-		if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+		if (IsKeyDownRaw(Key_Shift))
 		{
 			platform->RequestQuit();
 		}
@@ -834,7 +839,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// | F6 Toggles Performance Graph |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F6, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_F6, false) && appIn->isFocused)
 	{
 		app->showPerfGraph = !app->showPerfGraph;
 	}
@@ -842,9 +847,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |       Handle F9 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F9, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_F9, false) && appIn->isFocused)
 	{
-		ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+		ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
 			? ThemeMode_Debug
 			: ((app->currentThemeMode == ThemeMode_Dark)
 				? ThemeMode_Light
@@ -860,7 +865,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F10 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_F10, false) && appIn->isFocused)
 	{
 		app->settings.smallButtons = !app->settings.smallButtons;
 		SaveAppSettings();
@@ -869,7 +874,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle F11 Hotkey       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_F11, false) && appIn->isFocused)
 	{
 		app->minimalModeEnabled = !app->minimalModeEnabled;
 	}
@@ -877,7 +882,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |      Handle Escape Key       |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_Escape, false) && appIn->isFocused)
 	{
 		if (app->popup.isOpen)
 		{
@@ -901,15 +906,15 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==================================================+
 	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
 	// +==================================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_Plus, true) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		AppChangeFontSize(true);
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_Minus, true) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		AppChangeFontSize(false);
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_0, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
@@ -921,7 +926,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |   Handle Ctrl+ScrollWheel    |
 	// +==============================+
-	if (IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->mouse.scrollDelta.Y != 0 && appIn->mouse.isOverWindow)
+	if (IsKeyDownRaw(Key_Control) && appIn->mouse.scrollDelta.Y != 0 && appIn->mouse.isOverWindow)
 	{
 		AppChangeFontSize(appIn->mouse.scrollDelta.Y > 0);
 	}
@@ -929,7 +934,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +================================+
 	// | Handle Alt+F and Alt+V Hotkeys |
 	// +================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt) && appIn->isFocused)
+	if (WasKeyPressed(Key_F, false) && IsKeyDown(Key_Alt) && appIn->isFocused)
 	{
 		app->isFileMenuOpen = !app->isFileMenuOpen;
 		if (app->isFileMenuOpen)
@@ -938,7 +943,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			app->keepFileMenuOpenUntilMouseOver = true;
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt) && appIn->isFocused)
+	if (WasKeyPressed(Key_V, false) && IsKeyDown(Key_Alt) && appIn->isFocused)
 	{
 		app->isViewMenuOpen = !app->isViewMenuOpen;
 		if (app->isViewMenuOpen)
@@ -953,7 +958,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	bool shouldOpenFile = false;
 	bool shouldOpenThemeFile = false;
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_O, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		shouldOpenFile = true;
 	}
@@ -961,11 +966,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +========================================+
 	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
 	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_Tab, true) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		if (app->tabs.length > 1)
 		{
-			if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+			if (IsKeyDownRaw(Key_Shift))
 			{
 				AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1);
 			}
@@ -979,7 +984,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+E Hotkey     |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_E, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 		{
@@ -994,7 +999,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |     Handle Ctrl+T Hotkey     |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->isFocused)
+	if (WasKeyPressed(Key_T, false) && IsKeyDownRaw(Key_Control) && appIn->isFocused)
 	{
 		platform->SetWindowTopmost(!appIn->isWindowTopmost);
 	}
@@ -1003,12 +1008,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// | Handle Home/End and PageUp/PageDown  |
 	// +======================================+
 	//TODO: These should probably move the app->currentTab->selectedOptionIndex if app->usingKeyboardToSelect
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_Home, false) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, false) && appIn->isFocused)
+	if (WasKeyPressed(Key_End, false) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
@@ -1017,7 +1022,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			optionsListScrollData.scrollTarget->Y = -maxScroll;
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp, true) && appIn->isFocused)
+	if (WasKeyPressed(Key_PageUp, true) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
@@ -1026,7 +1031,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 		}
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown, true) && appIn->isFocused)
+	if (WasKeyPressed(Key_PageDown, true) && appIn->isFocused)
 	{
 		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		if (optionsListScrollData.found)
@@ -1039,158 +1044,165 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +====================================+
 	// | Handle Arrow Keys to Select Option |
 	// +====================================+
-	if (appIn->isFocused &&
-		(IsKeyboardKeyPressed(&appIn->keyboard, Key_Left,  true) ||
-		 IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true) ||
-		 IsKeyboardKeyPressed(&appIn->keyboard, Key_Up,    true) ||
-		 IsKeyboardKeyPressed(&appIn->keyboard, Key_Down,  true)))
+	if (appIn->isFocused)
 	{
-		app->usingKeyboardToSelect = true;
-		if (app->currentTab != nullptr)
+		bool downPressed  = WasKeyPressed(Key_Down,  false);
+		bool upPressed    = WasKeyPressed(Key_Up,    false);
+		bool leftPressed  = WasKeyPressed(Key_Left,  false);
+		bool rightPressed = WasKeyPressed(Key_Right, false);
+		bool downPressedOrRepeated  = (downPressed  || WasKeyPressed(Key_Down,  true));
+		bool upPressedOrRepeated    = (upPressed    || WasKeyPressed(Key_Up,    true));
+		bool leftPressedOrRepeated  = (leftPressed  || WasKeyPressed(Key_Left,  true));
+		bool rightPressedOrRepeated = (rightPressed || WasKeyPressed(Key_Right, true));
+		if (downPressedOrRepeated || upPressedOrRepeated || leftPressedOrRepeated || rightPressedOrRepeated)
 		{
-			bool movedSelection = false;
-			
-			if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
+			app->usingKeyboardToSelect = true;
+			if (app->currentTab != nullptr)
 			{
-				//TODO: Could we somehow choose the option thats near the middle of the screen?
-				app->currentTab->selectedOptionIndex = 0;
-				movedSelection = true;
-			}
-			else if (app->currentTab->selectedOptionIndex >= 0)
-			{
-				if (app->settings.smallButtons)
+				bool movedSelection = false;
+				
+				if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
 				{
-					r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
-					u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
-					r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
-					i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
-					if (numColumns <= 0) { numColumns = 1; }
-					i32 numRows = CeilDivI32((i32)app->currentTab->fileOptions.length, numColumns);
-					
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true))
+					//TODO: Could we somehow choose the option thats near the middle of the screen?
+					app->currentTab->selectedOptionIndex = 0;
+					movedSelection = true;
+				}
+				else if (app->currentTab->selectedOptionIndex >= 0)
+				{
+					if (app->settings.smallButtons)
 					{
-						if (app->currentTab->selectedOptionIndex >= numColumns)
+						r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
+						u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
+						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
+						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
+						if (numColumns <= 0) { numColumns = 1; }
+						i32 numRows = CeilDivI32((i32)app->currentTab->fileOptions.length, numColumns);
+						
+						if (upPressedOrRepeated)
 						{
-							app->currentTab->selectedOptionIndex -= numColumns;
-							movedSelection = true;
+							if (app->currentTab->selectedOptionIndex >= numColumns)
+							{
+								app->currentTab->selectedOptionIndex -= numColumns;
+								movedSelection = true;
+							}
+							else if (upPressed)
+							{
+								app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
+								movedSelection = true;
+							}
 						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, false))
+						if (downPressedOrRepeated)
 						{
-							app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
-							movedSelection = true;
+							if (((i32)app->currentTab->selectedOptionIndex / numColumns) < numRows-1)
+							{
+								app->currentTab->selectedOptionIndex += numColumns;
+								if ((uxx)app->currentTab->selectedOptionIndex >= app->currentTab->fileOptions.length)
+								{
+									app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+								}
+								movedSelection = true;
+							}
+							else if (downPressed)
+							{
+								app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
+								movedSelection = true;
+							}
 						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
-					{
-						if (((i32)app->currentTab->selectedOptionIndex / numColumns) < numRows-1)
+						if (leftPressedOrRepeated)
 						{
-							app->currentTab->selectedOptionIndex += numColumns;
-							if ((uxx)app->currentTab->selectedOptionIndex >= app->currentTab->fileOptions.length)
+							if (app->currentTab->selectedOptionIndex > 0)
+							{
+								app->currentTab->selectedOptionIndex--;
+								movedSelection = true;
+							}
+							else if (leftPressed)
 							{
 								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+								movedSelection = true;
 							}
-							movedSelection = true;
 						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, false))
+						if (rightPressedOrRepeated)
 						{
-							app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
-							movedSelection = true;
-						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true))
-					{
-						if (app->currentTab->selectedOptionIndex > 0)
-						{
-							app->currentTab->selectedOptionIndex--;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, false))
-						{
-							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-							movedSelection = true;
+							if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
+							{
+								app->currentTab->selectedOptionIndex++;
+								movedSelection = true;
+							}
+							else if (rightPressed)
+							{
+								app->currentTab->selectedOptionIndex = 0;
+								movedSelection = true;
+							}
 						}
 					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true))
+					else
 					{
-						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
+						if (upPressedOrRepeated)
 						{
-							app->currentTab->selectedOptionIndex++;
-							movedSelection = true;
+							if (app->currentTab->selectedOptionIndex > 0)
+							{
+								app->currentTab->selectedOptionIndex--;
+								movedSelection = true;
+							}
+							else if (WasKeyPressed(Key_Up, false))
+							{
+								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+								movedSelection = true;
+							}
 						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, false))
+						if (downPressedOrRepeated)
 						{
-							app->currentTab->selectedOptionIndex = 0;
-							movedSelection = true;
-						}
-					}
-				}
-				else
-				{
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true))
-					{
-						if (app->currentTab->selectedOptionIndex > 0)
-						{
-							app->currentTab->selectedOptionIndex--;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, false))
-						{
-							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-							movedSelection = true;
-						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
-					{
-						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
-						{
-							app->currentTab->selectedOptionIndex++;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, false))
-						{
-							app->currentTab->selectedOptionIndex = 0;
-							movedSelection = true;
+							if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
+							{
+								app->currentTab->selectedOptionIndex++;
+								movedSelection = true;
+							}
+							else if (WasKeyPressed(Key_Down, false))
+							{
+								app->currentTab->selectedOptionIndex = 0;
+								movedSelection = true;
+							}
 						}
 					}
 				}
-			}
-			
-			// Auto-scroll up/down to the newly selected option if needed
-			if (movedSelection && app->currentTab->selectedOptionIndex >= 0)
-			{
-				rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-				Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-				FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
-				Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
-				ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
-				rec optionRec = GetClayElementDrawRec(btnId);
-				if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
+				
+				// Auto-scroll up/down to the newly selected option if needed
+				if (movedSelection && app->currentTab->selectedOptionIndex >= 0)
 				{
-					r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
-					r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
-					r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
-					r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
-					if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
+					rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+					Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
+					FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
+					Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
+					ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
+					rec optionRec = GetClayElementDrawRec(btnId);
+					if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
 					{
-						viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
-					}
-					else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
-					{
-						viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
+						r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
+						r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
+						r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
+						r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
+						if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
+						{
+							viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
+						}
+						else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
+						{
+							viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
+						}
 					}
 				}
 			}
 		}
 	}
-	else if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left) ||
-		IsMouseBtnPressed(&appIn->mouse, MouseBtn_Right) ||
-		IsMouseBtnPressed(&appIn->mouse, MouseBtn_Middle) ||
+	else if (MouseLeftClickedRaw() ||
+		MouseRightClickedRaw() ||
+		MouseMiddleClickedRaw() ||
 		(appIn->mouse.isOverWindow && !AreSimilarV2(appIn->mouse.scrollDelta, V2_Zero, DEFAULT_R32_TOLERANCE)))
 	{
 		app->usingKeyboardToSelect = false;
 	}
 	
-	if (app->usingKeyboardToSelect && IsKeyboardKeyPressed(&appIn->keyboard, Key_Enter, false) &&
+	if (app->usingKeyboardToSelect && WasKeyPressed(Key_Enter, false) &&
 		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0 &&
 		appIn->isFocused)
 	{
@@ -1234,7 +1246,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			uiArena,
 			&app->clay,
 			&appIn->keyboard,
+			&appInputHandling->keyboard,
 			&appIn->mouse,
+			&appInputHandling->mouse,
 			app->uiScale,
 			nullptr, //TODO: Fill focusedElementPntr
 			MouseCursorShape_Default,
@@ -1243,12 +1257,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			&app->tooltips
 		);
 		
-		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
+		v2 scrollContainerInput = IsKeyDownRaw(Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
 		#if TARGET_IS_LINUX
 		scrollContainerInput = ScaleV2(scrollContainerInput, LINUX_SCROLL_WHEEL_SCALING);
 		#endif
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
-		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseDownRaw(MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
 			CLAY({ .id = CLAY_ID("FullscreenContainer"),
@@ -1283,7 +1297,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						.border = { .color=GetThemeColor(TopbarBorder), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
-						bool showMenuHotkeys = (IsKeyboardKeyDown(&appIn->keyboard, Key_Alt) && appIn->isFocused);
+						bool showMenuHotkeys = (IsKeyDown(Key_Alt) && appIn->isFocused);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
 							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
@@ -1365,7 +1379,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
-							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
 								? ThemeMode_Debug
 								: ((app->currentThemeMode == ThemeMode_Dark)
 									? ThemeMode_Light
@@ -1581,11 +1595,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								);
 								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
 								
-								if (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+								if (isHovered && MouseLeftClicked())
 								{
 									AppChangeTab(tIndex);
 								}
-								if (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Middle))
+								if (isHovered && MouseMiddleClicked())
 								{
 									AppCloseFileTab(tIndex);
 									tIndex--;
@@ -1772,7 +1786,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		#if DEBUG_BUILD
 		if (app->currentTab == nullptr)
 		{
-			DrawClayTextboxText(&app->testTextbox);
+			// DrawClayTextboxText(&app->testTextbox);
 			
 			#if 0
 			DrawSheetCell(&app->testSheet, MakeV2i(1, 0), MakeRec(10, 300, 64, 64), White);
@@ -1897,7 +1911,7 @@ EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr, nullptr);
 	
 	#if THREAD_POOL_TEST
 	FreeThreadPool(&app->threadPool);

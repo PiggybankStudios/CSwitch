@@ -6,6 +6,7 @@ Description:
 	** Holds functions that handle an box with text that the user can type into (also selection using the mouse)
 */
 
+#if 0
 void FreeClayTextbox(ClayTextbox* textbox)
 {
 	NotNull(textbox);
@@ -215,12 +216,12 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 	// +===============================+
 	// | Handle MouseBtn_Left to Focus |
 	// +===============================+
-	if (!textbox->edit.isFocused && isBoxHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+	if (!textbox->edit.isFocused && isBoxHovered && MouseLeftClicked())
 	{
 		textbox->edit.isFocused = true;
 		EditTextResetCursorBlink(&textbox->edit);
 	}
-	if (textbox->edit.isFocused && !isBoxHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+	if (textbox->edit.isFocused && !isBoxHovered && MouseLeftClicked())
 	{
 		textbox->edit.isFocused = false;
 	}
@@ -231,16 +232,16 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		// |      Handle Arrow Keys       |
 		// +==============================+
 		//TODO: Handle Ctrl and Alt modifiers!
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, &appInputHandling->keyboard, Key_Left, true))
 		{
 			if (textbox->edit.cursorActive)
 			{
-				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift))
 				{
 					if (textbox->edit.cursorEnd > 0)
 					{
 						textbox->edit.cursorEnd--;
-						if (!IsKeyboardKeyDown(&appIn->keyboard, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
+						if (!IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
 					}
 				}
 				else
@@ -256,16 +257,16 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			}
 			EditTextResetCursorBlink(&textbox->edit);
 		}
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, &appInputHandling->keyboard, Key_Right, true))
 		{
 			if (textbox->edit.cursorActive)
 			{
-				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+				if (textbox->edit.cursorStart == textbox->edit.cursorEnd || IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift))
 				{
 					if (textbox->edit.cursorEnd < textbox->edit.str.length)
 					{
 						textbox->edit.cursorEnd++;
-						if (!IsKeyboardKeyDown(&appIn->keyboard, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
+						if (!IsKeyboardKeyDown(&appIn->keyboard, &appInputHandling->keyboard, Key_Shift)) { textbox->edit.cursorStart = textbox->edit.cursorEnd; }
 					}
 				}
 				else
@@ -285,7 +286,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		// +==============================+
 		// |       Handle Backspace       |
 		// +==============================+
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Backspace, true))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, &appInputHandling->keyboard, Key_Backspace, true))
 		{
 			if (!textbox->edit.cursorActive)
 			{
@@ -308,7 +309,7 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 		// +==============================+
 		// |        Handle Delete         |
 		// +==============================+
-		if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Delete, true))
+		if (IsKeyboardKeyPressed(&appIn->keyboard, &appInputHandling->keyboard, Key_Delete, true))
 		{
 			if (!textbox->edit.cursorActive)
 			{
@@ -336,8 +337,15 @@ void UpdateClayTextbox(ClayTextbox* textbox)
 			for (uxx cIndex = 0; cIndex < appIn->keyboard.numCharInputs; cIndex++)
 			{
 				KeyboardCharInput* charInput = &appIn->keyboard.charInputs[cIndex];
-				bool inputHandled = EditTextHandleCharInput(&textbox->edit, charInput);
-				UNUSED(inputHandled); //TODO: Do we need to do anything to mark the input as handled?
+				if (!appInputHandling->keyboard.charInputHandled[cIndex])
+				{
+					bool inputHandled = EditTextHandleCharInput(&textbox->edit, charInput);
+					if (inputHandled)
+					{
+						appInputHandling->keyboard.charInputHandled[cIndex] = true;
+						//TODO: Handle the corresponding Key BtnState!
+					}
+				}
 			}
 		}
 	}
@@ -446,3 +454,4 @@ void DrawClayTextboxText(ClayTextbox* textbox)
 	SetClipRec(oldClipRec);
 	ScratchEnd(scratch);
 }
+#endif

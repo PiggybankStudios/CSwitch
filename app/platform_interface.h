@@ -30,6 +30,7 @@ struct AppInput
 	
 	KeyboardState keyboard;
 	MouseState mouse;
+	TouchscreenState touch;
 	//TODO: Add ControllerStates
 	
 	sapp_mouse_cursor cursorType;
@@ -45,6 +46,20 @@ struct AppInput
 	// v2i windowSize; //TODO: Can we somehow ask sokol_sapp for the window size (include title bar and border)?
 	
 	VarArray droppedFilePaths; //Str8
+};
+
+typedef plex AppInputHandling AppInputHandling;
+plex AppInputHandling
+{
+	KeyboardStateHandling keyboard;
+	MouseStateHandling mouse;
+	TouchscreenStateHandling touch;
+	
+	bool fullscreenChangeHandled;
+	bool minimizedHandled;
+	bool focusedHandled;
+	bool screenSizeChangedHandled;
+	VarArray droppedFilePathsHandled; //bool
 };
 
 // +--------------------------------------------------------------+
@@ -93,7 +108,7 @@ struct PlatformApi
 #define APP_INIT_DEF(functionName) void* functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi)
 typedef APP_INIT_DEF(AppInit_f);
 
-#define APP_UPDATE_DEF(functionName) bool functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
+#define APP_UPDATE_DEF(functionName) bool functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* input, AppInputHandling* inputHandling)
 typedef APP_UPDATE_DEF(AppUpdate_f);
 
 #define APP_CLOSING_DEF(functionName) void functionName(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr)

@@ -11,7 +11,7 @@ Date:   02\25\2025
 #define TOPBAR_ICONS_SIZE  16 //px
 #define TOPBAR_ICONS_PADDING  8 //px
 
-#define THREAD_POOL_TEST 1
+#define THREAD_POOL_TEST 0
 
 #define RECENT_FILES_SAVE_FILEPATH "recent_files.txt"
 #define RECENT_FILES_MAX_LENGTH    16 //files
