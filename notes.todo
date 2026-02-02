@@ -1,71 +1,43 @@
 
 # TODO List:
-@ Release!
-	[X] Disable thread pool on Windows release
-	[X] Ctrl+O explanatory notification message
-	[X] Add a tooltip to "Clear Recent Files"
-	[X] Change wording on "Are you sure you want to clear all 1 recent file entry?"
-	[X] Notification for "-top" command-line argument not working on Linux
-	[X] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
-	[X] Add option to disable auto-reloading of file when changed externally
-	(X) Custom theme overrides causes theme baking to fail on Linux?
-	(X) Command-line arguments with quotes and spaces don't work on Linux?
-	[X] Clear the custom theme if the baking fails on startup
-	[X] Lower the max UI scale based on the window resolution so we can't have insane scales
-	(X) File with multiple defines of the same name should be handled gracefully
-	[X] Handle quotes around command-line arguments properly
-	[ ] Ubuntu application icon support? (works on Mint)
-	[X] Install a fresh Ubuntu distribution in VirtualBox
-	[X] Install another linux distribution in VirtualBox
-	[X] Sublime shortcut to open CSwitch on Linux
-	[X] Does the application depend on any other things being installed on Linux?
-@ All
-	[X] Finish SpriteSheet support
-	[X] Change to saving in `$HOME/.config/C_Switch`
-	[X] Start simple binding system (enum for commands, hardcoded binding init on startup)
-	[X] Deserialize bindings from a file with a simple syntax
-	[!] Show bindings in UI based on bindings in AppBindingSet
-	[!] Add a "View" -> "Open Config Folder" option
-	[!] Make a spritesheet editor?
+	[X] Save the UI scale to settings.txt
+	[!] Amortize the settings save triggers so we delay a few frames after a setting change and only save once (maybe with a longer backoff right after saving?)
+	[!] Add a version number
+	[!] Save which tabs are open to the config folder and re-open them all automatically
+	[!] Track which tabs are closed and re-open the most recently closed file with AppCommand_ReopenRecentFile. If no tabs have been closed this session which are not open then we can start opening files from Recent Files list
+	[ ] Implement OsShowFile, OsShowFolder, and OsOpenFile
+		[ ] Add a "View" -> "Open Config Folder" option
+		[ ] Add a "New Theme" button that creates a theme template (based on the default theme) and opens it in the default editor for .txt files (also sets it as the user theme)
+	[ ] Implement OsOpenLink
+		[ ] Add a C-Switch Github Releases link somewhere?
 	[!] Sokol is giving us a MOUSE_ENTER event when the window initially opens, even when the mouse is not actually over the window
-	[ ] Add support for multi-threading
-		[X] Thread creation
-		[X] ThreadPool with WorkQueue
-		[X] ThreadPool on Linux
+	[!] Add a help/info button that explains keybindings and other info about C-Switch usage
+	[?] Add mouse binding support to bindings.txt (only binding currently is Ctrl+ScrollWheel?)
+	[ ] Add a command palette
+		[ ] Add a way to change bindings from within the program (command palette and topbar menu buttons)
+	[ ] Add an option to change font(s)
 	[ ] Save program state to file using ThreadPool and safe file overwrite operations
 	[ ] If the user theme file is invalid when CSwitch opens it doesn't clear the user theme but it also doesn't watch it for changes to trigger reload
-	[-] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
-		[ ] NOTE: Seems line XSizeHints aren't respected on most Linux Window Managers / Desktop Environments
 	[ ] Add deduplication to the notification system. Also maybe a backoff of some kind to keep any kind of notification loop from spamming notifications constantly
-	( ) Figure out how to render while resizing when using D3D11!
-	( ) Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
-	( ) Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
-	( ) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
-	[X] Should we save our "recent_files.txt" and "settings.txt" to "~/.config/C_Switch" instead of "~/.C_Switch"?
-	[X] "Open File" dialog on Linux
-	[ ] Recent Files list should be based on full path of the file, not on relative path
-	[ ] If the most recently opened file doesn't exist we should open the next most recent file? Right now we throw a warning notification
+	[ ] Figure out how to render while resizing when using D3D11!
+	[ ] Somehow we should prevent the main window from being resized or interacted with when an open file dialog is open!
+	[ ] Word wrap is not allowed in file paths without spaces and that causes the notification system to be less than useful
 	[ ] Implement ColorDarken and ColorLighten
-	[ ] Option for dumping default theme and/or custom theme template
 	[?] Separate On/Off state out of Option theme entries somehow?
 	[ ] Update file watching to use PigCore file watch functions/type
 	[?] Theme file parsing errors should go into a log that we can display to the user somewhere in the UI!
 	[ ] Add a search bar that can be used to filter the buttons
-	[ ] Re-open all tabs that were open in the last session of CSwitch
-	[ ] Restore other state information between CSwitch sessions
 	[ ] Add a right-click context menu widget
 	[ ] Add a save system to store customization options for specific files and/or global configuration
-	[ ] Add abbreviation customization options
-	[ ] Add icons to the small buttons (and customization to choose which icons shows for which define)
+		[ ] Add abbreviation customization options
+		[ ] Add icons to the small buttons (and customization to choose which icons shows for which define)
 	[ ] Undo/Redo
 	[ ] Support external edits as an Undoable change
 	@ Multiple Window Support
 		[ ] Add support for tooltips that can extend outside the main window (i.e. they have their own host window)
 		[ ] Add a "Settings" window that can be opened from the "File" menu
 		[?] Add a "project" system that saves a set of configuration values somewhere the user decides. Then we can have stuff like telling it to ignore (aka hide) particular defines, or ignoring files or sub-folders when doing multi-file display.
-		[ ] Add a "Help" menu that gives info (version number?)
 	[ ] Reduce memory usage
-	[ ] Measure and reduce CPU load while idle
 	[ ] Add an indication that there is more to see at the top/bottom of the scrollable area
 	[ ] Save the window size (and position?) and restore to the same size/position on startup (careful of monitor changes meaning our old location is invalid!)
 	[ ] If something writes to the file externally multiple times in a row, or maybe slowly, can we ever end up in a spot where we fail to read the file because it is locked? Should we have a sort of delay after we see the write time change? Or maybe a retry pattern if we fail to read it once or twice? Do we ever tell the user we can't open the file anymore? Should we close the file if we see the file got deleted? (again worry about if the file is getting deleted for a short time and then recreated, maybe we wait a bit before really considering the file deleted)
@@ -88,6 +60,41 @@
 	[ ] 
 
 # Finished List:
+	[X] Measure and reduce CPU load while idle
+	(X) Debug Clay menu hits problems when it tries to display some clay ID strings (probably they were allocated temporarily and are overwritten by the time the renderer sees them)
+	[-] If the most recently opened file doesn't exist we should open the next most recent file? Right now we throw a warning notification
+	[X] Ubuntu application icon support? (works on Mint)
+	[X] Disable thread pool on Windows release
+	[-] Add a lower limit to window size (harder to do than I thought, no support in Sokol atm "https://github.com/floooh/sokol/issues/590" and "https://github.com/floooh/sokol/issues/853")
+		[ ] NOTE: Seems line XSizeHints aren't respected on most Linux Window Managers / Desktop Environments
+	[X] Ctrl+O explanatory notification message
+	[X] Add a tooltip to "Clear Recent Files"
+	[X] Change wording on "Are you sure you want to clear all 1 recent file entry?"
+	[X] Notification for "-top" command-line argument not working on Linux
+	[X] The error notification for "Open File" stopped working? Maybe after duplicate define in file?
+	[X] Add option to disable auto-reloading of file when changed externally
+	(X) Custom theme overrides causes theme baking to fail on Linux?
+	(X) Command-line arguments with quotes and spaces don't work on Linux?
+	[X] Clear the custom theme if the baking fails on startup
+	[X] Lower the max UI scale based on the window resolution so we can't have insane scales
+	(X) File with multiple defines of the same name should be handled gracefully
+	[X] Handle quotes around command-line arguments properly
+	[X] Install a fresh Ubuntu distribution in VirtualBox
+	[X] Install another linux distribution in VirtualBox
+	[X] Sublime shortcut to open CSwitch on Linux
+	[X] Does the application depend on any other things being installed on Linux?
+	[X] Finish SpriteSheet support
+	[X] Change to saving in `$HOME/.config/C_Switch`
+	[X] Start simple binding system (enum for commands, hardcoded binding init on startup)
+	[X] Deserialize bindings from a file with a simple syntax
+	[X] Show bindings in UI based on bindings in AppBindingSet
+	[X] Should we save our "recent_files.txt" and "settings.txt" to "~/.config/C_Switch" instead of "~/.C_Switch"?
+	[X] "Open File" dialog on Linux
+	[X] Recent Files list should be based on full path of the file, not on relative path
+	[X] Add support for multi-threading
+		[X] Thread creation
+		[X] ThreadPool with WorkQueue
+		[X] ThreadPool on Linux
 	[X] Add keyboard control to move a cursor up/down the list and Enter to toggle a button
 	[X] "Mix(Color1, Color2, Amount)" and "Transparent(Color, Alpha)" functions accepted in theme files (Maybe also "Darken(Color, Amount)" and "Lighten(Color, Amount)")
 	[X] Choose colors in theme carefully to maximize theme flexibility

@@ -182,12 +182,15 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		case AppCommand_ResetFile:
 		{
-			OpenPopupDialog(stdHeap, &app->popup,
-				StrLit("Do you want to reset the file to the state it was in when it was opened?"),
-				AppResetCurrentFilePopupCallback, nullptr
-			);
-			AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
-			AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+			if (!app->popup.isOpen)
+			{
+				OpenPopupDialog(stdHeap, &app->popup,
+					StrLit("Do you want to reset the file to the state it was in when it was opened?"),
+					AppResetCurrentFilePopupCallback, nullptr
+				);
+				AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
+				AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+			}
 		} break;
 		
 		// +==============================+
@@ -366,9 +369,10 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			app->uiFontSize = DEFAULT_UI_FONT_SIZE;
 			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-			app->uiScale = 1.0f;
+			app->settings.uiScale = 1.0f;
 			bool fontBakeSuccess = AppCreateFonts();
 			Assert(fontBakeSuccess);
+			SaveAppSettings();
 		} break;
 		
 		// +==============================+
@@ -636,7 +640,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		case AppCommand_ClearRecentFiles:
 		{
-			if (app->recentFiles.length > 0)
+			if (app->recentFiles.length > 0 && !app->popup.isOpen)
 			{
 				OpenPopupDialog(stdHeap, &app->popup,
 					ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),

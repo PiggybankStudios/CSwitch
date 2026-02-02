@@ -359,12 +359,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
 	
-	app->uiFontSize = DEFAULT_UI_FONT_SIZE;
-	app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-	app->uiScale = 1.0f;
-	bool fontBakeSuccess = AppCreateFonts();
-	Assert(fontBakeSuccess);
-	
 	InitClayUIRenderer(stdHeap, V2_Zero, &app->clay);
 	AttachTooltipRegistryToUIRenderer(&app->clay, &app->tooltips);
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
@@ -890,7 +884,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			&appInputHandling->keyboard,
 			&appIn->mouse,
 			&appInputHandling->mouse,
-			app->uiScale,
+			app->settings.uiScale,
 			nullptr, //TODO: Fill focusedElementPntr
 			MouseCursorShape_Default,
 			OsWindowHandleEmpty,

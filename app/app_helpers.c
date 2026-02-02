@@ -6,52 +6,6 @@ Description:
 	** None
 */
 
-FilePath GetAppSettingsSavePath(Arena* arena, bool addNullTerm)
-{
-	ScratchBegin1(scratch, arena);
-	FilePath folderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
-	Assert(!IsEmptyStr(folderPath));
-	FilePath result = JoinStringsInArenaWithChar(arena, folderPath, '/', StrLit(SETTINGS_FILENAME), addNullTerm);
-	ScratchEnd(scratch);
-	return result;
-}
-void SaveAppSettings()
-{
-	ScratchBegin(scratch);
-	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
-	WriteLine_D("Saving settings...");
-	bool saveSuccess = TrySaveAppSettingsTo(&app->settings, settingsFilePath);
-	if (!saveSuccess)
-	{
-		NotifyPrint_E("Failed to save settings file! Make sure the folder has write permissions for the current user!\nPath: \"%.*s\"", StrPrint(settingsFilePath));
-		DebugAssert(saveSuccess);
-	}
-	ScratchEnd(scratch);
-}
-void LoadAppSettings()
-{
-	ScratchBegin(scratch);
-	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
-	if (OsDoesFileExist(settingsFilePath))
-	{
-		Result loadSettingsResult = TryLoadAppSettingsFrom(settingsFilePath, &app->settings);
-		if (loadSettingsResult == Result_Success)
-		{
-			PrintLine_I("Loaded settings from \"%.*s\"", StrPrint(settingsFilePath));
-		}
-		else
-		{
-			NotifyPrint_W("Failed to load settings!\nError: %s\nPath: \"%.*s\"", GetResultStr(loadSettingsResult), StrPrint(settingsFilePath));
-		}
-	}
-	else
-	{
-		PrintLine_N("No settings file found at \"%.*s\"! Saving settings", StrPrint(settingsFilePath));
-		SaveAppSettings();
-	}
-	ScratchEnd(scratch);
-}
-
 ImageData LoadImageData(Arena* arena, const char* path)
 {
 	ScratchBegin1(scratch, arena);
@@ -327,6 +281,29 @@ Result TryAttachFontFileFromResources(PigFont* font, Str8 filePath, u8 fontStyle
 	return attachResult;
 }
 
+FilePath GetAppSettingsSavePath(Arena* arena, bool addNullTerm)
+{
+	ScratchBegin1(scratch, arena);
+	FilePath folderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
+	Assert(!IsEmptyStr(folderPath));
+	FilePath result = JoinStringsInArenaWithChar(arena, folderPath, '/', StrLit(SETTINGS_FILENAME), addNullTerm);
+	ScratchEnd(scratch);
+	return result;
+}
+void SaveAppSettings()
+{
+	ScratchBegin(scratch);
+	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
+	WriteLine_D("Saving settings...");
+	bool saveSuccess = TrySaveAppSettingsTo(&app->settings, settingsFilePath);
+	if (!saveSuccess)
+	{
+		NotifyPrint_E("Failed to save settings file! Make sure the folder has write permissions for the current user!\nPath: \"%.*s\"", StrPrint(settingsFilePath));
+		DebugAssert(saveSuccess);
+	}
+	ScratchEnd(scratch);
+}
+
 bool AppCreateFonts()
 {
 	FontCharRange fontCharRanges[] = {
@@ -468,6 +445,7 @@ bool AppCreateFonts()
 
 bool AppChangeFontSize(bool increase)
 {
+	r32 oldUiScale = app->settings.uiScale;
 	if (increase)
 	{
 		NotNull(appIn);
@@ -477,25 +455,64 @@ bool AppChangeFontSize(bool increase)
 		{
 			app->uiFontSize += 1;
 			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-			app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+			app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
 			if (!AppCreateFonts())
 			{
 				app->uiFontSize -= 1;
-				app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+				app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
 				app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
 			}
 		}
+		if (app->settings.uiScale != oldUiScale) { SaveAppSettings(); }
 		return true;
 	}
 	else if (AreSimilarOrGreaterR32(app->uiFontSize - 1.0f, MIN_UI_FONT_SIZE, DEFAULT_R32_TOLERANCE))
 	{
 		app->uiFontSize -= 1;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-		app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+		app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
 		AppCreateFonts();
+		if (app->settings.uiScale != oldUiScale) { SaveAppSettings(); }
 		return true;
 	}
 	else { return false; }
+}
+
+void LoadAppSettings()
+{
+	ScratchBegin(scratch);
+	r32 prevUiScale = app->settings.uiScale;
+	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
+	if (OsDoesFileExist(settingsFilePath))
+	{
+		Result loadSettingsResult = TryLoadAppSettingsFrom(settingsFilePath, &app->settings);
+		if (loadSettingsResult == Result_Success)
+		{
+			PrintLine_I("Loaded settings from \"%.*s\"", StrPrint(settingsFilePath));
+			if (app->settings.uiScale <= 0.0f || app->settings.uiScale * DEFAULT_UI_FONT_SIZE < MIN_UI_FONT_SIZE)
+			{
+				app->settings.uiScale = (r32)MIN_UI_FONT_SIZE / (r32)MIN_UI_FONT_SIZE;
+				NotifyPrint_W("UiScale from settings.txt was too small or negative. Clamped to %g", app->settings.uiScale);
+			}
+		}
+		else
+		{
+			NotifyPrint_W("Failed to load settings!\nError: %s\nPath: \"%.*s\"", GetResultStr(loadSettingsResult), StrPrint(settingsFilePath));
+		}
+	}
+	else
+	{
+		PrintLine_N("No settings file found at \"%.*s\"! Saving settings", StrPrint(settingsFilePath));
+		SaveAppSettings();
+	}
+	if (app->settings.uiScale != prevUiScale || app->uiFont.arena == nullptr)
+	{
+		app->uiFontSize = app->settings.uiScale * DEFAULT_UI_FONT_SIZE;
+		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+		bool fontBakeSuccess = AppCreateFonts();
+		Assert(fontBakeSuccess);
+	}
+	ScratchEnd(scratch);
 }
 
 void FreeRecentFile(RecentFile* recentFile)

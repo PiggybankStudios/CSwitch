@@ -206,7 +206,6 @@ struct AppData
 	Shader mainShader;
 	PigFont uiFont;
 	r32 uiFontSize;
-	r32 uiScale;
 	r32 mainFontSize;
 	PigFont mainFont;
 	v2i appIconSheetCell[AppIcon_Count];

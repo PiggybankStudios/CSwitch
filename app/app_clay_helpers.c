@@ -8,9 +8,9 @@ Description:
 */
 
 // These macros are really shorthand for multiplying by app->uiScale and dealing with how to round or clamp to good values when uiScale is very big/small
-#define UI_R32(pixels) RoundR32((r32)(pixels) * app->uiScale)
-#define UI_U16(pixels) (u16)RoundR32i((r32)(pixels) * app->uiScale)
-#define UI_BORDER(pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * app->uiScale))
+#define UI_R32(pixels) RoundR32((r32)(pixels) * app->settings.uiScale)
+#define UI_U16(pixels) (u16)RoundR32i((r32)(pixels) * app->settings.uiScale)
+#define UI_BORDER(pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * app->settings.uiScale))
 
 bool IsMouseOverClay(ClayId clayId)
 {
