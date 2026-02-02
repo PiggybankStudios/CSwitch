@@ -948,10 +948,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						bool showMenuHotkeys = (IsKeyDown(Key_Alt) && appIn->isFocused);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
-							if (ClayBtnAppIcon("OpenFileBtn",
-								"Open" UNICODE_ELLIPSIS_STR,
-								"Ctrl+O",
-								"Open a file",
+							if (ClayBtnAppIconStr(StrLit("OpenFileBtn"),
+								StrLit("Open" UNICODE_ELLIPSIS_STR),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_OpenFile, uiArena, 0),
+								StrLit("Open a file"),
 								true, //isEnabled
 								AppIcon_OpenFile))
 							{
@@ -992,17 +992,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									Str8 clearRecentFilesTooltipStr = PrintInArenaStr(uiArena, "Remove %llu path%s from the \"Recent Files\" list", app->recentFiles.length, Plural(app->recentFiles.length, "s"));
 									if (ClayBtnAppIconStr(StrLit("ClearRecentBtn"),
 										StrLit("Clear Recent Files"),
-										Str8_Empty, //hotkey
+										GetBindingStrForAppCommand(&app->bindings, AppCommand_ClearRecentFiles, uiArena, 0),
 										clearRecentFilesTooltipStr,
 										app->recentFiles.length > 0, //isEnabled
 										AppIcon_Trash))
 									{
-										OpenPopupDialog(stdHeap, &app->popup,
-											ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
-											AppClearRecentFilesPopupCallback, nullptr
-										);
-										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
-										AddPopupButton(&app->popup, 2, StrLit("Clear Recent Files"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+										RunAppCommand(AppCommand_ClearRecentFiles);
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
@@ -1023,10 +1018,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								} Clay__CloseElement();
 							}
 							
-							if (ClayBtnAppIcon("ResetFileBtn",
-								"Reset File",
-								"", //hotkey
-								"Reset file to how it was when first opened",
+							if (ClayBtnAppIconStr(StrLit("ResetFileBtn"),
+								StrLit("Reset File"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ResetFile, uiArena, 0),
+								StrLit("Reset file to how it was when first opened"),
 								(app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal),
 								AppIcon_ResetFile))
 							{
@@ -1036,7 +1031,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("ReloadingEnabledBtn"),
 								ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleFileReloading, uiArena, 0),
 								StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes"),
 								(app->tabs.length > 0),
 								AppIcon_None)) //TODO: Add an icon for this option
@@ -1044,10 +1039,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								RunAppCommand(AppCommand_ToggleFileReloading);
 							} Clay__CloseElement();
 							
-							if (ClayBtnAppIcon("CloseFileBtn",
-								"Close File",
-								"Ctrl+W",
-								"Close the current file tab",
+							if (ClayBtnAppIconStr(StrLit("CloseFileBtn"),
+								StrLit("Close File"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_CloseTab, uiArena, 0),
+								StrLit("Close the current file tab"),
 								(app->currentTab != nullptr),
 								AppIcon_CloseFile))
 							{
@@ -1055,10 +1050,20 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
-							if (ClayBtnAppIcon("CloseWindowBtn",
-								"Close Window",
-								"Ctrl+Shift+W",
-								"", //tooltip
+							if (ClayBtnAppIconStr(StrLit("ReloadBindingsBtn"),
+								StrLit("Reload Bindings"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ReloadBindings, uiArena, 0),
+								StrLit("Reload key bindings from " USER_BINDINGS_FILENAME " in the config folder. Bindings can also be reloaded by close and reopening C-Switch"),
+								true, //isEnabled
+								AppIcon_None))
+							{
+								RunAppCommand(AppCommand_ReloadBindings);
+							} Clay__CloseElement();
+							
+							if (ClayBtnAppIconStr(StrLit("CloseWindowBtn"),
+								StrLit("Close Window"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_CloseWindow, uiArena, 0),
+								Str8_Empty, //tooltip
 								true, //isEnabled
 								AppIcon_CloseWindow))
 							{
@@ -1084,7 +1089,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							);
 							if (ClayBtnAppIconStr(StrLit("LightModeBtn"),
 								ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)),
-								StrLit("F9"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleLightMode, uiArena, 0),
 								StrLit("Toggle between dark and light mode"),
 								true, //isEnabled
 								AppIcon_LightDark))
@@ -1094,7 +1099,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("SmallButtonsBtn"),
 								ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"),
-								StrLit("F10"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleSmallButtons, uiArena, 0),
 								StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"),
 								true, //isEnabled
 								AppIcon_SmallBtn))
@@ -1104,7 +1109,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("TopmostBtn"),
 								ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"),
-								StrLit("Ctrl+T"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleTopmost, uiArena, 0),
 								StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"),
 								true, //isEnabled
 								appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled))
@@ -1114,7 +1119,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("ClipNamesBtn"),
 								ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleClipSide, uiArena, 0),
 								StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"),
 								true, //isEnabled
 								app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight))
@@ -1124,7 +1129,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("SmoothScrollingBtn"),
 								ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleSmoothScrolling, uiArena, 0),
 								StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"),
 								true, //isEnabled
 								AppIcon_SmoothScroll))
@@ -1134,7 +1139,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("TooltipsBtn"),
 								ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleOptionTooltips, uiArena, 0),
 								StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"),
 								true, //isEnabled
 								AppIcon_Tooltip))
@@ -1144,12 +1149,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("HideTopbarBtn"),
 								ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"),
-								StrLit("F11"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleTopbar, uiArena, 0),
 								StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"),
 								true, //isEnabled
 								AppIcon_Topbar))
 							{
-								app->minimalModeEnabled = !app->minimalModeEnabled;
+								RunAppCommand(AppCommand_ToggleTopbar);
 							} Clay__CloseElement();
 							
 							Str8 currentThemeStr = !IsEmptyStr(app->settings.userThemePath)
@@ -1158,7 +1163,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
 							if (ClayBtnAppIconStr(StrLit("OpenThemeBtn"),
 								StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_OpenCustomTheme, uiArena, 0),
 								openThemeTooltipStr,
 								true, //isEnabled
 								AppIcon_StarFile))
@@ -1170,7 +1175,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
 							if (ClayBtnAppIconStr(StrLit("ClearThemeBtn"),
 								StrLit("Clear Custom Theme"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ClearCustomTheme, uiArena, 0),
 								clearThemeTooltipStr,
 								!IsEmptyStr(app->settings.userThemePath),
 								AppIcon_CloseFile))
@@ -1181,7 +1186,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							#if DEBUG_BUILD
 							if (ClayBtnAppIconStr(StrLit("ClayDebugBtn"),
 								ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"),
-								StrLit("~"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleClayDebug, uiArena, 0),
 								StrLit("Toggles the debug sidebar for Clay"),
 								true, //isEnabled
 								AppIcon_Debug))
@@ -1191,7 +1196,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("SleepBtn"),
 								ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleSleeping, uiArena, 0),
 								StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing"),
 								true, //isEnabled
 								AppIcon_None))
@@ -1201,7 +1206,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							
 							if (ClayBtnAppIconStr(StrLit("FrameIndicatorBtn"),
 								ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"),
-								Str8_Empty, //hotkey
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleFrameIndicator, uiArena, 0),
 								StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate"),
 								true, //isEnabled
 								AppIcon_None))

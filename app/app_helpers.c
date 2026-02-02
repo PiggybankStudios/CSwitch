@@ -705,20 +705,6 @@ Str8 GetUniqueTabFilePath(FilePath filePath)
 	return filePath;
 }
 
-// +==================================+
-// | AppClearRecentFilesPopupCallback |
-// +==================================+
-// void AppClearRecentFilesPopupCallback(PopupDialogResult result, PopupDialog* dialog, PopupDialogButton* selectedButton, void* contextPntr)
-POPUP_DIALOG_CALLBACK_DEF(AppClearRecentFilesPopupCallback)
-{
-	UNUSED(dialog); UNUSED(selectedButton); UNUSED(contextPntr);
-	if (result == PopupDialogResult_Yes)
-	{
-		AppClearRecentFiles();
-		AppSaveRecentFilesList();
-	}
-}
-
 bool AppLoadUserTheme()
 {
 	bool loadedSuccessfully = false;

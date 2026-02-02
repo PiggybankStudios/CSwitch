@@ -48,6 +48,7 @@ enum AppCommand
 	AppCommand_SelectMoveLeft,
 	AppCommand_SelectMoveRight,
 	AppCommand_ToggleSelected,
+	AppCommand_ClearRecentFiles,
 	AppCommand_Count,
 };
 
@@ -93,6 +94,7 @@ const char* GetAppCommandStr(AppCommand enumValue)
 		case AppCommand_SelectMoveLeft:        return "SelectMoveLeft";
 		case AppCommand_SelectMoveRight:       return "SelectMoveRight";
 		case AppCommand_ToggleSelected:        return "ToggleSelected";
+		case AppCommand_ClearRecentFiles:      return "ClearRecentFiles";
 		default: return UNKNOWN_STR;
 	}
 }

@@ -62,6 +62,20 @@ POPUP_DIALOG_CALLBACK_DEF(AppResetCurrentFilePopupCallback)
 	}
 }
 
+// +==================================+
+// | AppClearRecentFilesPopupCallback |
+// +==================================+
+// void AppClearRecentFilesPopupCallback(PopupDialogResult result, PopupDialog* dialog, PopupDialogButton* selectedButton, void* contextPntr)
+POPUP_DIALOG_CALLBACK_DEF(AppClearRecentFilesPopupCallback)
+{
+	UNUSED(dialog); UNUSED(selectedButton); UNUSED(contextPntr);
+	if (result == PopupDialogResult_Yes)
+	{
+		AppClearRecentFiles();
+		AppSaveRecentFilesList();
+	}
+}
+
 void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 {
 	NotNull(app);
@@ -614,6 +628,22 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				{
 					ToggleOption(app->currentTab, selectedOption);
 				}
+			}
+		} break;
+		
+		// +==============================+
+		// | AppCommand_ClearRecentFiles  |
+		// +==============================+
+		case AppCommand_ClearRecentFiles:
+		{
+			if (app->recentFiles.length > 0)
+			{
+				OpenPopupDialog(stdHeap, &app->popup,
+					ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
+					AppClearRecentFilesPopupCallback, nullptr
+				);
+				AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
+				AddPopupButton(&app->popup, 2, StrLit("Clear Recent Files"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
 			}
 		} break;
 		

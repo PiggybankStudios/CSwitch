@@ -60,6 +60,41 @@ AppCommand FindAppBindingCommand(AppBindingSet* bindings, u8 modifierKeys, Key k
 	return (binding != nullptr) ? binding->command : AppCommand_None;
 }
 
+AppBinding* FindBindingForAppCommand(AppBindingSet* bindings, AppCommand command, uxx skipCount)
+{
+	NotNull(bindings);
+	NotNull(bindings->arena);
+	uxx foundIndex = 0;
+	VarArrayLoop(&bindings->bindings, bIndex)
+	{
+		VarArrayLoopGet(AppBinding, binding, &bindings->bindings, bIndex);
+		if (binding->command == command)
+		{
+			if (foundIndex >= skipCount) { return binding; }
+			foundIndex++;
+		}
+	}
+	return nullptr;
+}
+Str8 GetBindingStrForAppCommand(AppBindingSet* bindings, AppCommand command, Arena* arena, uxx skipCount)
+{
+	AppBinding* binding = FindBindingForAppCommand(bindings, command, skipCount);
+	if (binding == nullptr) { return Str8_Empty; }
+	bool controlMod = IsFlagSet(binding->modifierKeys, ModifierKey_Control);
+	bool altMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Alt);
+	bool shiftMod   = IsFlagSet(binding->modifierKeys, ModifierKey_Shift);
+	Str8 result = PrintInArenaStr(arena, "%s%s%s%s%s%s%s",
+		controlMod ? "Ctrl" : "",
+		(controlMod && altMod) ? "+" : "",
+		altMod ? "Alt" : "",
+		((controlMod || altMod) && shiftMod) ? "+" : "",
+		shiftMod ? "Shift" : "",
+		(controlMod || altMod || shiftMod) ? "+" : "",
+		GetKeyStr(binding->key)
+	);
+	return result;
+}
+
 void RemoveAppBinding(AppBindingSet* bindings, u8 modifierKeys, Key key)
 {
 	bool foundBindingWithSameKeyButDifferentMods = false;
