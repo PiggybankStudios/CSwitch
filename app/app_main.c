@@ -341,11 +341,11 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	
-	InitAppSettings(stdHeap, &app->settings);
-	LoadAppSettings();
-	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
+	
+	InitAppSettings(stdHeap, &app->settings);
+	LoadAppSettings();
 	
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();
