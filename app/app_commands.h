@@ -11,6 +11,7 @@ typedef enum AppCommand AppCommand;
 enum AppCommand
 {
 	AppCommand_None = 0,
+	AppCommand_ReloadBindings,
 	AppCommand_ClosePopupOrMenu,
 	AppCommand_OpenFile,
 	AppCommand_ReopenRecentFile,
@@ -55,6 +56,7 @@ const char* GetAppCommandStr(AppCommand enumValue)
 	switch (enumValue)
 	{
 		case AppCommand_None:                  return "None";
+		case AppCommand_ReloadBindings:        return "ReloadBindings";
 		case AppCommand_ClosePopupOrMenu:      return "ClosePopupOrMenu";
 		case AppCommand_OpenFile:              return "OpenFile";
 		case AppCommand_ReopenRecentFile:      return "ReopenRecentFile";
@@ -110,5 +112,7 @@ bool DoesAppCommandTriggerOnOsLevelKeyRepeatEvents(AppCommand command)
 		default: return false;
 	}
 }
+
+void RunAppCommand(AppCommand command);
 
 #endif //  _APP_COMMANDS_H

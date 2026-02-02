@@ -14,6 +14,7 @@ Date:   02\25\2025
 #define THREAD_POOL_TEST 0
 
 #define RECENT_FILES_SAVE_FILEPATH "recent_files.txt"
+#define USER_BINDINGS_FILENAME     "bindings.txt"
 #define RECENT_FILES_MAX_LENGTH    16 //files
 #define SETTINGS_FILENAME          "settings.txt"
 
@@ -40,6 +41,9 @@ Date:   02\25\2025
 
 #define APP_ICONS_TEXTURE_PATH  "resources/image/btn_icons_4x5.png"
 #define APP_ICONS_METADATA_PATH "resources/image/btn_icons_4x5.meta"
+
+#define DEFAULT_BINDINGS_PATH "resources/text/default_bindings.txt"
+#define DEBUG_BINDINGS_PATH   "resources/text/debug_bindings.txt"
 
 #define DEFAULT_WINDOW_SIZE        MakeV2(360, 500)
 #define MIN_WINDOW_SIZE            MakeV2(50, 50)

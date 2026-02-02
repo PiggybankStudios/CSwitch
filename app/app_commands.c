@@ -62,13 +62,24 @@ POPUP_DIALOG_CALLBACK_DEF(AppResetCurrentFilePopupCallback)
 	}
 }
 
-void RunAppCommand(AppCommand command)
+void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 {
 	NotNull(app);
 	NotNull(appIn);
 	
 	switch (command)
 	{
+		// +==============================+
+		// |  AppCommand_ReloadBindings   |
+		// +==============================+
+		case AppCommand_ReloadBindings:
+		{
+			if (AppTryLoadBindings(false))
+			{
+				Notify_I("Reloaded bindings");
+			}
+		} break;
+		
 		// +==============================+
 		// | AppCommand_ClosePopupOrMenu  |
 		// +==============================+
@@ -136,7 +147,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |     AppCommand_CloseTab      |
 		// +==============================+
-		case AppCommand_CloseTab:
+		case AppCommand_CloseTab: //TODO: app->currentTab != nullptr
 		{
 			if (app->currentTab != nullptr)
 			{
@@ -295,7 +306,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |      AppCommand_NextTab      |
 		// +==============================+
-		case AppCommand_NextTab:
+		case AppCommand_NextTab: //TODO: app->tabs.length > 1
 		{
 			if (app->tabs.length > 1) { AppChangeTab((app->currentTabIndex+1) % app->tabs.length); }
 		} break;
@@ -303,7 +314,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |    AppCommand_PreviousTab    |
 		// +==============================+
-		case AppCommand_PreviousTab:
+		case AppCommand_PreviousTab: //TODO: app->tabs.length > 1
 		{
 			if (app->tabs.length > 1) { AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1); }
 		} break;
@@ -381,7 +392,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |    AppCommand_ScrollToTop    |
 		// +==============================+
-		case AppCommand_ScrollToTop:
+		case AppCommand_ScrollToTop: //TODO: app->currentTab != nullptr
 		{
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
@@ -390,7 +401,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |  AppCommand_ScrollToBottom   |
 		// +==============================+
-		case AppCommand_ScrollToBottom:
+		case AppCommand_ScrollToBottom: //TODO: app->currentTab != nullptr
 		{
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
@@ -403,7 +414,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |   AppCommand_ScrollUpPage    |
 		// +==============================+
-		case AppCommand_ScrollUpPage:
+		case AppCommand_ScrollUpPage: //TODO: app->currentTab != nullptr
 		{
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
@@ -416,7 +427,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |  AppCommand_ScrollDownPage   |
 		// +==============================+
-		case AppCommand_ScrollDownPage:
+		case AppCommand_ScrollDownPage: //TODO: app->currentTab != nullptr
 		{
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
@@ -437,7 +448,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |   AppCommand_SelectMoveUp    |
 		// +==============================+
-		case AppCommand_SelectMoveUp:
+		case AppCommand_SelectMoveUp: //TODO: app->currentTab != nullptr
 		{
 			app->usingKeyboardToSelect = true;
 			if (app->currentTab != nullptr)
@@ -485,7 +496,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |  AppCommand_SelectMoveDown   |
 		// +==============================+
-		case AppCommand_SelectMoveDown:
+		case AppCommand_SelectMoveDown: //TODO: app->currentTab != nullptr
 		{
 			app->usingKeyboardToSelect = true;
 			if (app->currentTab != nullptr)
@@ -536,7 +547,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |  AppCommand_SelectMoveLeft   |
 		// +==============================+
-		case AppCommand_SelectMoveLeft:
+		case AppCommand_SelectMoveLeft: //TODO: app->currentTab != nullptr
 		{
 			app->usingKeyboardToSelect = true;
 			if (app->currentTab != nullptr)
@@ -565,7 +576,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |  AppCommand_SelectMoveRight  |
 		// +==============================+
-		case AppCommand_SelectMoveRight:
+		case AppCommand_SelectMoveRight: //TODO: app->currentTab != nullptr
 		{
 			app->usingKeyboardToSelect = true;
 			if (app->currentTab != nullptr)
@@ -594,7 +605,7 @@ void RunAppCommand(AppCommand command)
 		// +==============================+
 		// |  AppCommand_ToggleSelected   |
 		// +==============================+
-		case AppCommand_ToggleSelected:
+		case AppCommand_ToggleSelected: //TODO: app->usingKeyboardToSelect && app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0
 		{
 			if (app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0)
 			{

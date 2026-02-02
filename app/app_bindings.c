@@ -136,54 +136,6 @@ AppBinding* AddAppBindingRef(AppBindingSet* bindings, const AppBinding* bindingP
 	return AddAppBinding(bindings, bindingPntr->modifierKeys, bindingPntr->key, bindingPntr->command);
 }
 
-void AddDefaultAppBindings(AppBindingSet* bindings)
-{
-	#define NoMods ModifierKey_None
-	#define Ctrl   ModifierKey_Control
-	#define Alt    ModifierKey_Alt
-	#define Shift  ModifierKey_Shift
-	
-	AddAppBinding(bindings, Ctrl,       Key_W,              AppCommand_CloseTab); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, Ctrl|Shift, Key_W,              AppCommand_CloseWindow);
-	AddAppBinding(bindings, NoMods,     Key_F6,             AppCommand_TogglePerfGraph);
-	AddAppBinding(bindings, NoMods,     Key_F9,             AppCommand_ToggleLightMode);
-	AddAppBinding(bindings, NoMods,     Key_F10,            AppCommand_ToggleSmallButtons);
-	AddAppBinding(bindings, NoMods,     Key_F11,            AppCommand_ToggleTopbar);
-	AddAppBinding(bindings, NoMods,     Key_Escape,         AppCommand_ClosePopupOrMenu);
-	AddAppBinding(bindings, Ctrl,       Key_Plus,           AppCommand_IncreaseUiScale);
-	AddAppBinding(bindings, Ctrl,       Key_NumpadAdd,      AppCommand_IncreaseUiScale);
-	AddAppBinding(bindings, Ctrl,       Key_Minus,          AppCommand_DecreaseUiScale);
-	AddAppBinding(bindings, Ctrl,       Key_NumpadSubtract, AppCommand_DecreaseUiScale);
-	AddAppBinding(bindings, Ctrl,       Key_0,              AppCommand_ResetUiScale);
-	AddAppBinding(bindings, Alt,        Key_F,              AppCommand_OpenFileMenu);
-	AddAppBinding(bindings, Alt,        Key_V,              AppCommand_OpenViewMenu);
-	AddAppBinding(bindings, Ctrl,       Key_O,              AppCommand_OpenFile);
-	AddAppBinding(bindings, Ctrl,       Key_Tab,            AppCommand_NextTab); //TODO: app->tabs.length > 1
-	AddAppBinding(bindings, Ctrl|Alt,   Key_X,              AppCommand_NextTab); //TODO: app->tabs.length > 1
-	AddAppBinding(bindings, Ctrl|Shift, Key_Tab,            AppCommand_PreviousTab); //TODO: app->tabs.length > 1
-	AddAppBinding(bindings, Ctrl|Alt,   Key_Z,              AppCommand_PreviousTab); //TODO: app->tabs.length > 1
-	AddAppBinding(bindings, Ctrl,       Key_E,              AppCommand_ReopenRecentFile);
-	AddAppBinding(bindings, Ctrl,       Key_T,              AppCommand_ToggleTopmost);
-	AddAppBinding(bindings, NoMods,     Key_Home,           AppCommand_ScrollToTop); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_End,            AppCommand_ScrollToBottom); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_PageUp,         AppCommand_ScrollUpPage); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_PageDown,       AppCommand_ScrollDownPage); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_Up,             AppCommand_SelectMoveUp); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_Down,           AppCommand_SelectMoveDown); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_Left,           AppCommand_SelectMoveLeft); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_Right,          AppCommand_SelectMoveRight); //TODO: app->currentTab != nullptr
-	AddAppBinding(bindings, NoMods,     Key_Enter,          AppCommand_ToggleSelected); //TODO: app->usingKeyboardToSelect && app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0
-	
-	#if DEBUG_BUILD
-	AddAppBinding(bindings, NoMods,     Key_Tilde,  AppCommand_ToggleClayDebug);
-	#endif
-	
-	#undef NoMods
-	#undef Ctrl
-	#undef Alt
-	#undef Shift
-}
-
 void RunAppBindingCommands(AppBindingSet* bindings)
 {
 	if (!appIn->isFocused) { return; }
@@ -236,4 +188,213 @@ void RunAppBindingCommands(AppBindingSet* bindings)
 			}
 		}
 	}
+}
+
+Result TryParseBindingFile(Str8 fileContents, AppBindingSet* bindingsOut)
+{
+	NotNullStr(fileContents);
+	NotNull(bindingsOut);
+	AssertMsg(bindingsOut->arena != nullptr, "Must initialized AppBindingSet before passing to TryParseBindingFile");
+	
+	uxx numValidBindingsFound = 0;
+	bool foundInvalidBindings = false;
+	bool foundInvalidSyntax = false;
+	Result result = Result_None;
+	TextParser parser = MakeTextParser(fileContents);
+	ParsingToken token = ZEROED;
+	while (TextParserGetToken(&parser, &token))
+	{
+		switch (token.type)
+		{
+			case ParsingTokenType_Comment: /* do nothing */ break;
+			
+			case ParsingTokenType_KeyValuePair:
+			{
+				Str8 keyName = token.key;
+				uxx previousPlusIndex = 0;
+				u8 modifierKeys = ModifierKey_None;
+				bool allModifiersValid = true;
+				for (uxx cIndex = 0; cIndex < token.key.length; cIndex++)
+				{
+					if (token.key.chars[cIndex] == '+')
+					{
+						Str8 modifierName = TrimWhitespace(StrSlice(token.key, previousPlusIndex, cIndex));
+						if (StrAnyCaseEquals(modifierName, StrLit("Control")) || StrAnyCaseEquals(modifierName, StrLit("Ctrl")) || StrAnyCaseEquals(modifierName, StrLit("Ctl")))
+						{
+							if (IsFlagSet(modifierKeys, ModifierKey_Control)) { NotifyPrint_W("Duplicated Ctrl modifier in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key)); }
+							modifierKeys |= ModifierKey_Control;
+						}
+						else if (StrAnyCaseEquals(modifierName, StrLit("Alt"))) //TODO: "Super" or "Command"?
+						{
+							if (IsFlagSet(modifierKeys, ModifierKey_Alt)) { NotifyPrint_W("Duplicated Alt modifier in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key)); }
+							modifierKeys |= ModifierKey_Alt;
+						}
+						else if (StrAnyCaseEquals(modifierName, StrLit("Shift"))) //TODO: "Shft" or some other abbreviation?
+						{
+							if (IsFlagSet(modifierKeys, ModifierKey_Shift)) { NotifyPrint_W("Duplicated Shift modifier in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key)); }
+							modifierKeys |= ModifierKey_Shift;
+						}
+						else if (IsEmptyStr(modifierName))
+						{
+							NotifyPrint_W("Empty modifier part in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key));
+							allModifiersValid = false;
+							foundInvalidBindings = true;
+							break;
+						}
+						else
+						{
+							NotifyPrint_W("Unknown modifier \"%.*s\" in bindings file on line %llu: \"%.*s\"", StrPrint(modifierName), parser.lineParser.lineIndex, StrPrint(token.key));
+							allModifiersValid = false;
+							foundInvalidBindings = true;
+							break;
+						}
+						keyName = StrSliceFrom(token.key, cIndex+1);
+						previousPlusIndex = cIndex+1;
+					}
+				}
+				
+				keyName = TrimWhitespace(keyName);
+				
+				if (IsEmptyStr(keyName))
+				{
+					NotifyPrint_W("Modifiers only in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key));
+					foundInvalidBindings = true;
+				}
+				else if (allModifiersValid)
+				{
+					Key key = Key_None;
+					for (uxx keyIndex = 1; keyIndex < Key_Count; keyIndex++)
+					{
+						Key keyEnumValue = (Key)keyIndex;
+						Str8 keyEnumName = MakeStr8Nt(GetKeyStr(keyEnumValue));
+						if (StrAnyCaseEquals(keyName, keyEnumName)) { key = keyEnumValue; break; }
+					}
+					
+					if (key == Key_None)
+					{
+						NotifyPrint_W("Unknown key name \"%.*s\" in bindings file on line %llu: \"%.*s\"", StrPrint(keyName), parser.lineParser.lineIndex, StrPrint(token.key));
+					}
+					else
+					{
+						AppCommand command = AppCommand_None;
+						for (uxx cIndex = 1; cIndex < AppCommand_Count; cIndex++)
+						{
+							AppCommand commandEnumValue = (AppCommand)cIndex;
+							Str8 commandEnumName = MakeStr8Nt(GetAppCommandStr(commandEnumValue));
+							if (StrAnyCaseEquals(token.value, commandEnumName))
+							{
+								command = commandEnumValue;
+								break;
+							}
+						}
+						
+						if (StrAnyCaseEquals(token.value, StrLit("None")))
+						{
+							RemoveAppBinding(bindingsOut, modifierKeys, key);
+							numValidBindingsFound++;
+						}
+						else if (command == AppCommand_None)
+						{
+							NotifyPrint_W("Unknown command name \"%.*s\" in bindings file on line %llu: \"%.*s\"", StrPrint(token.value), parser.lineParser.lineIndex, StrPrint(token.str));
+						}
+						else
+						{
+							AddAppBinding(bindingsOut, modifierKeys, key, command);
+							numValidBindingsFound++;
+						}
+					}
+				}
+			} break;
+			
+			default:
+			{
+				PrintLine_W("Invalid syntax in binding file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.str));
+				foundInvalidSyntax = true;
+			}  break;
+		}
+	}
+	
+	if (numValidBindingsFound == 0 && result == Result_None)
+	{
+		if (foundInvalidBindings || foundInvalidSyntax) { Notify_E("All bindings in file were invalid!"); result = Result_InvalidSyntax; }
+		else { PrintLine_W("Bindings file contained no bindings!"); result = Result_EmptyFile; }
+	}
+	
+	if (result == Result_None) { result = Result_Success; }
+	return result;
+}
+
+Str8 SerializeCommentedBindingsFileFromBindingSet(Arena* arena, AppBindingSet* defaultBindingSet)
+{
+	TwoPassStr8Loop(result, arena, false)
+	{
+		TwoPassStrNt(&result, "// This file stores all the user configured bindings for functionality in C-Switch.\n");
+		TwoPassStrNt(&result, "// The following commented lines are a copy of the default bindings that are baked into the program.\n");
+		TwoPassStrNt(&result, "// Override these bindings with your own or unbind a key combo by assigning it to \"None\".\n");
+		TwoPassStrNt(&result, "// Key combos are modifier keys (Ctrl, Alt, and Shift) joined by \'+\' character ending in a single valid key name like \"Enter\".\n");
+		TwoPassStrNt(&result, "// Whitespace is allowed pretty much anywhere you would expect. Comments are allowed with // but multi-line comment syntax like /* */ is not allowed.\n");
+		
+		TwoPassStrNt(&result, "// \n");
+		
+		TwoPassStrNt(&result, "// Valid Key Names: ");
+		for (uxx keyIndex = 1; keyIndex < Key_Count; keyIndex++)
+		{
+			Key key = (Key)keyIndex;
+			if (key != Key_Control && key != Key_Alt && key != Key_Shift &&
+				key != Key_Windows && key != Key_Command && key != Key_Option &&
+				key != Key_LeftShift && key != Key_LeftControl && key != Key_LeftAlt &&
+				key != Key_LeftWindows && key != Key_LeftCommand && key != Key_LeftOption &&
+				key != Key_RightShift && key != Key_RightControl && key != Key_RightAlt &&
+				key != Key_RightWindows && key != Key_RightCommand && key != Key_RightOption)
+			{
+				if (keyIndex > 1) { TwoPassStrNt(&result, ", "); }
+				TwoPassStrNt(&result, GetKeyStr(key));
+			}
+		}
+		TwoPassStrNt(&result, "\n");
+		
+		TwoPassStrNt(&result, "// \n");
+		
+		TwoPassStrNt(&result, "// Bindable Commands: ");
+		for (uxx cIndex = 1; cIndex < AppCommand_Count; cIndex++)
+		{
+			AppCommand appCommand = (AppCommand)cIndex;
+			if (cIndex > 1) { TwoPassStrNt(&result, ", "); }
+			TwoPassStrNt(&result, GetAppCommandStr(appCommand));
+		}
+		TwoPassStrNt(&result, "\n");
+		
+		TwoPassStrNt(&result, "\n");
+		
+		TwoPassStrNt(&result, "// Change one of these bindings by uncommenting it and setting it to something else, or \"None\" to remove the default binding:\n");
+		VarArrayLoop(&defaultBindingSet->bindings, bIndex)
+		{
+			VarArrayLoopGet(AppBinding, binding, &defaultBindingSet->bindings, bIndex);
+			if (binding->id != APP_BINDING_ID_INVALID)
+			{
+				TwoPassStrNt(&result, "// ");
+				bool controlMod = IsFlagSet(binding->modifierKeys, ModifierKey_Control);
+				bool altMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Alt);
+				bool shiftMod   = IsFlagSet(binding->modifierKeys, ModifierKey_Shift);
+				if (controlMod)                         { TwoPassStrNt(&result, "Ctrl");  }
+				if (controlMod && altMod)               { TwoPassStrNt(&result, "+");     }
+				if (altMod)                             { TwoPassStrNt(&result, "Alt");   }
+				if ((controlMod || altMod) && shiftMod) { TwoPassStrNt(&result, "+");     }
+				if (shiftMod)                           { TwoPassStrNt(&result, "Shift"); }
+				if (controlMod || altMod || shiftMod)   { TwoPassStrNt(&result, "+");     }
+				
+				TwoPassStrNt(&result, GetKeyStr(binding->key));
+				TwoPassStrNt(&result, ": ");
+				TwoPassStrNt(&result, GetAppCommandStr(binding->command));
+				TwoPassStrNt(&result, "\n");
+			}
+		}
+		
+		TwoPassStrNt(&result, "\n");
+		
+		TwoPassStrNt(&result, "// Add new bindings here:\n");
+		
+		TwoPassStr8LoopEnd(&result);
+	}
+	return result.str;
 }

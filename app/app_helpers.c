@@ -144,6 +144,91 @@ void LoadAppIcons()
 	ScratchEnd(scratch);
 }
 
+bool AppTryLoadBindings(bool assertOnFailure)
+{
+	ScratchBegin(scratch);
+	
+	FilePath defaultBindingsPath = FilePathLit(DEFAULT_BINDINGS_PATH);
+	Str8 defaultBindingsFileName = GetFileNamePart(defaultBindingsPath, true);
+	
+	Str8 defaultBindingsFileContents = Slice_Empty;
+	Result readResult = TryReadAppResource(&app->resources, scratch, defaultBindingsPath, true, &defaultBindingsFileContents);
+	if (readResult != Result_Success)
+	{
+		PrintLine_E("Failed to load %.*s: %s", StrPrint(defaultBindingsFileName), GetResultStr(readResult));
+		Assert(!assertOnFailure || readResult == Result_Success);
+		ScratchEnd(scratch);
+		return false;
+	}
+	
+	AppBindingSet newBindings = ZEROED;
+	InitAppBindingSet(stdHeap, &newBindings);
+	Result parseResult = TryParseBindingFile(defaultBindingsFileContents, &newBindings);
+	if (parseResult != Result_Success)
+	{
+		PrintLine_E("Failed to parse %.*s: %s", StrPrint(defaultBindingsFileName), GetResultStr(parseResult));
+		Assert(!assertOnFailure || parseResult == Result_Success);
+		ScratchEnd(scratch);
+		FreeAppBindingSet(&newBindings);
+		return false;
+	}
+	
+	FilePath settingsFolderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), false);
+	Assert(!IsEmptyStr(settingsFolderPath));
+	FilePath userBindingsPath = PrintInArenaStr(scratch, "%.*s%s%s",
+		StrPrint(settingsFolderPath),
+		DoesPathHaveTrailingSlash(settingsFolderPath) ? "" : "/",
+		USER_BINDINGS_FILENAME
+	);
+	if (!OsDoesFileExist(userBindingsPath))
+	{
+		PrintLine_D("Creating new %s with commented bindings at \"%.*s\"", USER_BINDINGS_FILENAME, StrPrint(userBindingsPath));
+		Str8 commentedBindingsFileContents = SerializeCommentedBindingsFileFromBindingSet(scratch, &newBindings);
+		Result createSettingsFolderResult = OsCreateFolder(settingsFolderPath, true);
+		if (createSettingsFolderResult != Result_Success)
+		{
+			NotifyPrint_W("Failed to create settings folder at \"%.*s\": %s", StrPrint(settingsFolderPath), GetResultStr(createSettingsFolderResult));
+		}
+		else
+		{
+			if (!OsWriteTextFile(userBindingsPath, commentedBindingsFileContents))
+			{
+				NotifyPrint_W("Failed to create %s at \"%.*s\"", USER_BINDINGS_FILENAME, StrPrint(userBindingsPath));
+			}
+		}
+	}
+	
+	#if DEBUG_BUILD
+	FilePath debugBindingsPath = FilePathLit(DEBUG_BINDINGS_PATH);
+	Str8 debugBindingsFileName = GetFileNamePart(debugBindingsPath, true);
+	Str8 debugBindingsFileContents = Slice_Empty;
+	Result debugReadResult = TryReadAppResource(&app->resources, scratch, debugBindingsPath, true, &debugBindingsFileContents);
+	if (debugReadResult == Result_Success)
+	{
+		Result debugParseResult = TryParseBindingFile(debugBindingsFileContents, &newBindings);
+		if (debugParseResult != Result_Success && debugParseResult != Result_EmptyFile) { NotifyPrint_W("Failed to parse %.*s: %s", StrPrint(debugBindingsFileName), GetResultStr(debugParseResult)); }
+	}
+	else { NotifyPrint_W("Failed to load %.*s: %s", StrPrint(debugBindingsFileName), GetResultStr(debugReadResult)); }
+	#endif
+	
+	Str8 userBindingsFileContents = Str8_Empty;
+	if (OsReadTextFile(userBindingsPath, scratch, &userBindingsFileContents))
+	{
+		Result userBindingsParseResult = TryParseBindingFile(userBindingsFileContents, &newBindings);
+		if (userBindingsParseResult == Result_EmptyFile) { PrintLine_D("%s contains no bindings", USER_BINDINGS_FILENAME); }
+		else if (userBindingsParseResult != Result_Success)
+		{
+			NotifyPrint_E("Failed to parse %s: %s", USER_BINDINGS_FILENAME, GetResultStr(userBindingsParseResult));
+		}
+	}
+	else { PrintLine_D("No user bindings file at \"%.*s\"", StrPrint(userBindingsPath)); }
+	
+	FreeAppBindingSet(&app->bindings);
+	MyMemCopy(&app->bindings, &newBindings, sizeof(AppBindingSet));
+	ScratchEnd(scratch);
+	return true;
+}
+
 bool AppTryLoadDefaultTheme(bool assertOnFailure)
 {
 	TracyCZoneN(_funcZone, "LoadDefaultTheme", true);

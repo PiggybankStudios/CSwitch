@@ -71,11 +71,11 @@ static Arena* stdHeap = nullptr;
 #include "app_clay_helpers.c"
 #include "app_textbox.c"
 #include "app_popup_dialog.c"
+#include "app_bindings.c"
 #include "app_helpers.c"
 #include "app_tab.c"
 #include "app_clay.c"
 #include "app_commands.c"
-#include "app_bindings.c"
 
 // +==============================+
 // |         TestWorkItem         |
@@ -385,7 +385,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitVarArray(FileTab, &app->tabs, stdHeap);
 	
 	InitAppBindingSet(stdHeap, &app->bindings);
-	AddDefaultAppBindings(&app->bindings);
+	AppTryLoadBindings(true);
 	
 	InitThemeDefFuncArgInfos();
 	AppTryLoadDefaultTheme(true);
