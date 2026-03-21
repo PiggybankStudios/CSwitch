@@ -14,8 +14,6 @@ Description:
 #ifndef _BUILD_CONFIG_H
 #define /*DONT SHOW IN CSWITCH*/ _BUILD_CONFIG_H
 
-#define BUILD_PIG_BUILD 0
-
 // Controls whether we are making a build that we want to run with a Debugger.
 // This often sacrifices runtime speed or code size for extra debug information.
 // Debug builds often take less time to compile as well.
@@ -23,9 +21,9 @@ Description:
 
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 0
+#define BUILD_WINDOWS 1
 // Build binaries for Linux platform(s)
-#define BUILD_LINUX   1
+#define BUILD_LINUX   0
 
 
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library

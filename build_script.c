@@ -437,7 +437,7 @@ int main(int argc, char* argv[])
 		mz_bool finalizeResult = mz_zip_writer_finalize_archive(&context.zip);
 		assert(finalizeResult == MZ_TRUE);
 		mz_zip_writer_end(&context.zip);
-		PrintLine("Found %lu resource files, total %lu bytes uncompressed, %lu compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
+		PrintLine("Found %llu resource files, total %llu bytes uncompressed, %llu compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
 		
 		CreateAndWriteFile(StrLit("resources.zip"), MakeStr8(context.archiveSize, context.archivePntr), false);
 		
@@ -551,7 +551,7 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized); }
 		
-		PrintLine("Found %lu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
+		PrintLine("Found %llu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
 		// for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		// {
 		// 	PrintLine("Shader[%u]", sIndex);
