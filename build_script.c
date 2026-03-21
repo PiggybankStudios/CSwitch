@@ -14,26 +14,15 @@ Description:
 	** since it's lifespan is short and it's memory requirements are tiny
 */
 
-#include "tools/tools_shared.h"
-#include "tools/tools_str_array.h"
-#include "tools/tools_cli.h"
-
-#include "tools/tools_msvc_flags.h"
-#include "tools/tools_clang_flags.h"
-#include "tools/tools_gcc_flags.h"
-#include "tools/tools_emscripten_flags.h"
-#include "tools/tools_shdc_flags.h"
-#include "tools/tools_pdc_flags.h"
-
-#include "tools/tools_build_helpers.h"
-#include "tools/tools_pig_core_build_flags.h"
+#define PIG_BUILD_PRINT_SYS_CMDS 0
+#include "pig_build.h"
 
 //NOTE: We use miniz.h when BUNDLE_RESOURCES_ZIP is enabled
 #define MINIZ_NO_STDIO //to disable all usage and any functions which rely on stdio for file I/O.
 #define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1
 #define MINIZ_LITTLE_ENDIAN                  1
-#include "third_party/miniz/miniz.h"
-#include "third_party/miniz/miniz.c"
+#include "core/third_party/miniz/miniz.h"
+#include "core/third_party/miniz/miniz.c"
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
@@ -58,9 +47,9 @@ Description:
 #define TOOL_EXE_NAME      "pig_build"
 #endif
 
-static inline void PrintUsage()
+void PrintUsage()
 {
-	WriteLine_E("Usage: " TOOL_EXE_NAME " [build_config_path] [is_msvc_compiler_initialized]");
+	WriteLine_E("Usage: " BUILD_SCRIPT_EXE_NAME " [DEBUG_BUILD={1/0}] [BUILD_TESTS={1/0}] ...");
 }
 
 typedef struct BundleResourcesContext BundleResourcesContext;
@@ -69,10 +58,10 @@ struct BundleResourcesContext
 	mz_zip_archive zip;
 	Str8 relativePath;
 	StrArray resourcePaths;
-	uxx uncompressedSize;
-	uxx archiveAllocSize;
-	uxx archiveSize;
-	uint8_t* archivePntr;
+	u64 uncompressedSize;
+	u64 archiveAllocSize;
+	u64 archiveSize;
+	u8* archivePntr;
 };
 
 // +==============================+
@@ -106,7 +95,7 @@ size_t ZipFileWriteCallback(void* contextPntr, mz_uint64 fileOffset, const void*
 	assert(context != nullptr);
 	if (context->archiveAllocSize < fileOffset + numBytes)
 	{
-		uxx newAllocSize = context->archiveAllocSize;
+		u64 newAllocSize = context->archiveAllocSize;
 		if (newAllocSize < 8) { newAllocSize = 8; }
 		while (newAllocSize < fileOffset + numBytes) { newAllocSize *= 2; }
 		void* newAllocPntr = malloc(newAllocSize);
@@ -122,7 +111,8 @@ size_t ZipFileWriteCallback(void* contextPntr, mz_uint64 fileOffset, const void*
 
 int main(int argc, char* argv[])
 {
-	// PrintLine("Running %s...", TOOL_EXE_NAME);
+	RecompileIfNeeded();
+	PrintLine("[%s...]", BUILD_SCRIPT_EXE_NAME);
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	
@@ -164,6 +154,22 @@ int main(int argc, char* argv[])
 	bool BUILD_WITH_GTK           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
 	
 	free(buildConfigContents.chars);
+	
+	// +==============================+
+	// | Parse Command-Line Arguments |
+	// +==============================+
+	if (argc > 1)
+	{
+		PrintLine("Got %d argument%s", argc-1, (argc-1 == 1) ? "" : "s");
+		for (int aIndex = 1; aIndex < argc; aIndex++)
+		{
+			PrintLine("Arg[%d]: %s", aIndex-1, argv[aIndex]);
+			//TODO: We should parse these arguments and use them as overrides to the #defines we loaded above!
+		}
+		PrintUsage(); //TODO: Only print this out if we find an argument we don't understand
+		PrintLine_E("ERROR: Command-line arguments are not supported yet!");
+		return 1;
+	}
 	
 	// +==============================+
 	// | Enforce Option Restrictions  |
@@ -359,10 +365,49 @@ int main(int argc, char* argv[])
 		}
 		if (BUILD_LINUX)
 		{
-			//TODO: Implement Linux version!
+			PrintLine("\n[Building %s for Linux...]", FILENAME_TRACY_SO);
+			
+			CliArgList cmd = ZEROED;
+			cmd.pathSepChar = '/';
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/third_party/tracy/TracyClient.cpp");
+			AddArgNt(&cmd, CLANG_INCLUDE_DIR, "[ROOT]/core/third_party/tracy");
+			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_TRACY_SO);
+			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
+			AddArg(&cmd, CLANG_fPIC);
+			AddArgNt(&cmd, CLANG_DEFINE, "TRACY_ENABLE");
+			AddArgNt(&cmd, CLANG_DEFINE, "TRACY_EXPORTS");
+			AddArgList(&cmd, &clang_CommonFlags);
+			AddArgList(&cmd, &clang_LangCppFlags);
+			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &clang_CommonLibraries);
+			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_SHADOWING); // declaration shadows a local variable
+			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_MISSING_FIELD_INITIALIZERS); // missing field 'extra' initializer
+			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH); // unannotated fall-through between switch labels
+			
+			#if BUILDING_ON_LINUX
+			Str8 clangExe = StrLit(EXE_CLANG);
+			#else
+			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
+			chdir(FOLDERNAME_LINUX);
+			cmd.rootDirPath = StrLit("../..");
+			#endif
+			
+			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
+			AssertFileExist(StrLit(FILENAME_TRACY_SO), true);
+			PrintLine("[Built %s for Linux!]", FILENAME_TRACY_SO);
+			
+			#if !BUILDING_ON_LINUX
+			chdir("..");
+			#endif
 		}
 	}
-	if (PROFILING_ENABLED) { AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB); }
+	if (PROFILING_ENABLED)
+	{
+		AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB);
+		AddArgNt(&clang_PigCoreLinuxLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_SO);
+	}
 	
 	// +--------------------------------------------------------------+
 	// |                       Bundle Resources                       |
@@ -392,7 +437,7 @@ int main(int argc, char* argv[])
 		mz_bool finalizeResult = mz_zip_writer_finalize_archive(&context.zip);
 		assert(finalizeResult == MZ_TRUE);
 		mz_zip_writer_end(&context.zip);
-		PrintLine("Found %u resource files, total %u bytes uncompressed, %u compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
+		PrintLine("Found %lu resource files, total %lu bytes uncompressed, %lu compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
 		
 		CreateAndWriteFile(StrLit("resources.zip"), MakeStr8(context.archiveSize, context.archivePntr), false);
 		
@@ -401,7 +446,7 @@ int main(int argc, char* argv[])
 			Str8 cFileContents = ZEROED;
 			for (int pass = 0; pass < 2; pass++)
 			{
-				uxx fileSize = 0;
+				u64 fileSize = 0;
 				
 				TwoPassPrint(&cFileContents, &fileSize,
 					"/*\n"
@@ -431,16 +476,16 @@ int main(int argc, char* argv[])
 			Str8 cFileContents = ZEROED;
 			for (int pass = 0; pass < 2; pass++)
 			{
-				uxx fileSize = 0;
+				u64 fileSize = 0;
 				
 				TwoPassPrint(&cFileContents, &fileSize, "// This file is generated by pig_build.exe! Any hand edits will be lost!\n\n");
 				TwoPassPrint(&cFileContents, &fileSize, "// Archive Contents (%u file%s, %u bytes uncompressed):\n", context.resourcePaths.length, (context.resourcePaths.length == 1) ? "" : "s", context.uncompressedSize);
-				for (uxx rIndex = 0; rIndex < context.resourcePaths.length; rIndex++)
+				for (u64 rIndex = 0; rIndex < context.resourcePaths.length; rIndex++)
 				{
-					TwoPassPrint(&cFileContents, &fileSize, "//\t%.*s\n", context.resourcePaths.strings[rIndex].length, context.resourcePaths.strings[rIndex].chars);
+					TwoPassPrint(&cFileContents, &fileSize, "//\t%.*s\n", StrPrint(context.resourcePaths.strings[rIndex]));
 				}
 				TwoPassPrint(&cFileContents, &fileSize, "\nu8 resources_zip_bytes[%u] = {\n\t", context.archiveSize);
-				for (uxx bIndex = 0; bIndex < context.archiveSize; bIndex++)
+				for (u64 bIndex = 0; bIndex < context.archiveSize; bIndex++)
 				{
 					if (bIndex > 0) { TwoPassPrint(&cFileContents, &fileSize, ",%s", (bIndex%32) == 0 ? "\n\t" : " "); }
 					TwoPassPrint(&cFileContents, &fileSize, "0x%02X", context.archivePntr[bIndex]);
@@ -474,21 +519,21 @@ int main(int argc, char* argv[])
 		
 		if (BUILD_WINDOWS)
 		{
-			for (uxx sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
+			for (u64 sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
 			{
 				Str8 objPath = findContext.objPaths.strings[sIndex];
 				AddArgStr(&cl_ShaderObjects, CLI_QUOTED_ARG, objPath);
-				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", objPath.length, objPath.chars); BUILD_SHADERS = true; }
+				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(objPath)); BUILD_SHADERS = true; }
 			}
 		}
 		if (BUILD_LINUX)
 		{
-			for (uxx sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
 				Str8 oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
 				Str8 oPathWithFolder = BUILDING_ON_LINUX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
-				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", oPathWithFolder.length, oPathWithFolder.chars); BUILD_SHADERS = true; }
+				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
 		}
 		
@@ -506,19 +551,19 @@ int main(int argc, char* argv[])
 	{
 		if (BUILD_WINDOWS) { InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized); }
 		
-		PrintLine("Found %u shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
-		// for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		PrintLine("Found %lu shader%s", findContext.shaderPaths.length, findContext.shaderPaths.length == 1 ? "" : "s");
+		// for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		// {
 		// 	PrintLine("Shader[%u]", sIndex);
-		// 	PrintLine("\t\"%.*s\"", findContext.shaderPaths.strings[sIndex].length, findContext.shaderPaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.headerPaths.strings[sIndex].length, findContext.headerPaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.sourcePaths.strings[sIndex].length, findContext.sourcePaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.objPaths.strings[sIndex].length, findContext.objPaths.strings[sIndex].chars);
-		// 	PrintLine("\t\"%.*s\"", findContext.oPaths.strings[sIndex].length, findContext.oPaths.strings[sIndex].chars);
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.shaderPaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.headerPaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.sourcePaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.objPaths.strings[sIndex]));
+		// 	PrintLine("\t\"%.*s\"", StrPrint(findContext.oPaths.strings[sIndex]));
 		// }
 		
 		// First use shdc.exe to generate header files for each .glsl file
-		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
 			Str8 shaderPath = findContext.shaderPaths.strings[sIndex];
 			Str8 headerPath = findContext.headerPaths.strings[sIndex];
@@ -533,7 +578,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_INPUT, shaderPath);
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
-			PrintLine("Generating \"%.*s\"...", realHeaderPath.length, realHeaderPath.chars);
+			PrintLine("Generating \"%.*s\"...", StrPrint(realHeaderPath));
 			Str8 shdcExe = JoinStrings2(StrLit("../core/"), StrLit(EXE_SHDC), false);
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
 			RunCliProgramAndExitOnFailure(shdcExe, &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
@@ -545,7 +590,7 @@ int main(int argc, char* argv[])
 		}
 		
 		//Then compile each header file to an .o/.obj file
-		for (uxx sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
+		for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
 			Str8 headerPath = findContext.headerPaths.strings[sIndex];
 			Str8 sourcePath = findContext.sourcePaths.strings[sIndex];
@@ -560,7 +605,7 @@ int main(int argc, char* argv[])
 				StrLit("\"\n"),
 				false
 			);
-			PrintLine("Generating \"%.*s\"...", realSourcePath.length, realSourcePath.chars);
+			PrintLine("Generating \"%.*s\"...", StrPrint(realSourcePath));
 			CreateAndWriteFile(realSourcePath, sourceFileContents, true);
 			
 			if (BUILD_WINDOWS)
@@ -691,14 +736,14 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                  Build PROJECT_EXE_NAME.exe                  |
 	// +--------------------------------------------------------------+
-	if (RUN_APP && !BUILD_APP_EXE && BUILDING_ON_WINDOWS && !DoesFileExist(filenameAppExe)) { PrintLine("Building %.*s because it's missing", filenameAppExe.length, filenameAppExe.chars); BUILD_APP_EXE = true; BUILD_WINDOWS = true; }
-	if (RUN_APP && !BUILD_APP_EXE && !BUILDING_ON_WINDOWS && !DoesFileExist(filenameApp)) { PrintLine("Building %.*s because it's missing", filenameApp.length, filenameApp.chars); BUILD_APP_EXE = true; BUILD_LINUX = true; }
+	if (RUN_APP && !BUILD_APP_EXE && BUILDING_ON_WINDOWS && !DoesFileExist(filenameAppExe)) { PrintLine("Building %.*s because it's missing", StrPrint(filenameAppExe)); BUILD_APP_EXE = true; BUILD_WINDOWS = true; }
+	if (RUN_APP && !BUILD_APP_EXE && !BUILDING_ON_WINDOWS && !DoesFileExist(filenameApp)) { PrintLine("Building %.*s because it's missing", StrPrint(filenameApp)); BUILD_APP_EXE = true; BUILD_LINUX = true; }
 	if (BUILD_APP_EXE)
 	{
 		if (BUILD_WINDOWS)
 		{
 			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
-			PrintLine("\n[Building %.*s for Windows...]", filenameAppExe.length, filenameAppExe.chars);
+			PrintLine("\n[Building %.*s for Windows...]", StrPrint(filenameAppExe));
 			
 			// Build app/win_resources.rc file into resources.res
 			if (!DoesFileExist(StrLit(FILENAME_WIN_RESOURCES_RES)))
@@ -727,12 +772,12 @@ int main(int argc, char* argv[])
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
 			AssertFileExist(filenameAppExe, true);
-			PrintLine("[Built %.*s for Windows!]", filenameAppExe.length, filenameAppExe.chars);
+			PrintLine("[Built %.*s for Windows!]", StrPrint(filenameAppExe));
 		}
 		
 		if (BUILD_LINUX)
 		{
-			PrintLine("\n[Building %.*s for Linux...]", filenameApp.length, filenameApp.chars);
+			PrintLine("\n[Building %.*s for Linux...]", StrPrint(filenameApp));
 			
 			CliArgList cmd = ZEROED;
 			cmd.pathSepChar = '/';
@@ -760,7 +805,7 @@ int main(int argc, char* argv[])
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameApp, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(clangExe, &cmd, errorStr);
 			AssertFileExist(filenameApp, true);
-			PrintLine("[Built %.*s for Linux!]", filenameApp.length, filenameApp.chars);
+			PrintLine("[Built %.*s for Linux!]", StrPrint(filenameApp));
 			
 			#if !BUILDING_ON_LINUX
 			chdir("..");
@@ -773,14 +818,14 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                  Build PROJECT_DLL_NAME.dll                  |
 	// +--------------------------------------------------------------+
-	if (RUN_APP && !BUILD_APP_DLL && BUILDING_ON_WINDOWS && !DoesFileExist(filenameAppDll)) { PrintLine("Building %.*s because it's missing", filenameAppDll.length, filenameAppDll.chars); BUILD_APP_DLL = true; BUILD_WINDOWS = true; }
-	if (RUN_APP && !BUILD_APP_DLL && !BUILDING_ON_WINDOWS && !DoesFileExist(filenameAppSo)) { PrintLine("Building %.*s because it's missing", filenameAppSo.length, filenameAppSo.chars); BUILD_APP_DLL = true; BUILD_LINUX = true; }
+	if (RUN_APP && !BUILD_APP_DLL && BUILDING_ON_WINDOWS && !DoesFileExist(filenameAppDll)) { PrintLine("Building %.*s because it's missing", StrPrint(filenameAppDll)); BUILD_APP_DLL = true; BUILD_WINDOWS = true; }
+	if (RUN_APP && !BUILD_APP_DLL && !BUILDING_ON_WINDOWS && !DoesFileExist(filenameAppSo)) { PrintLine("Building %.*s because it's missing", StrPrint(filenameAppSo)); BUILD_APP_DLL = true; BUILD_LINUX = true; }
 	if (BUILD_APP_DLL)
 	{
 		if (BUILD_WINDOWS)
 		{
 			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
-			PrintLine("\n[Building %.*s for Windows...]", filenameAppDll.length, filenameAppDll.chars);
+			PrintLine("\n[Building %.*s for Windows...]", StrPrint(filenameAppDll));
 			
 			CliArgList cmd = ZEROED;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/app_main.c");
@@ -798,12 +843,12 @@ int main(int argc, char* argv[])
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppDll, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
 			AssertFileExist(filenameAppDll, true);
-			PrintLine("[Built %.*s for Windows!]", filenameAppDll.length, filenameAppDll.chars);
+			PrintLine("[Built %.*s for Windows!]", StrPrint(filenameAppDll));
 		}
 		
 		if (BUILD_LINUX)
 		{
-			PrintLine("\n[Building %.*s for Linux...]", filenameAppSo.length, filenameAppSo.chars);
+			PrintLine("\n[Building %.*s for Linux...]", StrPrint(filenameAppSo));
 			
 			CliArgList cmd = ZEROED;
 			cmd.pathSepChar = '/';
@@ -832,7 +877,7 @@ int main(int argc, char* argv[])
 			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppSo, StrLit("!"), false);
 			RunCliProgramAndExitOnFailure(clangExe, &cmd, errorStr);
 			AssertFileExist(filenameAppSo, true);
-			PrintLine("[Built %.*s for Linux!]", filenameAppSo.length, filenameAppSo.chars);
+			PrintLine("[Built %.*s for Linux!]", StrPrint(filenameAppSo));
 			
 			#if !BUILDING_ON_LINUX
 			chdir("..");
@@ -848,7 +893,7 @@ int main(int argc, char* argv[])
 	if (COPY_TO_DATA_DIRECTORY)
 	{
 		Str8 dataFolder = StrLit("../_data");
-		PrintLine("Copying files to %.*s...", dataFolder.length, dataFolder.chars);
+		PrintLine("Copying files to %.*s...", StrPrint(dataFolder));
 		#if BUILDING_ON_WINDOWS
 		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder, true); }
 		if (BUILD_APP_EXE) { CopyFileToFolder(filenameAppExe, dataFolder, true); }
@@ -857,6 +902,7 @@ int main(int argc, char* argv[])
 		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_SO), dataFolder, true); }
 		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder, true); }
 		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppSo, dataFolder, true); }
+		if (PROFILING_ENABLED) { CopyFileToFolder(StrLit(FILENAME_TRACY_SO), dataFolder, true); }
 		#endif
 	}
 	
@@ -867,12 +913,12 @@ int main(int argc, char* argv[])
 	{
 		Str8 appBinaryName = BUILDING_ON_WINDOWS ? filenameAppExe : filenameApp;
 		Str8 runAppStr = JoinStrings2(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX), appBinaryName, false);
-		PrintLine("\n[%.*s]", runAppStr.length, runAppStr.chars);
+		PrintLine("\n[%.*s]", StrPrint(runAppStr));
 		CliArgList cmd = ZEROED;
 		Str8 errorStr = JoinStrings2(appBinaryName, StrLit(" Exited With Error"), false);
 		RunCliProgramAndExitOnFailure(runAppStr, &cmd, errorStr);
 	}
 	
-	PrintLine("\n[%s Finished Successfully]", TOOL_EXE_NAME);
+	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);
 	return 0;
 }

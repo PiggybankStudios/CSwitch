@@ -1,8 +1,10 @@
 *.sublime-workspace
 core/
-_build/
+pig_build/
+build/
 _data/*.exe
 _data/*.dll
+_data/*.so
 _data/*.ini
 _data/cswitch
 _data/cswitch_app.so

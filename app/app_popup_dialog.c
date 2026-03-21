@@ -105,7 +105,7 @@ void UpdatePopupDialog(PopupDialog* dialog)
 		Str8 buttonClayIdStr = ScratchPrintStr("PopupDialogBtn[%llu]_%s", button->id, GetPopupDialogResultStr(button->result));
 		ClayId buttonClayId = ToClayId(buttonClayIdStr);
 		bool isButtonHovered = IsMouseOverClay(buttonClayId);
-		if (isButtonHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+		if (isButtonHovered && MouseLeftClicked())
 		{
 			dialog->result = button->result;
 			ClosePopupDialog(dialog, button);
@@ -162,8 +162,8 @@ void RenderPopupDialog(PopupDialog* dialog)
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
 				.padding = CLAY_PADDING_ALL(UI_U16(16)),
 				.sizing = {
-					.width = CLAY_SIZING_FIT(MinR32(POPUP_MIN_WIDTH * app->uiScale, dialogMaxWidth), dialogMaxWidth),
-					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->uiScale, (r32)appIn->screenSize.Height), (r32)appIn->screenSize.Height)
+					.width = CLAY_SIZING_FIT(MinR32(POPUP_MIN_WIDTH * app->settings.uiScale, dialogMaxWidth), dialogMaxWidth),
+					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->settings.uiScale, (r32)appIn->screenSize.Height), (r32)appIn->screenSize.Height)
 				},
 			},
 			.backgroundColor = dialogColor,

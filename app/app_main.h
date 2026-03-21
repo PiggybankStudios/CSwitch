@@ -7,6 +7,15 @@ Date:   02\25\2025
 #ifndef _APP_MAIN_H
 #define _APP_MAIN_H
 
+typedef plex AtomicBundle AtomicBundle;
+plex AtomicBundle
+{
+	abool begin;
+	ai32 int0;
+	ai64 int1;
+	au16 int2;
+};
+
 typedef enum FileOptionType FileOptionType;
 enum FileOptionType
 {
@@ -197,10 +206,10 @@ struct AppData
 	Shader mainShader;
 	PigFont uiFont;
 	r32 uiFontSize;
-	r32 uiScale;
 	r32 mainFontSize;
 	PigFont mainFont;
-	Texture icons[AppIcon_Count];
+	v2i appIconSheetCell[AppIcon_Count];
+	SpriteSheet appIconsSheet;
 	
 	BakedTheme theme;
 	ThemeDefinition defaultTheme;
@@ -231,6 +240,10 @@ struct AppData
 	NotificationQueue notificationQueue;
 	Texture notificationIconsTexture;
 	TooltipRegistry tooltips;
+	bool openFileDialogIsForTheme;
+	OsOpenFileDialogHandle openFileDialog;
+	
+	AppBindingSet bindings;
 	
 	VarArray recentFiles; //RecentFile
 	uxx recentFilesWatchId;
@@ -250,16 +263,16 @@ struct AppData
 	
 	//User Options
 	bool sleepingDisabled;
-	#if DEBUG_BUILD
 	bool enableFrameUpdateIndicator;
-	#endif
 	bool minimalModeEnabled;
 	
-	SpriteSheet testSheet;
-	
-	#if TARGET_IS_WINDOWS
+	#if THREAD_POOL_TEST
 	ThreadPool threadPool;
 	#endif
+	u64 threadRandomSeed;
+	OsThreadHandle testThread;
+	Mutex testMutex;
+	AtomicBundle atomicBundle;
 };
 
 #endif //  _APP_MAIN_H

@@ -26,6 +26,7 @@ struct PlatformData
 	AppInput appInputs[2];
 	AppInput* oldAppInput;
 	AppInput* currentAppInput;
+	AppInputHandling appInputHandling;
 };
 
 #endif //  _PLATFORM_MAIN_H

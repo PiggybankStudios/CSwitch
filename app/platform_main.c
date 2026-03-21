@@ -146,6 +146,27 @@ void PlatUpdateAppInputTimingInfo(AppInput* appInput)
 	appInput->timeScale = (r32)appInput->timeScaleR64;
 }
 
+void PlatRefreshAppInputHandling(const AppInput* appInput, AppInputHandling* handling)
+{
+	handling->fullscreenChangeHandled = false;
+	handling->minimizedHandled = false;
+	handling->focusedHandled = false;
+	handling->screenSizeChangedHandled = false;
+	RefreshKeyboardStateHandling(&appInput->keyboard, &handling->keyboard);
+	RefreshMouseStateHandling(&appInput->mouse, &handling->mouse);
+	RefreshTouchscreenStateHandling(&appInput->touch, &handling->touch);
+	
+	if (handling->droppedFilePathsHandled.length < appInput->droppedFilePaths.length)
+	{
+		VarArrayAddMulti(bool, &handling->droppedFilePathsHandled, appInput->droppedFilePaths.length - handling->droppedFilePathsHandled.length);
+	}
+	VarArrayLoop(&handling->droppedFilePathsHandled, fIndex)
+	{
+		VarArrayLoopGet(bool, droppedFileHandled, &handling->droppedFilePathsHandled, fIndex);
+		*droppedFileHandled = false;
+	}
+}
+
 bool PlatDoUpdate(void)
 {
 	TracyCFrameMarkNamed("Game Loop");
@@ -243,7 +264,9 @@ bool PlatDoUpdate(void)
 	OsTime afterUpdateTime = OsGetTime();
 	platformInfo->updateMs = OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime);
 	
-	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput);
+	PlatRefreshAppInputHandling(oldAppInput, &platformData->appInputHandling);
+	
+	renderedFrame = platformData->appApi.AppUpdate(platformInfo, platform, platformData->appMemoryPntr, oldAppInput, &platformData->appInputHandling);
 	
 	TracyCZoneEnd(_funcZone);
 	return renderedFrame;
@@ -263,6 +286,8 @@ void PlatSappInit(void)
 	InitAppInput(&platformData->appInputs[1]);
 	platformData->currentAppInput = &platformData->appInputs[0];
 	platformData->oldAppInput = &platformData->appInputs[1];
+	ClearStruct(platformData->appInputHandling);
+	InitVarArray(bool, &platformData->appInputHandling.droppedFilePathsHandled, stdHeap);
 	
 	platformInfo = AllocType(PlatformInfo, stdHeap);
 	NotNull(platformInfo);
@@ -335,7 +360,7 @@ void PlatSappInit(void)
 		// .wgpu_disable_bindgroups_cache = ?; //bool  // set to true to disable the WebGPU backend BindGroup cache
 		// .wgpu_bindgroups_cache_size = ?; //int      // number of slots in the WebGPU bindgroup cache (must be 2^N)
 		// .allocator = ?; //sg_allocator TODO: Fill this out!
-		.environment = CreateSokolAppEnvironment(),
+		.environment = GetSokolGfxEnvironment(),
 		.logger.func = SokolLogCallback,
 	});
 	InitGfxSystem(stdHeap, &gfx);
@@ -346,12 +371,7 @@ void PlatSappInit(void)
 	#endif
 	
 	bool topmostFlagValue = FindNamedProgramArgBoolEx(&programArgs, StrLit("top"), StrLit("topmost"), false, 0);
-	#if (false && TARGET_IS_WINDOWS)
 	Plat_SetWindowTopmost(topmostFlagValue);
-	#else
-	//TODO: This notification comes too early, before the application has the GlobalNotificationQueue registered. So it doesn't show up visually. Maybe we should parse this argument later?
-	if (topmostFlagValue == true) { Notify_W("Topmost is not available on the current platform! Ignoring command-line argument!"); }
-	#endif
 	
 	platformData->appMemoryPntr = platformData->appApi.AppInit(platformInfo, platform);
 	NotNull(platformData->appMemoryPntr);
@@ -371,6 +391,39 @@ void PlatSappCleanup(void)
 	ShutdownSokolGraphics();
 }
 
+const char* Get_SAPP_EVENTTYPE_Str(sapp_event_type eventType)
+{
+	switch (eventType)
+	{
+		case SAPP_EVENTTYPE_INVALID:           return "INVALID";
+		case SAPP_EVENTTYPE_KEY_DOWN:          return "KEY_DOWN";
+		case SAPP_EVENTTYPE_KEY_UP:            return "KEY_UP";
+		case SAPP_EVENTTYPE_CHAR:              return "CHAR";
+		case SAPP_EVENTTYPE_MOUSE_DOWN:        return "MOUSE_DOWN";
+		case SAPP_EVENTTYPE_MOUSE_UP:          return "MOUSE_UP";
+		case SAPP_EVENTTYPE_MOUSE_SCROLL:      return "MOUSE_SCROLL";
+		case SAPP_EVENTTYPE_MOUSE_MOVE:        return "MOUSE_MOVE";
+		case SAPP_EVENTTYPE_MOUSE_ENTER:       return "MOUSE_ENTER";
+		case SAPP_EVENTTYPE_MOUSE_LEAVE:       return "MOUSE_LEAVE";
+		case SAPP_EVENTTYPE_TOUCHES_BEGAN:     return "TOUCHES_BEGAN";
+		case SAPP_EVENTTYPE_TOUCHES_MOVED:     return "TOUCHES_MOVED";
+		case SAPP_EVENTTYPE_TOUCHES_ENDED:     return "TOUCHES_ENDED";
+		case SAPP_EVENTTYPE_TOUCHES_CANCELLED: return "TOUCHES_CANCELLED";
+		case SAPP_EVENTTYPE_RESIZED:           return "RESIZED";
+		case SAPP_EVENTTYPE_ICONIFIED:         return "ICONIFIED";
+		case SAPP_EVENTTYPE_RESTORED:          return "RESTORED";
+		case SAPP_EVENTTYPE_FOCUSED:           return "FOCUSED";
+		case SAPP_EVENTTYPE_UNFOCUSED:         return "UNFOCUSED";
+		case SAPP_EVENTTYPE_SUSPENDED:         return "SUSPENDED";
+		case SAPP_EVENTTYPE_RESUMED:           return "RESUMED";
+		case SAPP_EVENTTYPE_QUIT_REQUESTED:    return "QUIT_REQUESTED";
+		case SAPP_EVENTTYPE_CLIPBOARD_PASTED:  return "CLIPBOARD_PASTED";
+		case SAPP_EVENTTYPE_FILES_DROPPED:     return "FILES_DROPPED";
+		case SAPP_EVENTTYPE_RESIZE_RENDER:     return "RESIZE_RENDER";
+		default: return UNKNOWN_STR;
+	}
+}
+
 void PlatSappEvent(const sapp_event* event)
 {
 	TracyCZoneN(_funcZone, "PlatSappEvent", true);
@@ -388,6 +441,18 @@ void PlatSappEvent(const sapp_event* event)
 			sapp_mouse_locked()
 		);
 	}
+	
+	#if 0
+	if (event->type == SAPP_EVENTTYPE_KEY_DOWN || event->type == SAPP_EVENTTYPE_KEY_UP)
+	{
+		Key primaryKey = GetKeyFromSokolKeycodeEx(event->key_code, 0);
+		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_KEY_%s %s", event->type == SAPP_EVENTTYPE_KEY_DOWN ? "DOWN" : "UP", GetKeyStr(primaryKey));
+	}
+	else if (event->type != SAPP_EVENTTYPE_MOUSE_MOVE)
+	{
+		PrintLine_D("SokolEvent: SAPP_EVENTTYPE_%s%s", Get_SAPP_EVENTTYPE_Str(event->type), handledEvent ? " (Handled)" : "");
+	}
+	#endif
 	
 	if (!handledEvent)
 	{
@@ -466,9 +531,14 @@ void PlatSappEvent(const sapp_event* event)
 sapp_desc sokol_main(int argc, char* argv[])
 {
 	#if PROFILING_ENABLED
-	TracyCSetThreadName("main");
 	Str8 projectName = StrLit(PROJECT_READABLE_NAME_STR);
 	TracyCAppInfo(projectName.chars, projectName.length);
+	#endif
+	
+	#if TARGET_HAS_THREADING
+	//TODO: On Android this is actually a different thread than the one we will normally be updating/rendering in. We should probably track the other thread ID as the "main thread"
+	MainThreadId = OsGetCurrentThreadId();
+	OsSetThreadName(nullptr, StrLit("Main"));
 	#endif
 	
 	OsMarkStartTime(); //NOTE: We reset this at the end of PlatSappInit
@@ -523,6 +593,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.event_cb = PlatSappEvent,
 		.width = RoundR32i(windowSize.Width),
 		.height = RoundR32i(windowSize.Height),
+		// .min_width = 100, //TODO: Can we implement this somehow on X11? And get the implementation from GLFW for Win32
+		// .min_height = 200, //TODO: Can we implement this somehow on X11? And get the implementation from GLFW for Win32
 		.swap_interval = 1, //16ms aka 60fps
 		.window_title = "Loading...",
 		.icon.sokol_default = false,

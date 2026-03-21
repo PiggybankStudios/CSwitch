@@ -1,0 +1,32 @@
+// These are the default key bindings for C-Switch. Bindings can be overridden (or unset) by a bindings.txt file in the user's config folder
+
+//Alt+F4 is always bound, and cannot be unbound
+Ctrl+Shift+R:        ReloadBindings
+Ctrl+W:              CloseTab
+Ctrl+Shift+W:        CloseWindow
+F6:                  TogglePerfGraph //TODO: Do we want to move this to debug_bindings.txt
+F9:                  ToggleLightMode
+F10:                 ToggleSmallButtons
+F11:                 ToggleTopbar //TODO: On some platforms F11 is an OS-level binding for fullscreen
+Escape:              ClosePopupOrMenu
+Ctrl+Plus:           IncreaseUiScale
+Ctrl+NumpadAdd:      IncreaseUiScale
+Ctrl+Minus:          DecreaseUiScale
+Ctrl+NumpadSubtract: DecreaseUiScale
+Ctrl+0:              ResetUiScale
+Alt+F:               OpenFileMenu
+Alt+V:               OpenViewMenu
+Ctrl+O:              OpenFile
+Ctrl+Tab:            NextTab
+Ctrl+Shift+Tab:      PreviousTab
+Ctrl+E:              ReopenRecentFile
+Ctrl+T:              ToggleTopmost
+Home:                ScrollToTop
+End:                 ScrollToBottom
+PageUp:              ScrollUpPage
+PageDown:            ScrollDownPage
+Up:                  SelectMoveUp
+Down:                SelectMoveDown
+Left:                SelectMoveLeft
+Right:               SelectMoveRight
+Enter:               ToggleSelected

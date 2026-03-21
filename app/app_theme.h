@@ -7,7 +7,7 @@ Date:   12\10\2025
 #ifndef _APP_THEME_H
 #define _APP_THEME_H
 
-#define DEFAULT_THEME_FILE_PATH "resources/theme/default_theme.txt"
+#define DEFAULT_THEME_FILE_PATH "resources/text/default_theme.txt"
 #define NUM_ENTRIES_EXPECTED_IN_DEFAULT_THEME (40 + ThemeColor_Count*3) //this should be an overestimate
 
 // The Theme_XList macro needs to be able to define all possible states for a color entry, thus we have this flag-style enum that maps to entries in the ThemeState enum

@@ -19,6 +19,7 @@ Description:
 // NOTE: This X-Macro allows us to generate the struct and functions below
 // X(type, cType, nameNt, cName, defaultValue)
 #define Settings_XList(X)                                                    \
+	X(R32, r32, "UiScale", uiScale, 1.0f)                                    \
 	X(Bool, bool, "SmallButtons", smallButtons, false)                       \
 	X(Bool, bool, "ClipNamesLeft", clipNamesLeft, false)                     \
 	X(Bool, bool, "SmoothScrollingDisabled", smoothScrollingDisabled, false) \

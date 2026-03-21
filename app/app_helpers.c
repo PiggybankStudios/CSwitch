@@ -6,52 +6,6 @@ Description:
 	** None
 */
 
-FilePath GetAppSettingsSavePath(Arena* arena, bool addNullTerm)
-{
-	ScratchBegin1(scratch, arena);
-	FilePath folderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
-	Assert(!IsEmptyStr(folderPath));
-	FilePath result = JoinStringsInArenaWithChar(arena, folderPath, '/', StrLit(SETTINGS_FILENAME), addNullTerm);
-	ScratchEnd(scratch);
-	return result;
-}
-void SaveAppSettings()
-{
-	ScratchBegin(scratch);
-	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
-	WriteLine_D("Saving settings...");
-	bool saveSuccess = TrySaveAppSettingsTo(&app->settings, settingsFilePath);
-	if (!saveSuccess)
-	{
-		NotifyPrint_E("Failed to save settings file! Make sure the folder has write permissions for the current user!\nPath: \"%.*s\"", StrPrint(settingsFilePath));
-		DebugAssert(saveSuccess);
-	}
-	ScratchEnd(scratch);
-}
-void LoadAppSettings()
-{
-	ScratchBegin(scratch);
-	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
-	if (OsDoesFileExist(settingsFilePath))
-	{
-		Result loadSettingsResult = TryLoadAppSettingsFrom(settingsFilePath, &app->settings);
-		if (loadSettingsResult == Result_Success)
-		{
-			PrintLine_I("Loaded settings from \"%.*s\"", StrPrint(settingsFilePath));
-		}
-		else
-		{
-			NotifyPrint_W("Failed to load settings!\nError: %s\nPath: \"%.*s\"", GetResultStr(loadSettingsResult), StrPrint(settingsFilePath));
-		}
-	}
-	else
-	{
-		PrintLine_N("No settings file found at \"%.*s\"! Saving settings", StrPrint(settingsFilePath));
-		SaveAppSettings();
-	}
-	ScratchEnd(scratch);
-}
-
 ImageData LoadImageData(Arena* arena, const char* path)
 {
 	ScratchBegin1(scratch, arena);
@@ -124,6 +78,109 @@ void LoadNotificationIcons()
 			SetNotificationIconEx(&app->notificationQueue, dbgLevel, &app->notificationIconsTexture, iconScale, GetDbgLevelTextColor(dbgLevel), iconSourceRec);
 		}
 	}
+}
+
+void LoadAppIcons()
+{
+	ScratchBegin(scratch);
+	Slice imageFileContents = ReadAppResource(&app->resources, scratch, StrLit(APP_ICONS_TEXTURE_PATH), false);
+	Str8 metaFileContents = ReadAppResource(&app->resources, scratch, StrLit(APP_ICONS_METADATA_PATH), true);
+	app->appIconsSheet = InitSpriteSheet(stdHeap, StrLit("appIcons"), StrLit(APP_ICONS_TEXTURE_PATH), imageFileContents, metaFileContents);
+	Assert(app->appIconsSheet.error == Result_Success);
+	for (uxx iIndex = 1; iIndex < AppIcon_Count; iIndex++)
+	{
+		AppIcon enumValue = (AppIcon)iIndex;
+		Str8 cellName = MakeStr8Nt(GetAppIconSheetCellName(enumValue));
+		SpriteSheetCell* sheetCell = TryFindSheetCell(&app->appIconsSheet, cellName);
+		Assert(sheetCell != nullptr);
+		app->appIconSheetCell[iIndex] = sheetCell->cellPos;
+	}
+	ScratchEnd(scratch);
+}
+
+bool AppTryLoadBindings(bool assertOnFailure)
+{
+	ScratchBegin(scratch);
+	
+	FilePath defaultBindingsPath = FilePathLit(DEFAULT_BINDINGS_PATH);
+	Str8 defaultBindingsFileName = GetFileNamePart(defaultBindingsPath, true);
+	
+	Str8 defaultBindingsFileContents = Slice_Empty;
+	Result readResult = TryReadAppResource(&app->resources, scratch, defaultBindingsPath, true, &defaultBindingsFileContents);
+	if (readResult != Result_Success)
+	{
+		PrintLine_E("Failed to load %.*s: %s", StrPrint(defaultBindingsFileName), GetResultStr(readResult));
+		Assert(!assertOnFailure || readResult == Result_Success);
+		ScratchEnd(scratch);
+		return false;
+	}
+	
+	AppBindingSet newBindings = ZEROED;
+	InitAppBindingSet(stdHeap, &newBindings);
+	Result parseResult = TryParseBindingFile(defaultBindingsFileContents, &newBindings);
+	if (parseResult != Result_Success)
+	{
+		PrintLine_E("Failed to parse %.*s: %s", StrPrint(defaultBindingsFileName), GetResultStr(parseResult));
+		Assert(!assertOnFailure || parseResult == Result_Success);
+		ScratchEnd(scratch);
+		FreeAppBindingSet(&newBindings);
+		return false;
+	}
+	
+	FilePath settingsFolderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), false);
+	Assert(!IsEmptyStr(settingsFolderPath));
+	FilePath userBindingsPath = PrintInArenaStr(scratch, "%.*s%s%s",
+		StrPrint(settingsFolderPath),
+		DoesPathHaveTrailingSlash(settingsFolderPath) ? "" : "/",
+		USER_BINDINGS_FILENAME
+	);
+	if (!OsDoesFileExist(userBindingsPath))
+	{
+		PrintLine_D("Creating new %s with commented bindings at \"%.*s\"", USER_BINDINGS_FILENAME, StrPrint(userBindingsPath));
+		Str8 commentedBindingsFileContents = SerializeCommentedBindingsFileFromBindingSet(scratch, &newBindings);
+		Result createSettingsFolderResult = OsCreateFolder(settingsFolderPath, true);
+		if (createSettingsFolderResult != Result_Success)
+		{
+			NotifyPrint_W("Failed to create settings folder at \"%.*s\": %s", StrPrint(settingsFolderPath), GetResultStr(createSettingsFolderResult));
+		}
+		else
+		{
+			if (!OsWriteTextFile(userBindingsPath, commentedBindingsFileContents))
+			{
+				NotifyPrint_W("Failed to create %s at \"%.*s\"", USER_BINDINGS_FILENAME, StrPrint(userBindingsPath));
+			}
+		}
+	}
+	
+	#if DEBUG_BUILD
+	FilePath debugBindingsPath = FilePathLit(DEBUG_BINDINGS_PATH);
+	Str8 debugBindingsFileName = GetFileNamePart(debugBindingsPath, true);
+	Str8 debugBindingsFileContents = Slice_Empty;
+	Result debugReadResult = TryReadAppResource(&app->resources, scratch, debugBindingsPath, true, &debugBindingsFileContents);
+	if (debugReadResult == Result_Success)
+	{
+		Result debugParseResult = TryParseBindingFile(debugBindingsFileContents, &newBindings);
+		if (debugParseResult != Result_Success && debugParseResult != Result_EmptyFile) { NotifyPrint_W("Failed to parse %.*s: %s", StrPrint(debugBindingsFileName), GetResultStr(debugParseResult)); }
+	}
+	else { NotifyPrint_W("Failed to load %.*s: %s", StrPrint(debugBindingsFileName), GetResultStr(debugReadResult)); }
+	#endif
+	
+	Str8 userBindingsFileContents = Str8_Empty;
+	if (OsReadTextFile(userBindingsPath, scratch, &userBindingsFileContents))
+	{
+		Result userBindingsParseResult = TryParseBindingFile(userBindingsFileContents, &newBindings);
+		if (userBindingsParseResult == Result_EmptyFile) { PrintLine_D("%s contains no bindings", USER_BINDINGS_FILENAME); }
+		else if (userBindingsParseResult != Result_Success)
+		{
+			NotifyPrint_E("Failed to parse %s: %s", USER_BINDINGS_FILENAME, GetResultStr(userBindingsParseResult));
+		}
+	}
+	else { PrintLine_D("No user bindings file at \"%.*s\"", StrPrint(userBindingsPath)); }
+	
+	FreeAppBindingSet(&app->bindings);
+	MyMemCopy(&app->bindings, &newBindings, sizeof(AppBindingSet));
+	ScratchEnd(scratch);
+	return true;
 }
 
 bool AppTryLoadDefaultTheme(bool assertOnFailure)
@@ -224,6 +281,29 @@ Result TryAttachFontFileFromResources(PigFont* font, Str8 filePath, u8 fontStyle
 	return attachResult;
 }
 
+FilePath GetAppSettingsSavePath(Arena* arena, bool addNullTerm)
+{
+	ScratchBegin1(scratch, arena);
+	FilePath folderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), true);
+	Assert(!IsEmptyStr(folderPath));
+	FilePath result = JoinStringsInArenaWithChar(arena, folderPath, '/', StrLit(SETTINGS_FILENAME), addNullTerm);
+	ScratchEnd(scratch);
+	return result;
+}
+void SaveAppSettings()
+{
+	ScratchBegin(scratch);
+	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
+	WriteLine_D("Saving settings...");
+	bool saveSuccess = TrySaveAppSettingsTo(&app->settings, settingsFilePath);
+	if (!saveSuccess)
+	{
+		NotifyPrint_E("Failed to save settings file! Make sure the folder has write permissions for the current user!\nPath: \"%.*s\"", StrPrint(settingsFilePath));
+		DebugAssert(saveSuccess);
+	}
+	ScratchEnd(scratch);
+}
+
 bool AppCreateFonts()
 {
 	FontCharRange fontCharRanges[] = {
@@ -276,6 +356,7 @@ bool AppCreateFonts()
 		}
 		FillFontKerningTable(&newUiFont);
 		
+		#if 0
 		FontAtlas* uiAtlas = GetDefaultFontAtlas(&newUiFont);
 		NotNull(uiAtlas);
 		PrintLine_D("UI Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
@@ -300,6 +381,7 @@ bool AppCreateFonts()
 				);
 			}
 		}
+		#endif
 		
 		MakeFontActive(&newUiFont, 128, 1024, 16, 0, 0);
 	}
@@ -324,6 +406,7 @@ bool AppCreateFonts()
 		}
 		FillFontKerningTable(&newMainFont);
 		
+		#if 0
 		FontAtlas* mainAtlas = GetDefaultFontAtlas(&newMainFont);
 		NotNull(mainAtlas);
 		PrintLine_D("Main Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
@@ -348,6 +431,7 @@ bool AppCreateFonts()
 				);
 			}
 		}
+		#endif
 		
 		MakeFontActive(&newMainFont, 128, 1024, 16, 0, 0);
 	}
@@ -361,6 +445,7 @@ bool AppCreateFonts()
 
 bool AppChangeFontSize(bool increase)
 {
+	r32 oldUiScale = app->settings.uiScale;
 	if (increase)
 	{
 		NotNull(appIn);
@@ -370,25 +455,64 @@ bool AppChangeFontSize(bool increase)
 		{
 			app->uiFontSize += 1;
 			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-			app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+			app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
 			if (!AppCreateFonts())
 			{
 				app->uiFontSize -= 1;
-				app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+				app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
 				app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
 			}
 		}
+		if (app->settings.uiScale != oldUiScale) { SaveAppSettings(); }
 		return true;
 	}
 	else if (AreSimilarOrGreaterR32(app->uiFontSize - 1.0f, MIN_UI_FONT_SIZE, DEFAULT_R32_TOLERANCE))
 	{
 		app->uiFontSize -= 1;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-		app->uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+		app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
 		AppCreateFonts();
+		if (app->settings.uiScale != oldUiScale) { SaveAppSettings(); }
 		return true;
 	}
 	else { return false; }
+}
+
+void LoadAppSettings()
+{
+	ScratchBegin(scratch);
+	r32 prevUiScale = app->settings.uiScale;
+	FilePath settingsFilePath = GetAppSettingsSavePath(scratch, false);
+	if (OsDoesFileExist(settingsFilePath))
+	{
+		Result loadSettingsResult = TryLoadAppSettingsFrom(settingsFilePath, &app->settings);
+		if (loadSettingsResult == Result_Success)
+		{
+			PrintLine_I("Loaded settings from \"%.*s\"", StrPrint(settingsFilePath));
+			if (app->settings.uiScale <= 0.0f || app->settings.uiScale * DEFAULT_UI_FONT_SIZE < MIN_UI_FONT_SIZE)
+			{
+				app->settings.uiScale = (r32)MIN_UI_FONT_SIZE / (r32)MIN_UI_FONT_SIZE;
+				NotifyPrint_W("UiScale from settings.txt was too small or negative. Clamped to %g", app->settings.uiScale);
+			}
+		}
+		else
+		{
+			NotifyPrint_W("Failed to load settings!\nError: %s\nPath: \"%.*s\"", GetResultStr(loadSettingsResult), StrPrint(settingsFilePath));
+		}
+	}
+	else
+	{
+		PrintLine_N("No settings file found at \"%.*s\"! Saving settings", StrPrint(settingsFilePath));
+		SaveAppSettings();
+	}
+	if (app->settings.uiScale != prevUiScale || app->uiFont.arena == nullptr)
+	{
+		app->uiFontSize = app->settings.uiScale * DEFAULT_UI_FONT_SIZE;
+		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
+		bool fontBakeSuccess = AppCreateFonts();
+		Assert(fontBakeSuccess);
+	}
+	ScratchEnd(scratch);
 }
 
 void FreeRecentFile(RecentFile* recentFile)
@@ -596,20 +720,6 @@ Str8 GetUniqueTabFilePath(FilePath filePath)
 	}
 	
 	return filePath;
-}
-
-// +==================================+
-// | AppClearRecentFilesPopupCallback |
-// +==================================+
-// void AppClearRecentFilesPopupCallback(PopupDialogResult result, PopupDialog* dialog, PopupDialogButton* selectedButton, void* contextPntr)
-POPUP_DIALOG_CALLBACK_DEF(AppClearRecentFilesPopupCallback)
-{
-	UNUSED(dialog); UNUSED(selectedButton); UNUSED(contextPntr);
-	if (result == PopupDialogResult_Yes)
-	{
-		AppClearRecentFiles();
-		AppSaveRecentFilesList();
-	}
 }
 
 bool AppLoadUserTheme()

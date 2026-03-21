@@ -35,6 +35,8 @@ Description:
 // |                         Header Files                         |
 // +--------------------------------------------------------------+
 #include "platform_interface.h"
+#include "app_commands.h"
+#include "app_bindings.h"
 #include "app_theme_funcs.h"
 #include "app_theme.h"
 #include "app_icons.h"
@@ -47,6 +49,7 @@ Description:
 // +--------------------------------------------------------------+
 static AppData* app = nullptr;
 static AppInput* appIn = nullptr;
+static AppInputHandling* appInputHandling = nullptr;
 static Arena* uiArena = nullptr;
 
 #if !BUILD_INTO_SINGLE_UNIT //NOTE: The platform layer already has these globals
@@ -59,6 +62,7 @@ static Arena* stdHeap = nullptr;
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
 #include "main2d_shader.glsl.h"
+#include "app_input.c"
 #include "app_resources.c"
 #include "app_file_watch.c"
 #include "app_theme_funcs.c"
@@ -67,9 +71,11 @@ static Arena* stdHeap = nullptr;
 #include "app_clay_helpers.c"
 #include "app_textbox.c"
 #include "app_popup_dialog.c"
+#include "app_bindings.c"
 #include "app_helpers.c"
 #include "app_tab.c"
 #include "app_clay.c"
+#include "app_commands.c"
 
 // +==============================+
 // |         TestWorkItem         |
@@ -90,6 +96,78 @@ THREAD_POOL_WORK_ITEM_FUNC_DEF(TestWorkItem)
 	}
 	PrintLine_D("%.*s ENDED by %.*s...", StrPrint(allocatedStr), StrPrint(threadName));
 	return Result_Success;
+}
+
+// +==============================+
+// |          AtomicTest          |
+// +==============================+
+// Result AtomicTest(ThreadPoolThread* thread, plex ThreadPoolWorkItem* workItem)
+THREAD_POOL_WORK_ITEM_FUNC_DEF(AtomicTest)
+{
+	uxx numIterations0 = workItem->subject.id0;
+	uxx numIterations1 = workItem->subject.id1;
+	uxx numIterations2 = workItem->subject.id2;
+	AtomicBundle* bundle = GetStructInWorkSubject(AtomicBundle, &workItem->subject, 0);
+	Str8 workItemName = GetStandardPeopleFirstName(workItem->id);
+	if (!AtomicRead(&bundle->begin))
+	{
+		PrintLine_N("Thread %llu is waiting to do %.*s...", thread->id, StrPrint(workItemName));
+		while (!AtomicRead(&bundle->begin)) { if (thread->stopRequested) { return Result_Stopped; } }
+	}
+	PrintLine_N("Thread %llu is doing %.*s (%llu, %llu, %llu iterations)", thread->id, StrPrint(workItemName), numIterations0, numIterations1, numIterations2);
+	for (uxx iter = 0; iter < numIterations0 || iter < numIterations1 || iter < numIterations2; iter++)
+	{
+		if (thread->stopRequested) { return Result_Stopped; }
+		if (iter < numIterations0) { AtomicIncrement(&bundle->int0); }
+		if (iter < numIterations1) { i64 oldValue = AtomicExchange(&bundle->int1, (i64)iter); PrintLine_D("%.*s[%llu/%llu] Exchanged %lld->%llu", StrPrint(workItemName), iter, numIterations1, oldValue, iter); }
+		if (iter < numIterations2) { AtomicAdd(&bundle->int2, (u16)(numIterations2%3)); }
+	}
+	PrintLine_N("Thread %llu is done with %.*s!", thread->id, StrPrint(workItemName));
+	return Result_Success;
+}
+
+// +==============================+
+// |        TestThreadMain        |
+// +==============================+
+// DWORD TestThreadMain(LPVOID contextPntr)
+OS_THREAD_FUNC_DEF(TestThreadMain)
+{
+	NotNull(contextPntr);
+	u64* seedPntr = (u64*)contextPntr;
+	RandomSeries random;
+	InitRandomSeriesDefault(&random);
+	SeedRandomSeriesU64(&random, *seedPntr);
+	
+	
+	#if SCRATCH_ARENAS_THREAD_LOCAL
+	TracyCZoneN(Zone_ScratchInit, "ScratchInit", true);
+	InitScratchArenasVirtual(Gigabytes(4));
+	TracyCZoneEnd(Zone_ScratchInit);
+	#endif
+	
+	ScratchBegin(scratch);
+	OsSetThreadName(scratch, PrintInArenaStr(scratch, "Thread(%llu)", *seedPntr));
+	while (true)
+	{
+		LockMutexBlockWithTracyZone(&app->testMutex, TIMEOUT_FOREVER, Zone_LockMutex, "LockMutex")
+		{
+			TracyCZoneN(Zone_DebugOutput, "DebugOutput", true);
+			DbgLevel level = (DbgLevel)GetRandU32Range(&random, 1, DbgLevel_Count);
+			PrintLineAt(level, "This is a %s level threaded output!", GetDbgLevelStr(level));
+			TracyCZoneEnd(Zone_DebugOutput);
+		}
+		
+		TracyCZoneN(Zone_Sleep, "Sleep", true);
+		OsSleepMs(1000);
+		TracyCZoneEnd(Zone_Sleep);
+	}
+	ScratchEnd(scratch);
+	
+	#if SCRATCH_ARENAS_THREAD_LOCAL
+	FreeScratchArenasVirtual();
+	#endif
+	
+	OsThreadReturn(0, nullptr);
 }
 
 // +==============================+
@@ -116,7 +194,7 @@ BOOL WINAPI DllMain(
 }
 #endif //(TARGET_IS_WINDOWS && !BUILD_INTO_SINGLE_UNIT)
 
-void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
+void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* input, AppInputHandling* inputHandling)
 {
 	#if !BUILD_INTO_SINGLE_UNIT
 	platformInfo = inPlatformInfo;
@@ -127,7 +205,8 @@ void UpdateDllGlobals(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, 
 	UNUSED(inPlatformInfo);
 	#endif
 	app = (AppData*)memoryPntr;
-	appIn = appInput;
+	appIn = input;
+	appInputHandling = inputHandling;
 	
 	#if NOTIFICATION_QUEUE_AVAILABLE
 	SetGlobalNotificationQueue((app != nullptr) ? &app->notificationQueue : nullptr);
@@ -250,7 +329,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	AppData* appData = AllocType(AppData, inPlatformInfo->platformStdHeap);
 	ClearPointer(appData);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, (void*)appData, nullptr, nullptr);
 	
 	#if THREAD_POOL_TEST
 	InitThreadPool(stdHeap, StrLit("TestThreadPool"), true, true, Gigabytes(4), &app->threadPool);
@@ -262,26 +341,16 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
 	
-	InitAppSettings(stdHeap, &app->settings);
-	LoadAppSettings();
-	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
+	
+	InitAppSettings(stdHeap, &app->settings);
+	LoadAppSettings();
 	
 	platform->SetWindowTitle(StrLit(PROJECT_READABLE_NAME_STR));
 	LoadWindowIcon();
 	
-	for (uxx iIndex = 1; iIndex < AppIcon_Count; iIndex++)
-	{
-		AppIcon iconEnum = (AppIcon)iIndex;
-		const char* iconPath = GetAppIconPath(iconEnum);
-		if (iconPath != nullptr)
-		{
-			ImageData iconImageData = LoadImageData(scratch, iconPath);
-			app->icons[iIndex] = InitTexture(stdHeap, MakeStr8Nt(GetAppIconStr(iconEnum)), iconImageData.size, iconImageData.pixels, TextureFlag_NoMipmaps);
-			Assert(app->icons[iIndex].error == Result_Success);
-		}
-	}
+	LoadAppIcons();
 	
 	InitRandomSeriesDefault(&app->random);
 	SeedRandomSeriesU64(&app->random, OsGetCurrentTimestamp(false));
@@ -289,12 +358,6 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	InitPerfGraph(&app->perfGraph, 1000.0f/60.0f); //TODO: How do we know the target framerate?
 	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
-	
-	app->uiFontSize = DEFAULT_UI_FONT_SIZE;
-	app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-	app->uiScale = 1.0f;
-	bool fontBakeSuccess = AppCreateFonts();
-	Assert(fontBakeSuccess);
 	
 	InitClayUIRenderer(stdHeap, V2_Zero, &app->clay);
 	AttachTooltipRegistryToUIRenderer(&app->clay, &app->tooltips);
@@ -314,6 +377,9 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitFileWatches(&app->fileWatches);
 	InitVarArray(FileTab, &app->tabs, stdHeap);
+	
+	InitAppBindingSet(stdHeap, &app->bindings);
+	AppTryLoadBindings(true);
 	
 	InitThemeDefFuncArgInfos();
 	AppTryLoadDefaultTheme(true);
@@ -368,19 +434,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	app->tooltipWindowHandle = NULL;
 	#endif
 	
-	app->testSheet = LoadSpriteSheet(stdHeap, StrLit("testSheet"), FilePathLit("resources/image/notifications_2x2.png"), true);
-	if (app->testSheet.error == Result_Success)
-	{
-		PrintLine_E("Loaded testSheet: grid=%dx%d cell=%dx%d texture=%dx%d",
-			app->testSheet.gridWidth, app->testSheet.gridHeight,
-			app->testSheet.cellWidth, app->testSheet.cellHeight,
-			app->testSheet.texture.Width, app->testSheet.texture.Height
-		);
-	}
-	else
-	{
-		PrintLine_E("Failed to parse SpriteSheet: %s", GetResultStr(app->testSheet.error));
-	}
+	app->sleepingDisabled = false; //DEBUG_BUILD
 	
 	app->initialized = true;
 	ScratchEnd(scratch);
@@ -400,7 +454,7 @@ EXPORT_FUNC APP_BEFORE_RELOAD_DEF(AppBeforeReload)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr, nullptr);
 	
 	WriteLine_W("App is preparing for DLL reload...");
 	//TODO: Anything that needs to be saved before the DLL reload should be done here
@@ -420,7 +474,7 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr, nullptr);
 	
 	WriteLine_I("New app DLL was loaded!");
 	app->shouldRenderAfterReload = true;
@@ -434,15 +488,23 @@ EXPORT_FUNC APP_AFTER_RELOAD_DEF(AppAfterReload)
 // +==============================+
 // |          AppUpdate           |
 // +==============================+
-// bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* appInput)
+// bool AppUpdate(PlatformInfo* inPlatformInfo, PlatformApi* inPlatformApi, void* memoryPntr, AppInput* input, AppInputHandling* inputHandling)
 EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 {
 	OsTime beforeUpdateTime = OsGetTime();
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, appInput);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, input, inputHandling);
 	TracyCZoneN(_funcZone, "AppUpdate", true);
+	
+	if (app->testThread.isFilled)
+	{
+		TracyCZoneN(Zone_LockTestMutex, "LockMutex", true);
+		bool lockSuccess = LockMutex(&app->testMutex, TIMEOUT_FOREVER);
+		Assert(lockSuccess);
+		TracyCZoneEnd(Zone_LockTestMutex);
+	}
 	
 	TracyCZoneN(Zone_Update, "Update", true);
 	app->notificationQueue.currentProgramTime = appIn->programTime;
@@ -463,7 +525,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	ThreadPoolWorkItem* finishedWorkItem = nullptr;
 	while ((finishedWorkItem = GetFinishedThreadPoolWorkItem(&app->threadPool)) != nullptr)
 	{
-		PrintLine_O("%.*s FINISHED: %s", StrPrint(finishedWorkItem->subject.string0), GetResultStr(finishedWorkItem->result));
+		PrintLine_O("%llu FINISHED: %s", finishedWorkItem->id, GetResultStr(finishedWorkItem->result));
 		FreeThreadPoolWorkItem(&app->threadPool, finishedWorkItem);
 	}
 	#endif
@@ -477,6 +539,39 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		PrintLine_I("Dropped file: \"%.*s\"", StrPrint(*droppedFilePath));
 		AppOpenFileTab(*droppedFilePath);
 		refreshScreen = true;
+	}
+	
+	// +==============================+
+	// |   Handle Open File Dialog    |
+	// +==============================+
+	if (app->openFileDialog.arena != nullptr)
+	{
+		Result openResult = OsCheckOpenFileDialogAsyncHandle(&app->openFileDialog);
+		Assert(openResult != Result_None);
+		if (openResult != Result_Ongoing)
+		{
+			if (openResult == Result_Success)
+			{
+				PrintLine_I("Opened \"%.*s\"", StrPrint(app->openFileDialog.chosenFilePath));
+				if (app->openFileDialogIsForTheme)
+				{
+					SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, app->openFileDialog.chosenFilePath);
+					if (AppLoadUserTheme())
+					{
+						SaveAppSettings();
+						AppBakeTheme(true);
+					}
+				}
+				else
+				{
+					AppOpenFileTab(app->openFileDialog.chosenFilePath);
+				}
+			}
+			else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
+			else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
+			
+			OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
+		}
 	}
 	
 	// +====================================+
@@ -516,10 +611,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
 		if (app->notificationQueue.notifications.length > 0) { refreshScreen = true; }
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
-		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Left) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Left)) { refreshScreen = true; }
-		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Right) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Right)) { refreshScreen = true; }
-		if (IsMouseBtnReleased(&appIn->mouse, MouseBtn_Middle) || IsMouseBtnDown(&appIn->mouse, MouseBtn_Middle)) { refreshScreen = true; }
-		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyboardKeyDown(&appIn->keyboard, (Key)keyIndex) || IsKeyboardKeyReleased(&appIn->keyboard, (Key)keyIndex)) { refreshScreen = true; break; } }
+		if (WasMouseReleasedRaw(MouseBtn_Left) || IsMouseDownRaw(MouseBtn_Left)) { refreshScreen = true; }
+		if (WasMouseReleasedRaw(MouseBtn_Right) || IsMouseDownRaw(MouseBtn_Right)) { refreshScreen = true; }
+		if (WasMouseReleasedRaw(MouseBtn_Middle) || IsMouseDownRaw(MouseBtn_Middle)) { refreshScreen = true; }
+		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyDownRaw((Key)keyIndex) || WasKeyReleasedRaw((Key)keyIndex)) { refreshScreen = true; break; } }
 		if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
 		if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
 		if (app->shouldRenderAfterReload) { refreshScreen = true; app->shouldRenderAfterReload = false; }
@@ -529,6 +624,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		
 		if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
 		{
+			if (app->testThread.isFilled)
+			{
+				TracyCZoneN(Zone_UnlockTestMutex, "UnlockMutex", true);
+				UnlockMutex(&app->testMutex);
+				TracyCZoneEnd(Zone_UnlockTestMutex);
+			}
 			ScratchEnd(scratch);
 			ScratchEnd(scratch2);
 			ScratchEnd(scratch3);
@@ -565,7 +666,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// | Native Windows Tooltip Test  |
 	// +==============================+
 	#if 0
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false))
+	if (WasKeyPressed(Key_T, false))
 	{
 		HWND windowHandle = (HWND)platform->GetNativeWindowHandle();
 		if (app->tooltipWindowHandle == NULL)
@@ -617,8 +718,29 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |       Thread Pool Test       |
 	// +==============================+
 	#if THREAD_POOL_TEST
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_R, true))
 	{
+		PrintLine_D("Atomics values = %d, %lld, %u", AtomicRead(&app->atomicBundle.int0), AtomicRead(&app->atomicBundle.int1), AtomicRead(&app->atomicBundle.int2));
+	}
+	if (WasKeyComboPressed(ModifierKey_None, Key_B, true))
+	{
+		bool starting = !AtomicRead(&app->atomicBundle.begin);
+		AtomicWrite(&app->atomicBundle.begin, starting);
+		PrintLine_I("%s atomic tests!", starting ? "Starting" : "Stopping");
+	}
+	if (WasKeyComboPressed(ModifierKey_None, Key_W, true))
+	{
+		#if 1
+		WorkSubject subject = ZEROED;
+		subject.id0 = GetRandU32Range(&app->random, 3, 16);
+		subject.id1 = GetRandU32Range(&app->random, 3, 16);
+		subject.id2 = GetRandU32Range(&app->random, 3, 16);
+		subject.slice0.pntr = &app->atomicBundle;
+		subject.slice0.length = sizeof(app->atomicBundle);
+		ThreadPoolWorkItem* newItem = AddWorkItemToThreadPool(&app->threadPool, AtomicTest, &subject);
+		NotNull(newItem);
+		PrintLine_D("Queued %llu,%llu,%llu as item %llu", subject.id0, subject.id1, subject.id2, newItem->id);
+		#else
 		WorkSubject subject = ZEROED;
 		subject.id0 = GetRandU32Range(&app->random, 3, 16);
 		// Str8* allocatedStr = AllocStructInWorkSubject(Str8, stdHeap, &subject, 0);
@@ -640,8 +762,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		ThreadPoolWorkItem* newItem = AddWorkItemToThreadPool(&app->threadPool, TestWorkItem, &subject);
 		NotNull(newItem);
 		PrintLine_D("Queued %.*s as item %llu", StrPrint(allocatedStr), newItem->id);
+		#endif
 	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_K, true))
+	if (WasKeyComboPressed(ModifierKey_None, Key_K, true))
 	{
 		bool stoppedAThread = false;
 		for (uxx tIndex = 0; tIndex < app->threadPool.threads.length; tIndex++)
@@ -661,406 +784,68 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	#endif
 	
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_N, true))
+	// +==============================+
+	// |   Debug Only Test Hotkeys    |
+	// +==============================+
+	#if DEBUG_BUILD
+	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
-	
-	// +========================================+
-	// | Handle Ctrl+W and Ctrl+Shift+W Hotkeys |
-	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_W, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
+	if (WasKeyComboPressed(ModifierKey_None, Key_D, true))
 	{
-		if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
+		PrintLineAt(level, "This is a %s level output!", GetDbgLevelStr(level));
+	}
+	if (WasKeyComboPressed(ModifierKey_None, Key_T, true))
+	{
+		ThreadId threadId = OsGetCurrentThreadId();
+		Str8 threadName = GetStandardPeopleFirstName((u64)threadId);
+		PrintLine_D("Thread ID: %llu \"%.*s\"%s", (u64)threadId, StrPrint(threadName), OsIsMainThread() ? " (Main)" : "");
+		if (!app->testThread.isFilled)
 		{
-			platform->RequestQuit();
+			InitMutex(&app->testMutex);
+			app->threadRandomSeed = GetRandU64(&app->random);
+			PrintLine_D("Starting new thread with seed %llu...", app->threadRandomSeed);
+			app->testThread = OsCreateThread(TestThreadMain, &app->threadRandomSeed, true);
+			Assert(app->testThread.isFilled);
+			PrintLine_I("Started thread %llu!", (u64)app->testThread.id);
 		}
 		else
 		{
-			if (app->currentTab != nullptr)
-			{
-				AppCloseFileTab(app->currentTabIndex);
-			}
+			UnlockMutex(&app->testMutex);
+			PrintLine_W("Stopping thread %llu...", (u64)app->testThread.id);
+			OsCloseThread(&app->testThread);
+			WriteLine_D("Stopped!");
+			LockMutex(&app->testMutex, TIMEOUT_FOREVER);
+			DestroyMutex(&app->testMutex);
 		}
 	}
+	#endif
 	
 	// +==============================+
-	// | F6 Toggles Performance Graph |
+	// |   Handle Keyboard Bindings   |
 	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F6, false))
-	{
-		app->showPerfGraph = !app->showPerfGraph;
-	}
-	
-	// +==============================+
-	// |       Handle F9 Hotkey       |
-	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F9, false))
-	{
-		ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
-			? ThemeMode_Debug
-			: ((app->currentThemeMode == ThemeMode_Dark)
-				? ThemeMode_Light
-				: ThemeMode_Dark
-			)
-		);
-		app->currentThemeMode = otherThemeMode;
-		SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
-		SaveAppSettings();
-		AppBakeTheme(false);
-	}
-	
-	// +==============================+
-	// |      Handle F10 Hotkey       |
-	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F10, false))
-	{
-		app->settings.smallButtons = !app->settings.smallButtons;
-		SaveAppSettings();
-	}
-	
-	// +==============================+
-	// |      Handle F11 Hotkey       |
-	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F11, false))
-	{
-		app->minimalModeEnabled = !app->minimalModeEnabled;
-	}
-	
-	// +==============================+
-	// |      Handle Escape Key       |
-	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Escape, false))
-	{
-		if (app->popup.isOpen)
-		{
-			ClosePopupDialog(&app->popup, nullptr);
-		}
-		else if (app->isFileMenuOpen)
-		{
-			app->isFileMenuOpen = false;
-			app->isOpenRecentSubmenuOpen = false;
-		}
-		else if (app->isViewMenuOpen)
-		{
-			app->isViewMenuOpen = false;
-		}
-		else if (app->minimalModeEnabled)
-		{
-			app->minimalModeEnabled = false;
-		}
-	}
-	
-	// +==================================================+
-	// | Handle Ctrl+Plus, Ctrl+Minus, and Ctrl+0 Hotkeys |
-	// +==================================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Plus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		AppChangeFontSize(true);
-	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Minus, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		AppChangeFontSize(false);
-	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_0, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		app->uiFontSize = DEFAULT_UI_FONT_SIZE;
-		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-		app->uiScale = 1.0f;
-		bool fontBakeSuccess = AppCreateFonts();
-		Assert(fontBakeSuccess);
-	}
+	RunAppBindingCommands(&app->bindings);
 	
 	// +==============================+
 	// |   Handle Ctrl+ScrollWheel    |
 	// +==============================+
-	if (IsKeyboardKeyDown(&appIn->keyboard, Key_Control) && appIn->mouse.scrollDelta.Y != 0)
+	if (IsKeyDownRaw(Key_Control) && appIn->mouse.scrollDelta.Y != 0 && appIn->mouse.isOverWindow)
 	{
-		AppChangeFontSize(appIn->mouse.scrollDelta.Y > 0);
+		RunAppCommand((appIn->mouse.scrollDelta.Y > 0) ? AppCommand_IncreaseUiScale : AppCommand_DecreaseUiScale);
 	}
 	
-	// +================================+
-	// | Handle Alt+F and Alt+V Hotkeys |
-	// +================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_F, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
-	{
-		app->isFileMenuOpen = !app->isFileMenuOpen;
-		if (app->isFileMenuOpen)
-		{
-			app->isViewMenuOpen = false;
-			app->keepFileMenuOpenUntilMouseOver = true;
-		}
-	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_V, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Alt))
-	{
-		app->isViewMenuOpen = !app->isViewMenuOpen;
-		if (app->isViewMenuOpen)
-		{
-			app->isFileMenuOpen = false;
-			app->keepViewMenuOpenUntilMouseOver = true;
-		}
-	}
-	
-	// +==============================+
-	// |     Handle Ctrl+O Hotkey     |
-	// +==============================+
-	bool shouldOpenFile = false;
-	bool shouldOpenThemeFile = false;
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_O, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		shouldOpenFile = true;
-	}
-	
-	// +========================================+
-	// | Handle Ctrl+Tab/Ctrl+Shift+Tab Hotkeys |
-	// +========================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tab, true) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		if (app->tabs.length > 1)
-		{
-			if (IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
-			{
-				AppChangeTab(app->currentTabIndex > 0 ? app->currentTabIndex-1 : app->tabs.length-1);
-			}
-			else
-			{
-				AppChangeTab((app->currentTabIndex+1) % app->tabs.length);
-			}
-		}
-	}
-	
-	// +==============================+
-	// |     Handle Ctrl+E Hotkey     |
-	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_E, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
-		{
-			VarArrayLoopGet(RecentFile, recentFile, &app->recentFiles, rIndex-1);
-			if (recentFile->fileExists && AppFindTabForPath(recentFile->path) == nullptr)
-			{
-				if (AppOpenFileTab(recentFile->path) != nullptr) { break; }
-			}
-		}
-	}
-	
-	// +==============================+
-	// |     Handle Ctrl+T Hotkey     |
-	// +==============================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_T, false) && IsKeyboardKeyDown(&appIn->keyboard, Key_Control))
-	{
-		platform->SetWindowTopmost(!appIn->isWindowTopmost);
-	}
-	
-	// +==============================+
-	// |     Handle Tilde Hotkey      |
-	// +==============================+
-	#if DEBUG_BUILD
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Tilde, false))
-	{
-		Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
-	}
-	#endif
-	
-	// +======================================+
-	// | Handle Home/End and PageUp/PageDown  |
-	// +======================================+
-	//TODO: These should probably move the app->currentTab->selectedOptionIndex if app->usingKeyboardToSelect
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Home, false))
-	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
-	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_End, false))
-	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found)
-		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-			optionsListScrollData.scrollTarget->Y = -maxScroll;
-		}
-	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageUp, true))
-	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found)
-		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
-		}
-	}
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_PageDown, true))
-	{
-		Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		if (optionsListScrollData.found)
-		{
-			r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-			optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
-		}
-	}
-	
-	// +====================================+
-	// | Handle Arrow Keys to Select Option |
-	// +====================================+
-	if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true) ||
-		IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true) ||
-		IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true) ||
-		IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
-	{
-		app->usingKeyboardToSelect = true;
-		if (app->currentTab != nullptr)
-		{
-			bool movedSelection = false;
-			
-			if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
-			{
-				//TODO: Could we somehow choose the option thats near the middle of the screen?
-				app->currentTab->selectedOptionIndex = 0;
-				movedSelection = true;
-			}
-			else if (app->currentTab->selectedOptionIndex >= 0)
-			{
-				if (app->settings.smallButtons)
-				{
-					r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
-					u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
-					r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
-					i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
-					if (numColumns <= 0) { numColumns = 1; }
-					i32 numRows = CeilDivI32((i32)app->currentTab->fileOptions.length, numColumns);
-					
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true))
-					{
-						if (app->currentTab->selectedOptionIndex >= numColumns)
-						{
-							app->currentTab->selectedOptionIndex -= numColumns;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, false))
-						{
-							app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
-							movedSelection = true;
-						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
-					{
-						if (((i32)app->currentTab->selectedOptionIndex / numColumns) < numRows-1)
-						{
-							app->currentTab->selectedOptionIndex += numColumns;
-							if ((uxx)app->currentTab->selectedOptionIndex >= app->currentTab->fileOptions.length)
-							{
-								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-							}
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, false))
-						{
-							app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
-							movedSelection = true;
-						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, true))
-					{
-						if (app->currentTab->selectedOptionIndex > 0)
-						{
-							app->currentTab->selectedOptionIndex--;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Left, false))
-						{
-							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-							movedSelection = true;
-						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, true))
-					{
-						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
-						{
-							app->currentTab->selectedOptionIndex++;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Right, false))
-						{
-							app->currentTab->selectedOptionIndex = 0;
-							movedSelection = true;
-						}
-					}
-				}
-				else
-				{
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, true))
-					{
-						if (app->currentTab->selectedOptionIndex > 0)
-						{
-							app->currentTab->selectedOptionIndex--;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Up, false))
-						{
-							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
-							movedSelection = true;
-						}
-					}
-					if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, true))
-					{
-						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
-						{
-							app->currentTab->selectedOptionIndex++;
-							movedSelection = true;
-						}
-						else if (IsKeyboardKeyPressed(&appIn->keyboard, Key_Down, false))
-						{
-							app->currentTab->selectedOptionIndex = 0;
-							movedSelection = true;
-						}
-					}
-				}
-			}
-			
-			// Auto-scroll up/down to the newly selected option if needed
-			if (movedSelection && app->currentTab->selectedOptionIndex >= 0)
-			{
-				rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-				Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-				FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
-				Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
-				ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
-				rec optionRec = GetClayElementDrawRec(btnId);
-				if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
-				{
-					r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
-					r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
-					r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
-					r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
-					if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
-					{
-						viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
-					}
-					else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
-					{
-						viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
-					}
-				}
-			}
-		}
-	}
-	else if (IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left) ||
-		IsMouseBtnPressed(&appIn->mouse, MouseBtn_Right) ||
-		IsMouseBtnPressed(&appIn->mouse, MouseBtn_Middle) ||
+	// +==================================================+
+	// | Mouse Interaction Disables usingKeyboardToSelect |
+	// +==================================================+
+	if (MouseLeftClickedRaw() ||
+		MouseRightClickedRaw() ||
+		MouseMiddleClickedRaw() ||
 		(appIn->mouse.isOverWindow && !AreSimilarV2(appIn->mouse.scrollDelta, V2_Zero, DEFAULT_R32_TOLERANCE)))
 	{
 		app->usingKeyboardToSelect = false;
-	}
-	
-	if (app->usingKeyboardToSelect && IsKeyboardKeyPressed(&appIn->keyboard, Key_Enter, false) &&
-		app->currentTab != nullptr && app->currentTab->selectedOptionIndex >= 0)
-	{
-		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
-		if (selectedOption->type == FileOptionType_Bool)
-		{
-			ToggleOption(app->currentTab, selectedOption);
-		}
 	}
 	
 	// if (app->currentTab == nullptr)
@@ -1096,8 +881,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			uiArena,
 			&app->clay,
 			&appIn->keyboard,
+			&appInputHandling->keyboard,
 			&appIn->mouse,
-			app->uiScale,
+			&appInputHandling->mouse,
+			app->settings.uiScale,
 			nullptr, //TODO: Fill focusedElementPntr
 			MouseCursorShape_Default,
 			OsWindowHandleEmpty,
@@ -1105,12 +892,16 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			&app->tooltips
 		);
 		
-		v2 scrollContainerInput = IsKeyboardKeyDown(&appIn->keyboard, Key_Control) ? V2_Zero : appIn->mouse.scrollDelta;
+		v2 clayMouseScrollInput = appIn->mouse.scrollDelta;
 		#if TARGET_IS_LINUX
-		scrollContainerInput = ScaleV2(scrollContainerInput, LINUX_SCROLL_WHEEL_SCALING);
+		clayMouseScrollInput = ScaleV2(clayMouseScrollInput, LINUX_SCROLL_WHEEL_SCALING);
 		#endif
-		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, 16.6f, false, scrollContainerInput, false);
-		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseBtnDown(&appIn->mouse, MouseBtn_Left));
+		if (IsKeyDownRaw(Key_Control)) { clayMouseScrollInput = V2_Zero; }
+		if (appInputHandling->mouse.scrollXHandled) { clayMouseScrollInput.X = 0; }
+		if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.Y = 0; }
+		
+		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, appIn->elapsedMs, false, clayMouseScrollInput, false);
+		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseDownRaw(MouseBtn_Left));
 		{
 			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
 			CLAY({ .id = CLAY_ID("FullscreenContainer"),
@@ -1145,20 +936,30 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 						.border = { .color=GetThemeColor(TopbarBorder), .width={ .bottom=UI_BORDER(1) } },
 					})
 					{
-						bool showMenuHotkeys = IsKeyboardKeyDown(&appIn->keyboard, Key_Alt);
+						// +==============================+
+						// |          File Menu           |
+						// +==============================+
+						bool showMenuHotkeys = (IsKeyDown(Key_Alt) && appIn->isFocused);
 						if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 						{
-							if (ClayBtn("Open" UNICODE_ELLIPSIS_STR, "Ctrl+O", "Open a file", true, &app->icons[AppIcon_OpenFile]))
+							if (ClayBtnAppIconStr(StrLit("OpenFileBtn"),
+								StrLit("Open" UNICODE_ELLIPSIS_STR),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_OpenFile, uiArena, 0),
+								StrLit("Open a file"),
+								true, //isEnabled
+								AppIcon_OpenFile))
 							{
-								shouldOpenFile = true;
-								#if TARGET_IS_WINDOWS
+								RunAppCommand(AppCommand_OpenFile);
 								app->isFileMenuOpen = false;
-								#endif
 							} Clay__CloseElement();
 							
 							if (app->recentFiles.length > 0)
 							{
-								if (ClayTopSubmenu("Open Recent " UNICODE_RIGHT_ARROW_STR, app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, &app->icons[AppIcon_OpenRecent]))
+								if (ClayTopSubmenu("OpenRecentSubmenu",
+									"Open Recent " UNICODE_RIGHT_ARROW_STR,
+									app->isFileMenuOpen, &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver,
+									&app->appIconsSheet.texture,
+									GetSheetCellRec(&app->appIconsSheet, app->appIconSheetCell[AppIcon_OpenRecent])))
 								{
 									for (uxx rIndex = app->recentFiles.length; rIndex > 0; rIndex--)
 									{
@@ -1166,7 +967,12 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 										Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
 										bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
 										Str8 tooltipStr = PrintInArenaStr(uiArena, "%.*s%s", StrPrint(recentFile->path), recentFile->fileExists ? "" : " (MISSING)");
-										if (ClayBtnStrEx(recentFile->path, AllocStr8(uiArena, displayPath), StrLit(""), tooltipStr, !isOpenFile && recentFile->fileExists, nullptr))
+										if (ClayBtnStrEx(recentFile->path,
+											AllocStr8(uiArena, displayPath),
+											StrLit(""), //hotkey
+											tooltipStr,
+											!isOpenFile && recentFile->fileExists,
+											nullptr, Rec_Zero))
 										{
 											FileTab* newTab = AppOpenFileTab(recentFile->path);
 											if (newTab != nullptr)
@@ -1178,14 +984,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									}
 									
 									Str8 clearRecentFilesTooltipStr = PrintInArenaStr(uiArena, "Remove %llu path%s from the \"Recent Files\" list", app->recentFiles.length, Plural(app->recentFiles.length, "s"));
-									if (ClayBtnStr(StrLit("Clear Recent Files"), Str8_Empty, clearRecentFilesTooltipStr, app->recentFiles.length > 0, &app->icons[AppIcon_Trash]))
+									if (ClayBtnAppIconStr(StrLit("ClearRecentBtn"),
+										StrLit("Clear Recent Files"),
+										GetBindingStrForAppCommand(&app->bindings, AppCommand_ClearRecentFiles, uiArena, 0),
+										clearRecentFilesTooltipStr,
+										app->recentFiles.length > 0, //isEnabled
+										AppIcon_Trash))
 									{
-										OpenPopupDialog(stdHeap, &app->popup,
-											ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
-											AppClearRecentFilesPopupCallback, nullptr
-										);
-										AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
-										AddPopupButton(&app->popup, 2, StrLit("Clear Recent Files"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+										RunAppCommand(AppCommand_ClearRecentFiles);
 										app->isOpenRecentSubmenuOpen = false;
 										app->isFileMenuOpen = false;
 									} Clay__CloseElement();
@@ -1196,129 +1002,212 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							}
 							else
 							{
-								if (ClayBtn("Open Recent " UNICODE_RIGHT_ARROW_STR, "", "", false, &app->icons[AppIcon_OpenRecent])) { } Clay__CloseElement();
+								if (ClayBtnAppIcon("OpenRecentBtn",
+									"Open Recent " UNICODE_RIGHT_ARROW_STR,
+									"", //hotkey
+									"", //tootltip
+									false, //isEnabled
+									AppIcon_OpenRecent))
+								{
+								} Clay__CloseElement();
 							}
 							
-							if (ClayBtn("Reset File", "", "Reset file to how it was when first opened", (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), &app->icons[AppIcon_ResetFile]))
+							if (ClayBtnAppIconStr(StrLit("ResetFileBtn"),
+								StrLit("Reset File"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ResetFile, uiArena, 0),
+								StrLit("Reset file to how it was when first opened"),
+								(app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal),
+								AppIcon_ResetFile))
 							{
-								OpenPopupDialog(stdHeap, &app->popup,
-									StrLit("Do you want to reset the file to the state it was in when it was opened?"),
-									AppResetCurrentFilePopupCallback, nullptr
-								);
-								AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
-								AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+								RunAppCommand(AppCommand_ResetFile);
+								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
-							//TODO: Add an icon for this option
-							if (ClayBtnStr(ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"), Str8_Empty, StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes"), (app->tabs.length > 0), nullptr))
+							if (ClayBtnAppIconStr(StrLit("ReloadingEnabledBtn"),
+								ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleFileReloading, uiArena, 0),
+								StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes"),
+								(app->tabs.length > 0),
+								AppIcon_None)) //TODO: Add an icon for this option
 							{
-								app->settings.dontAutoReloadFile = !app->settings.dontAutoReloadFile;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleFileReloading);
 							} Clay__CloseElement();
 							
-							if (ClayBtn("Close File", "Ctrl+W", "Close the current file tab", (app->currentTab != nullptr), &app->icons[AppIcon_CloseFile]))
+							if (ClayBtnAppIconStr(StrLit("CloseFileBtn"),
+								StrLit("Close File"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_CloseTab, uiArena, 0),
+								StrLit("Close the current file tab"),
+								(app->currentTab != nullptr),
+								AppIcon_CloseFile))
 							{
-								AppCloseFileTab(app->currentTabIndex);
+								RunAppCommand(AppCommand_CloseTab);
+								app->isFileMenuOpen = false;
+							} Clay__CloseElement();
+							
+							if (ClayBtnAppIconStr(StrLit("ReloadBindingsBtn"),
+								StrLit("Reload Bindings"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ReloadBindings, uiArena, 0),
+								StrLit("Reload key bindings from " USER_BINDINGS_FILENAME " in the config folder. Bindings can also be reloaded by close and reopening C-Switch"),
+								true, //isEnabled
+								AppIcon_None))
+							{
+								RunAppCommand(AppCommand_ReloadBindings);
+							} Clay__CloseElement();
+							
+							if (ClayBtnAppIconStr(StrLit("CloseWindowBtn"),
+								StrLit("Close Window"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_CloseWindow, uiArena, 0),
+								Str8_Empty, //tooltip
+								true, //isEnabled
+								AppIcon_CloseWindow))
+							{
+								RunAppCommand(AppCommand_CloseWindow);
+								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							Clay__CloseElement();
 							Clay__CloseElement();
 						} Clay__CloseElement();
 						
+						// +==============================+
+						// |          View Menu           |
+						// +==============================+
 						if (ClayTopBtn("View", showMenuHotkeys, &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false))
 						{
-							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyboardKeyDown(&appIn->keyboard, Key_Shift))
+							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
 								? ThemeMode_Debug
 								: ((app->currentThemeMode == ThemeMode_Dark)
 									? ThemeMode_Light
 									: ThemeMode_Dark
 								)
 							);
-							if (ClayBtnStr(ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), StrLit("F9"), StrLit("Toggle between dark and light mode"), true, &app->icons[AppIcon_LightDark]))
+							if (ClayBtnAppIconStr(StrLit("LightModeBtn"),
+								ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleLightMode, uiArena, 0),
+								StrLit("Toggle between dark and light mode"),
+								true, //isEnabled
+								AppIcon_LightDark))
 							{
-								app->currentThemeMode = otherThemeMode;
-								SetAppSettingStr8Pntr(&app->settings, &app->settings.themeMode, MakeStr8Nt(GetThemeModeStr(app->currentThemeMode)));
-								SaveAppSettings();
-								AppBakeTheme(false);
+								RunAppCommand(AppCommand_ToggleLightMode);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"), StrLit("F10"), StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"), true, &app->icons[AppIcon_SmallBtn]))
+							if (ClayBtnAppIconStr(StrLit("SmallButtonsBtn"),
+								ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleSmallButtons, uiArena, 0),
+								StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list"),
+								true, //isEnabled
+								AppIcon_SmallBtn))
 							{
-								app->settings.smallButtons = !app->settings.smallButtons;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleSmallButtons);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"), StrLit("Ctrl+T"), StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"), true, &app->icons[appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled]))
+							if (ClayBtnAppIconStr(StrLit("TopmostBtn"),
+								ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleTopmost, uiArena, 0),
+								StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)"),
+								true, //isEnabled
+								appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled))
 							{
-								#if TARGET_IS_WINDOWS
-								platform->SetWindowTopmost(!appIn->isWindowTopmost);
-								#else
-								Notify_W("Topmost toggling is only implemented for Windows.\nOn some Linux distributions you can toggle this yourself by right-clicking on the window topbar  ");
-								#endif
+								RunAppCommand(AppCommand_ToggleTopmost);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"), Str8_Empty, StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"), true, &app->icons[app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight]))
+							if (ClayBtnAppIconStr(StrLit("ClipNamesBtn"),
+								ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleClipSide, uiArena, 0),
+								StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space"),
+								true, //isEnabled
+								app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight))
 							{
-								app->settings.clipNamesLeft = !app->settings.clipNamesLeft;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleClipSide);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"), true, &app->icons[AppIcon_SmoothScroll]))
+							if (ClayBtnAppIconStr(StrLit("SmoothScrollingBtn"),
+								ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleSmoothScrolling, uiArena, 0),
+								StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel"),
+								true, //isEnabled
+								AppIcon_SmoothScroll))
 							{
-								app->settings.smoothScrollingDisabled = !app->settings.smoothScrollingDisabled;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleSmoothScrolling);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"), true, &app->icons[AppIcon_Tooltip]))
+							if (ClayBtnAppIconStr(StrLit("TooltipsBtn"),
+								ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleOptionTooltips, uiArena, 0),
+								StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list"),
+								true, //isEnabled
+								AppIcon_Tooltip))
 							{
-								app->settings.optionTooltipsDisabled = !app->settings.optionTooltipsDisabled;
-								SaveAppSettings();
+								RunAppCommand(AppCommand_ToggleOptionTooltips);
 							} Clay__CloseElement();
 							
-							if (ClayBtnStr(ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"), StrLit("F11"), StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"), true, &app->icons[AppIcon_Topbar]))
+							if (ClayBtnAppIconStr(StrLit("HideTopbarBtn"),
+								ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleTopbar, uiArena, 0),
+								StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space"),
+								true, //isEnabled
+								AppIcon_Topbar))
 							{
-								app->minimalModeEnabled = !app->minimalModeEnabled;
+								RunAppCommand(AppCommand_ToggleTopbar);
 							} Clay__CloseElement();
 							
 							Str8 currentThemeStr = !IsEmptyStr(app->settings.userThemePath)
 								? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
 								: StrLit("current: -");
 							Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR), Str8_Empty, openThemeTooltipStr, true, &app->icons[AppIcon_StarFile]))
+							if (ClayBtnAppIconStr(StrLit("OpenThemeBtn"),
+								StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_OpenCustomTheme, uiArena, 0),
+								openThemeTooltipStr,
+								true, //isEnabled
+								AppIcon_StarFile))
 							{
-								shouldOpenThemeFile = true;
+								RunAppCommand(AppCommand_OpenCustomTheme);
 								app->isFileMenuOpen = false;
 							} Clay__CloseElement();
 							
 							Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
-							if (ClayBtnStr(StrLit("Clear Custom Theme"), Str8_Empty, clearThemeTooltipStr, !IsEmptyStr(app->settings.userThemePath), &app->icons[AppIcon_CloseFile]))
+							if (ClayBtnAppIconStr(StrLit("ClearThemeBtn"),
+								StrLit("Clear Custom Theme"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ClearCustomTheme, uiArena, 0),
+								clearThemeTooltipStr,
+								!IsEmptyStr(app->settings.userThemePath),
+								AppIcon_CloseFile))
 							{
-								SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, Str8_Empty);
-								SaveAppSettings();
-								AppLoadUserTheme();
-								AppBakeTheme(false);
+								RunAppCommand(AppCommand_ClearCustomTheme);
 							} Clay__CloseElement();
 							
 							#if DEBUG_BUILD
-							if (ClayBtnStr(ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"), StrLit("~"), StrLit("Toggles the debug sidebar for Clay"), true, &app->icons[AppIcon_Debug]))
+							if (ClayBtnAppIconStr(StrLit("ClayDebugBtn"),
+								ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleClayDebug, uiArena, 0),
+								StrLit("Toggles the debug sidebar for Clay"),
+								true, //isEnabled
+								AppIcon_Debug))
 							{
-								Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
+								RunAppCommand(AppCommand_ToggleClayDebug);
 							} Clay__CloseElement();
-							if (ClayBtnStr(ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"), Str8_Empty, StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing"), true, nullptr))
+							
+							if (ClayBtnAppIconStr(StrLit("SleepBtn"),
+								ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleSleeping, uiArena, 0),
+								StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing"),
+								true, //isEnabled
+								AppIcon_None))
 							{
-								app->sleepingDisabled = !app->sleepingDisabled;
+								RunAppCommand(AppCommand_ToggleSleeping);
 							} Clay__CloseElement();
-							if (ClayBtnStr(ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"), Str8_Empty, StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate"), true, nullptr))
+							
+							if (ClayBtnAppIconStr(StrLit("FrameIndicatorBtn"),
+								ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"),
+								GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleFrameIndicator, uiArena, 0),
+								StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate"),
+								true, //isEnabled
+								AppIcon_None))
 							{
-								app->enableFrameUpdateIndicator = !app->enableFrameUpdateIndicator;
+								RunAppCommand(AppCommand_ToggleFrameIndicator);
 							} Clay__CloseElement();
 							#endif //DEBUG_BUILD
-							
-							// if (ClayBtn("Close Window", "Ctrl+Shift+W", true, &app->icons[AppIcon_CloseWindow]))
-							// {
-							// 	platform->RequestQuit();
-							// 	app->isFileMenuOpen = false;
-							// } Clay__CloseElement();
 							
 							Clay__CloseElement();
 							Clay__CloseElement();
@@ -1354,7 +1243,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 							CLAY({ .layout={ .sizing={ .width=CLAY_SIZING_FIXED(UI_R32(4)) } } }) {}
 						}
 						
-						#if DEBUG_BUILD
 						if (app->enableFrameUpdateIndicator)
 						{
 							//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
@@ -1375,7 +1263,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								}
 							}
 						}
-						#endif
 					}
 				}
 				
@@ -1447,11 +1334,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 								);
 								CLAY({ .layout = { .sizing = { .width = CLAY_SIZING_GROW(0) } } }) {}
 								
-								if (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Left))
+								if (isHovered && MouseLeftClicked())
 								{
 									AppChangeTab(tIndex);
 								}
-								if (isHovered && IsMouseBtnPressed(&appIn->mouse, MouseBtn_Middle))
+								if (isHovered && MouseMiddleClicked())
 								{
 									AppCloseFileTab(tIndex);
 									tIndex--;
@@ -1638,16 +1525,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		#if DEBUG_BUILD
 		if (app->currentTab == nullptr)
 		{
-			DrawClayTextboxText(&app->testTextbox);
-			
-			#if 0
-			DrawSheetCell(&app->testSheet, MakeV2i(1, 0), MakeRec(10, 300, 64, 64), White);
-			DrawSheetCell(&app->testSheet, MakeV2i(0, 1), MakeRec(10, 364, 64, 64), White);
-			for (u64 index = 0; index < 128; index++)
-			{
-				DrawNamedSheetCell(&app->testSheet, StrLit("error"), MakeRec(10 + 2.0f*index, 428, 64, 64), ((index%2) == 0) ? MonokaiBlue : White);
-			}
-			#endif
+			// DrawClayTextboxText(&app->testTextbox);
 			
 			app->testTooltipId = SoftRegisterTooltip(&app->tooltips, app->testTooltipId, Str8_Empty, 0, MakeRec(10, 60, 100, 100), StrLit("This is a test!"), &app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 			
@@ -1696,33 +1574,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime) +
 		OsTimeDiffMsR32(beforeRenderTime, afterRenderTime);
 	
-	// +==============================+
-	// |   Handle Open File Dialog    |
-	// +==============================+
-	if (shouldOpenFile || shouldOpenThemeFile)
+	if (app->testThread.isFilled)
 	{
-		#if TARGET_IS_WINDOWS || TARGET_IS_LINUX
-		Str8 selectedPath = Str8_Empty;
-		Result openResult = OsDoOpenFileDialog(scratch, &selectedPath);
-		if (openResult == Result_Success)
-		{
-			PrintLine_I("Opened \"%.*s\"", StrPrint(selectedPath));
-			if (shouldOpenFile) { AppOpenFileTab(selectedPath); }
-			else if (shouldOpenThemeFile)
-			{
-				SetAppSettingStr8Pntr(&app->settings, &app->settings.userThemePath, selectedPath);
-				if (AppLoadUserTheme())
-				{
-					SaveAppSettings();
-					AppBakeTheme(true);
-				}
-			}
-		}
-		else if (openResult == Result_Canceled) { WriteLine_D("Canceled..."); }
-		else { NotifyPrint_E("OpenDialog error: %s", GetResultStr(openResult)); }
-		#else //!(TARGET_IS_WINDOWS || TARGET_IS_LINUX)
-		Notify_W("Open File dialog is not implemented on OSX currently! Please use drag-and-drop or pass the file path as a command-line argument!");
-		#endif
+		TracyCZoneN(Zone_UnlockTestMutex, "UnlockMutex", true);
+		UnlockMutex(&app->testMutex);
+		TracyCZoneEnd(Zone_UnlockTestMutex);
 	}
 	
 	ScratchEnd(scratch);
@@ -1742,7 +1598,7 @@ EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 	ScratchBegin(scratch);
 	ScratchBegin1(scratch2, scratch);
 	ScratchBegin2(scratch3, scratch, scratch2);
-	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr);
+	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, nullptr, nullptr);
 	
 	#if THREAD_POOL_TEST
 	FreeThreadPool(&app->threadPool);
@@ -1752,6 +1608,7 @@ EXPORT_FUNC APP_CLOSING_DEF(AppClosing)
 	#endif
 	
 	AppSaveRecentFilesList();
+	OsFreeOpenFileDialogAsyncHandle(&app->openFileDialog);
 	
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
