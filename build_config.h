@@ -100,13 +100,6 @@ Description:
 #define BUILD_WITH_SOKOL_GFX  1
 #define BUILD_WITH_SOKOL_APP  1
 #define BUILD_WITH_CLAY       1
-#define BUILD_WITH_RAYLIB     0
-#define BUILD_WITH_BOX2D      0
-#define BUILD_WITH_SDL        0
-#define BUILD_WITH_OPENVR     0
-#define BUILD_WITH_IMGUI      0
-#define BUILD_WITH_PHYSX      0
-#define BUILD_WITH_HTTP       0
 #define BUILD_WITH_FREETYPE   1
 #define BUILD_WITH_GTK        0
 

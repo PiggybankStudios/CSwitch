@@ -50,6 +50,8 @@ Description:
 #define TOOL_EXE_NAME      "pig_build"
 #endif
 
+#define T_SHADER_OBJS      "|ShaderObjs"
+
 void PrintUsage()
 {
 	WriteLine_E("Usage: " BUILD_SCRIPT_EXE_NAME " [DEBUG_BUILD={1/0}] [BUILD_TESTS={1/0}] ...");
@@ -112,18 +114,10 @@ size_t ZipFileWriteCallback(void* contextPntr, mz_uint64 fileOffset, const void*
 	return numBytes;
 }
 
-bool ExtractConfigBool(Str buildConfigContents, Str defineName, StrArray* tagsArray)
-{
-	bool defineValue = ExtractBoolDefine(buildConfigContents, defineName);
-	if (defineValue) { AddStr(tagsArray, defineName); }
-	return defineValue;
-}
-
 int main(int argc, char* argv[])
 {
 	RecompileIfNeeded(StrArray_Empty);
 	PrintLine("[%s...]", BUILD_SCRIPT_EXE_NAME);
-	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
 	StrArray commonTags = EMPTY;
 	
@@ -132,41 +126,47 @@ int main(int argc, char* argv[])
 	// +==============================+
 	Str buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
-	// Str PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
-	// Str PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
 	Str PROJECT_DLL_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME"));
 	Str PROJECT_EXE_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME"));
+	// Str PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
+	// Str PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
+	
+	#define LOAD_CONFIG(CONFIG_NAME)                                                     \
+		bool CONFIG_NAME = ExtractBoolDefine(buildConfigContents, StrLit(#CONFIG_NAME)); \
+		if (CONFIG_NAME) { AddStrLit(&commonTags, #CONFIG_NAME); }                       \
+		do {} while(0)
+	LOAD_CONFIG(DEBUG_BUILD);
+	LOAD_CONFIG(BUILD_INTO_SINGLE_UNIT);
+	LOAD_CONFIG(USE_BUNDLED_RESOURCES);
+	LOAD_CONFIG(BUILD_WINDOWS);
+	LOAD_CONFIG(BUILD_LINUX);
+	LOAD_CONFIG(BUILD_SHADERS);
+	LOAD_CONFIG(BUILD_PIGGEN);
+	LOAD_CONFIG(RUN_PIGGEN);
+	LOAD_CONFIG(BUILD_TRACY_DLL);
+	LOAD_CONFIG(PROFILING_ENABLED);
+	LOAD_CONFIG(BUNDLE_RESOURCES_ZIP);
+	LOAD_CONFIG(BUILD_PIG_CORE_DLL);
+	LOAD_CONFIG(BUILD_APP_EXE);
+	LOAD_CONFIG(BUILD_APP_DLL);
+	LOAD_CONFIG(RUN_APP);
+	LOAD_CONFIG(COPY_TO_DATA_DIRECTORY);
+	LOAD_CONFIG(DUMP_PREPROCESSOR);
+	LOAD_CONFIG(DUMP_ASSEMBLY);
+	LOAD_CONFIG(BUILD_WITH_SOKOL_GFX);
+	LOAD_CONFIG(BUILD_WITH_SOKOL_APP);
+	LOAD_CONFIG(BUILD_WITH_FREETYPE);
+	LOAD_CONFIG(BUILD_WITH_GTK);
+	#undef LOAD_CONFIG
+	
+	free(buildConfigContents.chars);
+	
 	Str filenameAppDll    = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dll"));
 	Str filenameAppDllAsm = JoinStrings2(PROJECT_DLL_NAME, StrLit(".asm"));
 	Str filenameAppSo     = JoinStrings2(PROJECT_DLL_NAME, StrLit(".so"));
 	Str filenameAppExe    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".exe"));
 	Str filenameAppAsm    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".asm"));
 	Str filenameApp       = JoinStrings2(PROJECT_EXE_NAME, StrLit(""));
-	
-	bool DEBUG_BUILD              = ExtractConfigBool(buildConfigContents, StrLit("DEBUG_BUILD"),            &commonTags);
-	bool BUILD_INTO_SINGLE_UNIT   = ExtractConfigBool(buildConfigContents, StrLit("BUILD_INTO_SINGLE_UNIT"), &commonTags);
-	bool USE_BUNDLED_RESOURCES    = ExtractConfigBool(buildConfigContents, StrLit("USE_BUNDLED_RESOURCES"),  &commonTags);
-	bool BUILD_WINDOWS            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_WINDOWS"),          &commonTags);
-	bool BUILD_LINUX              = ExtractConfigBool(buildConfigContents, StrLit("BUILD_LINUX"),            &commonTags);
-	bool BUILD_SHADERS            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_SHADERS"),          &commonTags);
-	bool BUILD_PIGGEN             = ExtractConfigBool(buildConfigContents, StrLit("BUILD_PIGGEN"),           &commonTags);
-	bool RUN_PIGGEN               = ExtractConfigBool(buildConfigContents, StrLit("RUN_PIGGEN"),             &commonTags);
-	bool BUILD_TRACY_DLL          = ExtractConfigBool(buildConfigContents, StrLit("BUILD_TRACY_DLL"),        &commonTags);
-	bool PROFILING_ENABLED        = ExtractConfigBool(buildConfigContents, StrLit("PROFILING_ENABLED"),      &commonTags);
-	bool BUNDLE_RESOURCES_ZIP     = ExtractConfigBool(buildConfigContents, StrLit("BUNDLE_RESOURCES_ZIP"),   &commonTags);
-	bool BUILD_PIG_CORE_DLL       = ExtractConfigBool(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"),     &commonTags);
-	bool BUILD_APP_EXE            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_APP_EXE"),          &commonTags);
-	bool BUILD_APP_DLL            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_APP_DLL"),          &commonTags);
-	bool RUN_APP                  = ExtractConfigBool(buildConfigContents, StrLit("RUN_APP"),                &commonTags);
-	bool COPY_TO_DATA_DIRECTORY   = ExtractConfigBool(buildConfigContents, StrLit("COPY_TO_DATA_DIRECTORY"), &commonTags);
-	bool DUMP_PREPROCESSOR        = ExtractConfigBool(buildConfigContents, StrLit("DUMP_PREPROCESSOR"),      &commonTags);
-	bool DUMP_ASSEMBLY            = ExtractConfigBool(buildConfigContents, StrLit("DUMP_ASSEMBLY"),          &commonTags);
-	bool BUILD_WITH_FREETYPE      = ExtractConfigBool(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"),    &commonTags);
-	bool BUILD_WITH_GTK           = ExtractConfigBool(buildConfigContents, StrLit("BUILD_WITH_GTK"),         &commonTags);
-	bool BUILD_WITH_SOKOL_APP = true; AddStrLit(&commonTags, "BUILD_WITH_SOKOL_APP");
-	bool BUILD_WITH_SOKOL_GFX = true; AddStrLit(&commonTags, "BUILD_WITH_SOKOL_GFX");
-	
-	free(buildConfigContents.chars);
 	
 	// +==============================+
 	// | Parse Command-Line Arguments |
@@ -518,8 +518,6 @@ int main(int argc, char* argv[])
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
 	FindShadersContext findContext = EMPTY;
-	CliArgs cl_ShaderObjects = EMPTY;
-	CliArgs clang_ShaderObjects = EMPTY;
 	{
 		//NOTE: No ignoreList needed in findContext
 		RecursiveDirWalk(StrLit("../app"), FindShaderFilesCallback, &findContext);
@@ -529,7 +527,7 @@ int main(int argc, char* argv[])
 			for (u64 sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
 			{
 				Str objPath = findContext.objPaths.strings[sIndex];
-				AddArgStr(&cl_ShaderObjects, CLI_QUOTED_ARG, objPath);
+				AddTaggedArgStr(&commonLinkerFlags, T_WINDOWS T_SHADER_OBJS, CLI_QUOTED_ARG, objPath);
 				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(objPath)); BUILD_SHADERS = true; }
 			}
 		}
@@ -538,7 +536,7 @@ int main(int argc, char* argv[])
 			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
 				Str oPath = findContext.oPaths.strings[sIndex];
-				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
+				AddTaggedArgStr(&commonLinkerFlags, T_NOT_WINDOWS T_SHADER_OBJS, CLI_QUOTED_ARG, oPath);
 				Str oPathWithFolder = BUILDING_ON_LINUX ? CopyStr(oPath) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
@@ -789,7 +787,6 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArgList(&cmd, &commonLinkerFlags);
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB); }
-			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &cl_ShaderObjects); }
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_WIN_RESOURCES_RES);
 			
 			StrArray tags = EMPTY;
@@ -798,7 +795,11 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_PROGRAM);
-			if (BUILD_INTO_SINGLE_UNIT) { AddTag(&tags, T_PIG_CORE); }
+			if (BUILD_INTO_SINGLE_UNIT)
+			{
+				AddTag(&tags, T_PIG_CORE);
+				AddTag(&tags, T_SHADER_OBJS);
+			}
 			
 			Str errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"));
 			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, errorStr);
@@ -817,7 +818,6 @@ int main(int argc, char* argv[])
 			AddArgList(&cmd, &commonCompilerFlags);
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
-			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &clang_ShaderObjects); }
 			AddArgList(&cmd, &commonLinkerFlags);
 			
 			StrArray tags = EMPTY;
@@ -826,7 +826,11 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_LINUX);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_PROGRAM);
-			if (BUILD_INTO_SINGLE_UNIT) { AddTag(&tags, T_PIG_CORE); }
+			if (BUILD_INTO_SINGLE_UNIT)
+			{
+				AddTag(&tags, T_PIG_CORE);
+				AddTag(&tags, T_SHADER_OBJS);
+			}
 			
 			#if BUILDING_ON_LINUX
 			Str clangExe = StrLit(EXE_CLANG);
@@ -869,7 +873,6 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
 			AddArgList(&cmd, &commonLinkerFlags);
-			AddArgList(&cmd, &cl_ShaderObjects);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
 			
 			StrArray tags = EMPTY;
@@ -878,6 +881,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_WINDOWS);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_LIBRARY);
+			AddTag(&tags, T_SHADER_OBJS);
 			
 			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, FormatStr("Failed to build %.*s!", StrPrint(filenameAppDll)));
 			AssertFileExist(filenameAppDll, true);
@@ -897,7 +901,6 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
 			AddArgList(&cmd, &commonCompilerFlags);
 			AddArgList(&cmd, &commonLinkerFlags);
-			AddArgList(&cmd, &clang_ShaderObjects);
 			
 			StrArray tags = EMPTY;
 			AddStrArray(&tags, &commonTags);
@@ -905,6 +908,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_LINUX);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_LIBRARY);
+			AddTag(&tags, T_SHADER_OBJS);
 			
 			#if BUILDING_ON_LINUX
 			Str clangExe = StrLit(EXE_CLANG);
