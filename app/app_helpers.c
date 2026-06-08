@@ -75,7 +75,9 @@ void LoadNotificationIcons()
 				cellSize.Height * cellPos.Y,
 				cellSize.Width, cellSize.Height
 			);
+			#if BUILD_WITH_CLAY
 			SetNotificationIconEx(&app->notificationQueue, dbgLevel, &app->notificationIconsTexture, iconScale, GetDbgLevelTextColor(dbgLevel), iconSourceRec);
+			#endif //BUILD_WITH_CLAY
 		}
 	}
 }

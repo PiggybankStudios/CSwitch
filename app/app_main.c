@@ -339,7 +339,9 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	AddThreadToPool(&app->threadPool);
 	#endif
 	
+	#if BUILD_WITH_CLAY
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
+	#endif //BUILD_WITH_CLAY
 	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
@@ -359,14 +361,18 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	
 	InitCompiledShader(&app->mainShader, stdHeap, main2d);
 	
+	#if BUILD_WITH_CLAY
 	InitClayUIRenderer(stdHeap, V2_Zero, &app->clay);
 	AttachTooltipRegistryToUIRenderer(&app->clay, &app->tooltips);
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
+	#endif //BUILD_WITH_CLAY
 	
 	app->usingKeyboardToSelect = false;
 	
+	#if BUILD_WITH_CLAY
 	InitTooltipRegistry(stdHeap, &app->tooltips);
+	#endif //BUILD_WITH_CLAY
 	
 	// InitClayTextbox(stdHeap, StrLit("TestTextbox"), StrLit("Hello Text!"), app->clayMainFontId, app->mainFontSize, &app->testTextbox);
 	
@@ -507,9 +513,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	
 	TracyCZoneN(Zone_Update, "Update", true);
+	#if BUILD_WITH_CLAY
 	app->notificationQueue.currentProgramTime = appIn->programTime;
+	#endif //BUILD_WITH_CLAY
 	UpdateFileWatches(&app->fileWatches);
+	#if BUILD_WITH_CLAY
 	UpdatePopupDialog(&app->popup);
+	#endif //BUILD_WITH_CLAY
 	if (appIn->frameIndex != 0 && app->renderedLastFrame)
 	{
 		r32 fullUpdateMs = platformInfo->updateMs + app->prevUpdateMs;
@@ -580,7 +590,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	{
 		if (AppCheckForFileChanges()) { refreshScreen = true; }
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
+		#if BUILD_WITH_CLAY
 		if (app->tooltips.openTooltipId != TOOLTIP_ID_INVALID || app->tooltips.hoverTooltipId != TOOLTIP_ID_INVALID) { refreshScreen = true; }
+		#endif //BUILD_WITH_CLAY
 		if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 		{
 			ClearFileWatchChanged(&app->fileWatches, app->recentFilesWatchId);
@@ -609,7 +621,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
+		#if BUILD_WITH_CLAY
 		if (app->notificationQueue.notifications.length > 0) { refreshScreen = true; }
+		#endif //BUILD_WITH_CLAY
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 		if (WasMouseReleasedRaw(MouseBtn_Left) || IsMouseDownRaw(MouseBtn_Left)) { refreshScreen = true; }
 		if (WasMouseReleasedRaw(MouseBtn_Right) || IsMouseDownRaw(MouseBtn_Right)) { refreshScreen = true; }
@@ -647,7 +661,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	v2 mousePos = appIn->mouse.position;
 	FontNewFrame(&app->uiFont, appIn->programTime);
 	FontNewFrame(&app->mainFont, appIn->programTime);
+	#if BUILD_WITH_CLAY
 	UpdateTooltipRegistry(&app->tooltips);
+	#endif //BUILD_WITH_CLAY
 	
 	// +======================================+
 	// | Calculate Longest Abbreviation Width |
@@ -788,11 +804,13 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
+	#if BUILD_WITH_CLAY
 	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
+	#endif //BUILD_WITH_CLAY
 	if (WasKeyComboPressed(ModifierKey_None, Key_D, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
@@ -874,6 +892,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
 		
+		#if BUILD_WITH_CLAY
 		uiArena = scratch3;
 		FlagSet(uiArena->flags, ArenaFlag_DontPop);
 		uxx uiArenaMark = ArenaGetMark(uiArena);
@@ -1552,6 +1571,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
 		DrawText(shortenedPath, MakeV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
 		#endif
+		
+		#endif //BUILD_WITH_CLAY
 		
 		// +==============================+
 		// |       Render Overlays        |

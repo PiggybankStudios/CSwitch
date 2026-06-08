@@ -6,6 +6,8 @@ Description:
 	** Holds various functions that comprise common widgets for Clay
 */
 
+#if BUILD_WITH_CLAY
+
 //Call Clay__CloseElement once if false, three times if true (i.e. twice inside the if statement and once after)
 bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* keepOpenUntilMouseoverPntr, bool isSubmenuOpen)
 {
@@ -548,3 +550,5 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 	ScratchEnd(scratch);
 	return isScrollbarVisible;
 }
+
+#endif //BUILD_WITH_CLAY

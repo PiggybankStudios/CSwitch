@@ -225,9 +225,12 @@ struct AppData
 	bool renderedLastFrame;
 	bool shouldRenderAfterReload;
 	
+	#if BUILD_WITH_CLAY
 	ClayUIRenderer clay;
 	u16 clayUiFontId;
 	u16 clayMainFontId;
+	#endif //BUILD_WITH_CLAY
+	
 	bool isFileMenuOpen;
 	bool keepFileMenuOpenUntilMouseOver;
 	bool isViewMenuOpen;
@@ -237,9 +240,13 @@ struct AppData
 	bool wasClayScrollingPrevFrame;
 	
 	PopupDialog popup;
+	#if BUILD_WITH_CLAY
 	NotificationQueue notificationQueue;
+	#endif //BUILD_WITH_CLAY
 	Texture notificationIconsTexture;
+	#if BUILD_WITH_CLAY
 	TooltipRegistry tooltips;
+	#endif //BUILD_WITH_CLAY
 	bool openFileDialogIsForTheme;
 	OsOpenFileDialogHandle openFileDialog;
 	

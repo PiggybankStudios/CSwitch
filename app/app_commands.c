@@ -19,6 +19,7 @@ void AutoScrollToSelectedOptionAfterMove()
 	if (app->currentTab->selectedOptionIndex >= 0)
 	{
 		ScratchBegin(scratch);
+		#if BUILD_WITH_CLAY
 		rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
 		Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
@@ -40,6 +41,7 @@ void AutoScrollToSelectedOptionAfterMove()
 				viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
 			}
 		}
+		#endif //BUILD_WITH_CLAY
 		ScratchEnd(scratch);
 	}
 }
@@ -101,7 +103,9 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			if (app->popup.isOpen)
 			{
+				#if BUILD_WITH_CLAY
 				ClosePopupDialog(&app->popup, nullptr);
+				#endif //BUILD_WITH_CLAY
 			}
 			else if (app->isFileMenuOpen)
 			{
@@ -112,9 +116,11 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			{
 				app->isViewMenuOpen = false;
 			}
+			#if BUILD_WITH_CLAY
 			else if (DismissNotification(&app->notificationQueue, appIn->programTime, false))
 			{
 			}
+			#endif //BUILD_WITH_CLAY
 			else if (app->minimalModeEnabled)
 			{
 				app->minimalModeEnabled = false;
@@ -184,12 +190,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			if (!app->popup.isOpen)
 			{
+				#if BUILD_WITH_CLAY
 				OpenPopupDialog(stdHeap, &app->popup,
 					StrLit("Do you want to reset the file to the state it was in when it was opened?"),
 					AppResetCurrentFilePopupCallback, nullptr
 				);
 				AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
 				AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+				#endif //BUILD_WITH_CLAY
 			}
 		} break;
 		
@@ -402,18 +410,22 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		// |  AppCommand_ToggleClayDebug  |
 		// +==============================+
+		#if BUILD_WITH_CLAY
 		case AppCommand_ToggleClayDebug:
 		{
 			Clay_SetDebugModeEnabled(!Clay_IsDebugModeEnabled());
 		} break;
+		#endif //BUILD_WITH_CLAY
 		
 		// +==============================+
 		// |    AppCommand_ScrollToTop    |
 		// +==============================+
 		case AppCommand_ScrollToTop: //TODO: app->currentTab != nullptr
 		{
+			#if BUILD_WITH_CLAY
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
+			#endif //BUILD_WITH_CLAY
 		} break;
 		
 		// +==============================+
@@ -421,12 +433,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		case AppCommand_ScrollToBottom: //TODO: app->currentTab != nullptr
 		{
+			#if BUILD_WITH_CLAY
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
 			{
 				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 				optionsListScrollData.scrollTarget->Y = -maxScroll;
 			}
+			#endif //BUILD_WITH_CLAY
 		} break;
 		
 		// +==============================+
@@ -434,12 +448,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		case AppCommand_ScrollUpPage: //TODO: app->currentTab != nullptr
 		{
+			#if BUILD_WITH_CLAY
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
 			{
 				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 				optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 			}
+			#endif //BUILD_WITH_CLAY
 		} break;
 		
 		// +==============================+
@@ -447,12 +463,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		case AppCommand_ScrollDownPage: //TODO: app->currentTab != nullptr
 		{
+			#if BUILD_WITH_CLAY
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
 			{
 				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 				optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 			}
+			#endif //BUILD_WITH_CLAY
 		} break;
 		
 		#define CALC_SMALL_OPTION_GRID_SPECS(optionsAreaWidthVarName, buttonMarginVarName, buttonWidthVarName, numColumnsVarName, numRowsVarName)           \
@@ -642,12 +660,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			if (app->recentFiles.length > 0 && !app->popup.isOpen)
 			{
+				#if BUILD_WITH_CLAY
 				OpenPopupDialog(stdHeap, &app->popup,
 					ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
 					AppClearRecentFilesPopupCallback, nullptr
 				);
 				AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
 				AddPopupButton(&app->popup, 2, StrLit("Clear Recent Files"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
+				#endif //BUILD_WITH_CLAY
 			}
 		} break;
 		

@@ -12,6 +12,8 @@ Description:
 #define UI_U16(pixels) (u16)RoundR32i((r32)(pixels) * app->settings.uiScale)
 #define UI_BORDER(pixels) MaxU16(((pixels) > 0) ? (u16)1 : (u16)0, (u16)RoundR32i((r32)(pixels) * app->settings.uiScale))
 
+#if BUILD_WITH_CLAY
+
 bool IsMouseOverClay(ClayId clayId)
 {
 	return appIn->mouse.isOverWindow && Clay_PointerOver(clayId);
@@ -44,3 +46,5 @@ v2 ClayUiTextSize(PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 	},                                                  \
 	.backgroundColor = color,                           \
 }) {}
+
+#endif //BUILD_WITH_CLAY

@@ -99,7 +99,8 @@ Description:
 //These are all expected to be constant for the duration of the project
 #define BUILD_WITH_SOKOL_GFX  1
 #define BUILD_WITH_SOKOL_APP  1
-#define BUILD_WITH_CLAY       1
+#define BUILD_WITH_CLAY       0
+#define BUILD_WITH_PIG_UI     1
 #define BUILD_WITH_FREETYPE   1
 #define BUILD_WITH_GTK        0
 

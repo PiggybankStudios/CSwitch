@@ -12,6 +12,8 @@ Description:
 	** with one of the options presented.
 */
 
+#if BUILD_WITH_CLAY
+
 void FreePopupDialogButton(PopupDialogButton* button)
 {
 	NotNull(button);
@@ -237,3 +239,5 @@ void RenderPopupDialog(PopupDialog* dialog)
 		}
 	}
 }
+
+#endif //BUILD_WITH_CLAY

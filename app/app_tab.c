@@ -145,8 +145,10 @@ void CalculateLongestAbbreviationWidth(FileTab* tab)
 	VarArrayLoop(&tab->fileOptions, oIndex)
 	{
 		VarArrayLoopGet(FileOption, option, &tab->fileOptions, oIndex);
+		#if BUILD_WITH_CLAY
 		v2 abbreviationSize = ClayUiTextSize(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE, option->abbreviation);
 		if (tab->longestAbbreviationWidth < abbreviationSize.Width) { tab->longestAbbreviationWidth = abbreviationSize.Width; }
+		#endif //BUILD_WITH_CLAY
 	}
 	tab->longestAbbreviationWidthFontSize = app->mainFontSize;
 }
