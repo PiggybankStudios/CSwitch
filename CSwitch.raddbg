@@ -17,7 +17,7 @@ recent_file: path: "core/misc/misc_printing.h"
 recent_file: path: "app/app_textbox.c"
 target:
 {
-  executable: "_build/cswitch.exe"
+  executable: "build/cswitch.exe"
   working_directory: _data
   enabled: 1
   arguments: "-top"
@@ -143,4 +143,19 @@ type_view:
 {
   type: Vec4R64
   expr: "rows($, $.X, $.Y, $.Z, $.W)"
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/build/cswitch.pdb"
+  timestamp: 66216873348264
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/build/pig_core.pdb"
+  timestamp: 66216873347678
+}
+debug_info:
+{
+  path: "D:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
+  timestamp: 66216873348924
 }

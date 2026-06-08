@@ -15,14 +15,17 @@ Description:
 */
 
 #define PIG_BUILD_PRINT_SYS_CMDS 0
+#define PIG_BUILD_INCLUDE_OPTIONAL_HEADERS 1
 #include "pig_build.h"
 
+#if 0
 //NOTE: We use miniz.h when BUNDLE_RESOURCES_ZIP is enabled
 #define MINIZ_NO_STDIO //to disable all usage and any functions which rely on stdio for file I/O.
 #define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1
 #define MINIZ_LITTLE_ENDIAN                  1
 #include "core/third_party/miniz/miniz.h"
 #include "core/third_party/miniz/miniz.c"
+#endif
 
 #define BUILD_CONFIG_PATH       "../build_config.h"
 
@@ -56,7 +59,7 @@ typedef struct BundleResourcesContext BundleResourcesContext;
 struct BundleResourcesContext
 {
 	mz_zip_archive zip;
-	Str8 relativePath;
+	Str relativePath;
 	StrArray resourcePaths;
 	u64 uncompressedSize;
 	u64 archiveAllocSize;
@@ -67,17 +70,17 @@ struct BundleResourcesContext
 // +==============================+
 // |   BundleResourcesCallback    |
 // +==============================+
-// bool BundleResourcesCallback(Str8 path, bool isFolder, void* contextPntr)
+// bool BundleResourcesCallback(Str path, bool isFolder, void* contextPntr)
 RECURSIVE_DIR_WALK_CALLBACK_DEF(BundleResourcesCallback)
 {
 	BundleResourcesContext* context = (BundleResourcesContext*)contextPntr;
 	if (!isFolder)
 	{
-		Str8 fileContents = ReadEntireFile(path);
+		Str fileContents = ReadEntireFile(path);
 		assert(StrExactStartsWith(path, context->relativePath));
-		Str8 inZipPath = StrSliceFrom(path, context->relativePath.length);
-		if (inZipPath.length > 0 && IS_SLASH(inZipPath.chars[0])) { inZipPath.length--; inZipPath.chars++; }
-		Str8 inZipPathNt = CopyStr8(inZipPath, true);
+		Str inZipPath = StrSliceFrom(path, context->relativePath.length);
+		if (inZipPath.length > 0 && IsSlash(inZipPath.chars[0])) { inZipPath.length--; inZipPath.chars++; }
+		Str inZipPathNt = CopyStr(inZipPath);
 		FixPathSlashes(inZipPathNt, '/');
 		mz_bool addMemSuccess = mz_zip_writer_add_mem(&context->zip, inZipPathNt.chars, fileContents.bytes, (size_t)fileContents.length, (mz_uint)MZ_BEST_COMPRESSION);
 		assert(addMemSuccess == MZ_TRUE);
@@ -109,49 +112,59 @@ size_t ZipFileWriteCallback(void* contextPntr, mz_uint64 fileOffset, const void*
 	return numBytes;
 }
 
+bool ExtractConfigBool(Str buildConfigContents, Str defineName, StrArray* tagsArray)
+{
+	bool defineValue = ExtractBoolDefine(buildConfigContents, defineName);
+	if (defineValue) { AddStr(tagsArray, defineName); }
+	return defineValue;
+}
+
 int main(int argc, char* argv[])
 {
-	RecompileIfNeeded();
+	RecompileIfNeeded(StrArray_Empty);
 	PrintLine("[%s...]", BUILD_SCRIPT_EXE_NAME);
 	
 	bool isMsvcInitialized = WasMsvcDevBatchRun();
+	StrArray commonTags = EMPTY;
 	
 	// +==============================+
 	// |       Extract Defines        |
 	// +==============================+
-	Str8 buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
+	Str buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
-	// Str8 PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
-	// Str8 PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
-	Str8 PROJECT_DLL_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME"));
-	Str8 PROJECT_EXE_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME"));
-	Str8 filenameAppDll    = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dll"), true);
-	Str8 filenameAppDllAsm = JoinStrings2(PROJECT_DLL_NAME, StrLit(".asm"), true);
-	Str8 filenameAppSo     = JoinStrings2(PROJECT_DLL_NAME, StrLit(".so"), true);
-	Str8 filenameAppExe    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".exe"), true);
-	Str8 filenameAppAsm    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".asm"), true);
-	Str8 filenameApp       = JoinStrings2(PROJECT_EXE_NAME, StrLit(""), true);
+	// Str PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
+	// Str PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
+	Str PROJECT_DLL_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME"));
+	Str PROJECT_EXE_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME"));
+	Str filenameAppDll    = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dll"));
+	Str filenameAppDllAsm = JoinStrings2(PROJECT_DLL_NAME, StrLit(".asm"));
+	Str filenameAppSo     = JoinStrings2(PROJECT_DLL_NAME, StrLit(".so"));
+	Str filenameAppExe    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".exe"));
+	Str filenameAppAsm    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".asm"));
+	Str filenameApp       = JoinStrings2(PROJECT_EXE_NAME, StrLit(""));
 	
-	bool DEBUG_BUILD              = ExtractBoolDefine(buildConfigContents, StrLit("DEBUG_BUILD"));
-	bool BUILD_INTO_SINGLE_UNIT   = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_INTO_SINGLE_UNIT"));
-	bool USE_BUNDLED_RESOURCES    = ExtractBoolDefine(buildConfigContents, StrLit("USE_BUNDLED_RESOURCES"));
-	bool BUILD_WINDOWS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WINDOWS"));
-	bool BUILD_LINUX              = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_LINUX"));
-	bool BUILD_SHADERS            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_SHADERS"));
-	bool BUILD_PIGGEN             = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIGGEN"));
-	bool RUN_PIGGEN               = ExtractBoolDefine(buildConfigContents, StrLit("RUN_PIGGEN"));
-	bool BUILD_TRACY_DLL          = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_TRACY_DLL"));
-	bool PROFILING_ENABLED        = ExtractBoolDefine(buildConfigContents, StrLit("PROFILING_ENABLED"));
-	bool BUNDLE_RESOURCES_ZIP     = ExtractBoolDefine(buildConfigContents, StrLit("BUNDLE_RESOURCES_ZIP"));
-	bool BUILD_PIG_CORE_DLL       = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"));
-	bool BUILD_APP_EXE            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_APP_EXE"));
-	bool BUILD_APP_DLL            = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_APP_DLL"));
-	bool RUN_APP                  = ExtractBoolDefine(buildConfigContents, StrLit("RUN_APP"));
-	bool COPY_TO_DATA_DIRECTORY   = ExtractBoolDefine(buildConfigContents, StrLit("COPY_TO_DATA_DIRECTORY"));
-	bool DUMP_PREPROCESSOR        = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_PREPROCESSOR"));
-	bool DUMP_ASSEMBLY            = ExtractBoolDefine(buildConfigContents, StrLit("DUMP_ASSEMBLY"));
-	bool BUILD_WITH_FREETYPE      = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"));
-	bool BUILD_WITH_GTK           = ExtractBoolDefine(buildConfigContents, StrLit("BUILD_WITH_GTK"));
+	bool DEBUG_BUILD              = ExtractConfigBool(buildConfigContents, StrLit("DEBUG_BUILD"),            &commonTags);
+	bool BUILD_INTO_SINGLE_UNIT   = ExtractConfigBool(buildConfigContents, StrLit("BUILD_INTO_SINGLE_UNIT"), &commonTags);
+	bool USE_BUNDLED_RESOURCES    = ExtractConfigBool(buildConfigContents, StrLit("USE_BUNDLED_RESOURCES"),  &commonTags);
+	bool BUILD_WINDOWS            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_WINDOWS"),          &commonTags);
+	bool BUILD_LINUX              = ExtractConfigBool(buildConfigContents, StrLit("BUILD_LINUX"),            &commonTags);
+	bool BUILD_SHADERS            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_SHADERS"),          &commonTags);
+	bool BUILD_PIGGEN             = ExtractConfigBool(buildConfigContents, StrLit("BUILD_PIGGEN"),           &commonTags);
+	bool RUN_PIGGEN               = ExtractConfigBool(buildConfigContents, StrLit("RUN_PIGGEN"),             &commonTags);
+	bool BUILD_TRACY_DLL          = ExtractConfigBool(buildConfigContents, StrLit("BUILD_TRACY_DLL"),        &commonTags);
+	bool PROFILING_ENABLED        = ExtractConfigBool(buildConfigContents, StrLit("PROFILING_ENABLED"),      &commonTags);
+	bool BUNDLE_RESOURCES_ZIP     = ExtractConfigBool(buildConfigContents, StrLit("BUNDLE_RESOURCES_ZIP"),   &commonTags);
+	bool BUILD_PIG_CORE_DLL       = ExtractConfigBool(buildConfigContents, StrLit("BUILD_PIG_CORE_DLL"),     &commonTags);
+	bool BUILD_APP_EXE            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_APP_EXE"),          &commonTags);
+	bool BUILD_APP_DLL            = ExtractConfigBool(buildConfigContents, StrLit("BUILD_APP_DLL"),          &commonTags);
+	bool RUN_APP                  = ExtractConfigBool(buildConfigContents, StrLit("RUN_APP"),                &commonTags);
+	bool COPY_TO_DATA_DIRECTORY   = ExtractConfigBool(buildConfigContents, StrLit("COPY_TO_DATA_DIRECTORY"), &commonTags);
+	bool DUMP_PREPROCESSOR        = ExtractConfigBool(buildConfigContents, StrLit("DUMP_PREPROCESSOR"),      &commonTags);
+	bool DUMP_ASSEMBLY            = ExtractConfigBool(buildConfigContents, StrLit("DUMP_ASSEMBLY"),          &commonTags);
+	bool BUILD_WITH_FREETYPE      = ExtractConfigBool(buildConfigContents, StrLit("BUILD_WITH_FREETYPE"),    &commonTags);
+	bool BUILD_WITH_GTK           = ExtractConfigBool(buildConfigContents, StrLit("BUILD_WITH_GTK"),         &commonTags);
+	bool BUILD_WITH_SOKOL_APP = true; AddStrLit(&commonTags, "BUILD_WITH_SOKOL_APP");
+	bool BUILD_WITH_SOKOL_GFX = true; AddStrLit(&commonTags, "BUILD_WITH_SOKOL_GFX");
 	
 	free(buildConfigContents.chars);
 	
@@ -197,41 +210,19 @@ int main(int argc, char* argv[])
 	}
 	
 	// +==============================+
-	// |       Fill CliArgLists       |
+	// |      Fill Common Flags       |
 	// +==============================+
-	bool BUILD_WITH_SOKOL_APP = true;
-	bool BUILD_WITH_SOKOL_GFX = true;
-	bool BUILD_WITH_RAYLIB    = false;
-	bool BUILD_WITH_BOX2D     = false;
-	bool BUILD_WITH_SDL       = false;
-	bool BUILD_WITH_OPENVR    = false;
-	bool BUILD_WITH_IMGUI     = false;
-	bool BUILD_WITH_PHYSX     = false;
-	bool BUILD_WITH_HTTP      = false;
-	Str8 pigCoreThirdPartyPath = StrLit("[ROOT]/core/third_party");
-	CliArgList cl_CommonFlags              = ZEROED; Fill_cl_CommonFlags(&cl_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, DUMP_ASSEMBLY, BUILD_WITH_FREETYPE);
-	CliArgList cl_LangCFlags               = ZEROED; Fill_cl_LangCFlags(&cl_LangCFlags);
-	CliArgList cl_LangCppFlags             = ZEROED; Fill_cl_LangCppFlags(&cl_LangCppFlags);
-	CliArgList clang_CommonFlags           = ZEROED; Fill_clang_CommonFlags(&clang_CommonFlags, pigCoreThirdPartyPath, DEBUG_BUILD, DUMP_PREPROCESSOR, BUILD_WITH_FREETYPE);
-	CliArgList clang_LangCFlags            = ZEROED; Fill_clang_LangCFlags(&clang_LangCFlags, BUILD_WITH_IMGUI);
-	CliArgList clang_LangCppFlags          = ZEROED; Fill_clang_LangCppFlags(&clang_LangCppFlags);
-	CliArgList clang_LangObjectiveCFlags   = ZEROED; Fill_clang_LangObjectiveCFlags(&clang_LangObjectiveCFlags);
-	CliArgList clang_LinuxOrOsxFlags       = ZEROED; Fill_clang_LinuxOrOsxFlags(&clang_LinuxOrOsxFlags, DEBUG_BUILD, BUILD_WITH_GTK);
-	CliArgList cl_CommonLinkerFlags        = ZEROED; Fill_cl_CommonLinkerFlags(&cl_CommonLinkerFlags, DEBUG_BUILD);
-	CliArgList clang_CommonLibraries       = ZEROED; Fill_clang_CommonLibraries(&clang_CommonLibraries);
-	CliArgList clang_LinuxCommonLibraries  = ZEROED; Fill_clang_LinuxCommonLibraries(&clang_LinuxCommonLibraries, BUILD_WITH_SOKOL_APP, BUILD_WITH_GTK);
-	CliArgList clang_OsxCommonLibraries    = ZEROED; Fill_clang_OsxCommonLibraries(&clang_OsxCommonLibraries, BUILD_WITH_SOKOL_APP);
-	CliArgList cl_PigCoreLibraries         = ZEROED; Fill_cl_PigCoreLibraries(&cl_PigCoreLibraries, BUILD_WITH_RAYLIB, BUILD_WITH_BOX2D, BUILD_WITH_SDL, BUILD_WITH_OPENVR, BUILD_WITH_IMGUI, BUILD_WITH_PHYSX, BUILD_WITH_HTTP);
-	CliArgList clang_PigCoreLinuxLibraries = ZEROED; Fill_clang_PigCoreLinuxLibraries(&clang_PigCoreLinuxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
-	CliArgList clang_PigCoreOsxLibraries   = ZEROED; Fill_clang_PigCoreOsxLibraries(&clang_PigCoreOsxLibraries, BUILD_WITH_BOX2D, BUILD_WITH_SOKOL_GFX);
+	CliArgs commonCompilerFlags = EMPTY;
+	CliArgs commonLinkerFlags = EMPTY;
+	FillPigCoreFlags(&commonCompilerFlags, &commonLinkerFlags, StrLit("[ROOT]/core"));
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR, "[ROOT]/app");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR, "[ROOT]/core");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/app");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/core");
+	
 	//clang_AndroidFlags, clang_AndroidLinkFlags, clang_WasmFlags, clang_WebFlags, clang_OrcaFlags
 	//cl_PlaydateSimulatorCompilerFlags, link_PlaydateSimulatorLinkerFlags, link_PlaydateSimulatorLibraries
 	//gcc_PlaydateDeviceCommonFlags, gcc_PlaydateDeviceCompilerFlags, gcc_PlaydateDeviceLinkerFlags, pdc_CommonFlags
-	
-	AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/app");
-	AddArgNt(&cl_CommonFlags, CL_INCLUDE_DIR, "[ROOT]/core");
-	AddArgNt(&clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "[ROOT]/app");
-	AddArgNt(&clang_LinuxOrOsxFlags, CLANG_INCLUDE_DIR, "[ROOT]/core");
 	
 	// +--------------------------------------------------------------+
 	// |                       Build piggen.exe                       |
@@ -249,17 +240,22 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIGGEN_EXE);
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/piggen/piggen_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIGGEN_EXE);
-			AddArgList(&cmd, &cl_CommonFlags);
-			AddArgList(&cmd, &cl_LangCFlags);
+			AddArgList(&cmd, &commonCompilerFlags);
 			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "piggen.asm"); }
 			AddArg(&cmd, CL_LINK);
-			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "Shlwapi.lib"); //Needed for PathFileExistsA
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
+			AddTag(&tags, T_LANG_C);
+			
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN_EXE "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN_EXE), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PIGGEN_EXE);
 		}
@@ -267,26 +263,29 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIGGEN);
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/piggen/piggen_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIGGEN);
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &commonCompilerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
+			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_LANG_C);
 			
 			#if BUILDING_ON_LINUX
-			Str8 clangExe = StrLit(EXE_CLANG);
+			Str clangExe = StrLit(EXE_CLANG);
 			#else
-			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			Str clangExe = StrLit(EXE_WSL_CLANG);
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_PIGGEN "!"));
 			AssertFileExist(StrLit(FILENAME_PIGGEN), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIGGEN);
 			
@@ -307,7 +306,7 @@ int main(int argc, char* argv[])
 		#define PIGGEN_OUTPUT_FOLDER "-o=\"[VAL]\""
 		#define PIGGEN_EXCLUDE_FOLDER "-e=\"[VAL]\""
 		
-		CliArgList cmd = ZEROED;
+		CliArgs cmd = EMPTY;
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "..");
 		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, FOLDERNAME_GENERATED_CODE "/");
 		
@@ -343,7 +342,7 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("[Building %s for Windows...]", FILENAME_TRACY_DLL);
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			// AddArg(&cmd, CL_COMPILE);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/third_party/tracy/TracyClient.cpp");
 			AddArgNt(&cmd, CL_INCLUDE_DIR, "[ROOT]/core/third_party/tracy");
@@ -352,14 +351,19 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CL_DEFINE, "TRACY_EXPORTS");
 			AddArgNt(&cmd, CL_CONFIGURE_EXCEPTION_HANDLING, "s"); //enable stack-unwinding
 			AddArgNt(&cmd, CL_CONFIGURE_EXCEPTION_HANDLING, "c"); //extern "C" functions don't through exceptions
-			AddArgList(&cmd, &cl_CommonFlags);
-			AddArgList(&cmd, &cl_LangCppFlags);
+			AddArgList(&cmd, &commonCompilerFlags);
 			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "tracy.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
-			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
+			AddTag(&tags, T_LANG_CPP);
+			
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_TRACY_DLL), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_TRACY_DLL);
 		}
@@ -367,7 +371,7 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_TRACY_SO);
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/third_party/tracy/TracyClient.cpp");
 			AddArgNt(&cmd, CLANG_INCLUDE_DIR, "[ROOT]/core/third_party/tracy");
@@ -376,25 +380,28 @@ int main(int argc, char* argv[])
 			AddArg(&cmd, CLANG_fPIC);
 			AddArgNt(&cmd, CLANG_DEFINE, "TRACY_ENABLE");
 			AddArgNt(&cmd, CLANG_DEFINE, "TRACY_EXPORTS");
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangCppFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
+			AddArgList(&cmd, &commonCompilerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
 			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_SHADOWING); // declaration shadows a local variable
 			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_MISSING_FIELD_INITIALIZERS); // missing field 'extra' initializer
 			AddArgNt(&cmd, CLANG_DISABLE_WARNING, CLANG_WARNING_MISSING_FALLTHROUGH_IN_SWITCH); // unannotated fall-through between switch labels
 			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_LANG_CPP);
+			
 			#if BUILDING_ON_LINUX
-			Str8 clangExe = StrLit(EXE_CLANG);
+			Str clangExe = StrLit(EXE_CLANG);
 			#else
-			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			Str clangExe = StrLit(EXE_WSL_CLANG);
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_TRACY_SO "!"));
 			AssertFileExist(StrLit(FILENAME_TRACY_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_TRACY_SO);
 			
@@ -405,8 +412,8 @@ int main(int argc, char* argv[])
 	}
 	if (PROFILING_ENABLED)
 	{
-		AddArgNt(&cl_PigCoreLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_LIB);
-		AddArgNt(&clang_PigCoreLinuxLibraries, CLI_QUOTED_ARG, FILENAME_TRACY_SO);
+		AddTaggedArgNt(&commonLinkerFlags, T_MSVC_CL, CLI_QUOTED_ARG, FILENAME_TRACY_LIB);
+		AddTaggedArgNt(&commonLinkerFlags, T_CLANG,   CLI_QUOTED_ARG, FILENAME_TRACY_SO);
 	}
 	
 	// +--------------------------------------------------------------+
@@ -416,7 +423,7 @@ int main(int argc, char* argv[])
 	{
 		#if 0
 		//TODO: Move away from using python! This is the last script we depend on, currently
-		CliArgList cmd = ZEROED;
+		CliArgs cmd = EMPTY;
 		AddArgNt(&cmd, CLI_UNQUOTED_ARG, "[ROOT]/core/_scripts/pack_resources.py");
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/_data/resources");
 		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_RESOURCES_ZIP);
@@ -426,7 +433,7 @@ int main(int argc, char* argv[])
 		RunCliProgramAndExitOnFailure(StrLit("python"), &cmd, StrLit("pack_resources.py Failed!"));
 		AssertFileExist(StrLit(FILENAME_RESOURCES_ZIP), true);
 		#else
-		BundleResourcesContext context = ZEROED;
+		BundleResourcesContext context = EMPTY;
 		context.zip.m_pWrite = ZipFileWriteCallback;
 		context.zip.m_pIO_opaque = &context;
 		mz_bool initResult = mz_zip_writer_init(&context.zip, 0);
@@ -439,11 +446,11 @@ int main(int argc, char* argv[])
 		mz_zip_writer_end(&context.zip);
 		PrintLine("Found %llu resource files, total %llu bytes uncompressed, %llu compressed (%.1f%%)", context.resourcePaths.length, context.uncompressedSize, context.archiveSize, ((float)context.archiveSize / (float)context.uncompressedSize) * 100.0);
 		
-		CreateAndWriteFile(StrLit("resources.zip"), MakeStr8(context.archiveSize, context.archivePntr), false);
+		CreateAndWriteFile(StrLit("resources.zip"), MakeStr(context.archiveSize, context.archivePntr), false);
 		
 		//Create resources_zip.h
 		{
-			Str8 cFileContents = ZEROED;
+			Str cFileContents = EMPTY;
 			for (int pass = 0; pass < 2; pass++)
 			{
 				u64 fileSize = 0;
@@ -473,7 +480,7 @@ int main(int argc, char* argv[])
 		
 		//Create resources_zip.c
 		{
-			Str8 cFileContents = ZEROED;
+			Str cFileContents = EMPTY;
 			for (int pass = 0; pass < 2; pass++)
 			{
 				u64 fileSize = 0;
@@ -510,9 +517,9 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	// |                        Build Shaders                         |
 	// +--------------------------------------------------------------+
-	FindShadersContext findContext = ZEROED;
-	CliArgList cl_ShaderObjects = ZEROED;
-	CliArgList clang_ShaderObjects = ZEROED;
+	FindShadersContext findContext = EMPTY;
+	CliArgs cl_ShaderObjects = EMPTY;
+	CliArgs clang_ShaderObjects = EMPTY;
 	{
 		//NOTE: No ignoreList needed in findContext
 		RecursiveDirWalk(StrLit("../app"), FindShaderFilesCallback, &findContext);
@@ -521,7 +528,7 @@ int main(int argc, char* argv[])
 		{
 			for (u64 sIndex = 0; sIndex < findContext.objPaths.length; sIndex++)
 			{
-				Str8 objPath = findContext.objPaths.strings[sIndex];
+				Str objPath = findContext.objPaths.strings[sIndex];
 				AddArgStr(&cl_ShaderObjects, CLI_QUOTED_ARG, objPath);
 				if (!DoesFileExist(objPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(objPath)); BUILD_SHADERS = true; }
 			}
@@ -530,9 +537,9 @@ int main(int argc, char* argv[])
 		{
 			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
 			{
-				Str8 oPath = findContext.oPaths.strings[sIndex];
+				Str oPath = findContext.oPaths.strings[sIndex];
 				AddArgStr(&clang_ShaderObjects, CLI_QUOTED_ARG, oPath);
-				Str8 oPathWithFolder = BUILDING_ON_LINUX ? CopyStr8(oPath, false) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath, false);
+				Str oPathWithFolder = BUILDING_ON_LINUX ? CopyStr(oPath) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
 			}
 		}
@@ -565,12 +572,12 @@ int main(int argc, char* argv[])
 		// First use shdc.exe to generate header files for each .glsl file
 		for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
-			Str8 shaderPath = findContext.shaderPaths.strings[sIndex];
-			Str8 headerPath = findContext.headerPaths.strings[sIndex];
-			Str8 realHeaderPath = StrReplace(headerPath, StrLit("[ROOT]"), StrLit(".."), false);
-			Str8 realShaderPath = StrReplace(shaderPath, StrLit("[ROOT]"), StrLit(".."), false);
+			Str shaderPath = findContext.shaderPaths.strings[sIndex];
+			Str headerPath = findContext.headerPaths.strings[sIndex];
+			Str realHeaderPath = ResolveRootTo(headerPath, StrLit(".."));
+			Str realShaderPath = ResolveRootTo(shaderPath, StrLit(".."));
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			AddArgNt(&cmd, SHDC_FORMAT, "sokol_impl");
 			AddArgNt(&cmd, SHDC_ERROR_FORMAT, "msvc");
 			// AddArg(&cmd, SHDC_REFLECTION);
@@ -579,7 +586,7 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, SHDC_OUTPUT, headerPath);
 			
 			PrintLine("Generating \"%.*s\"...", StrPrint(realHeaderPath));
-			Str8 shdcExe = JoinStrings2(StrLit("../core/"), StrLit(EXE_SHDC), false);
+			Str shdcExe = JoinPaths(StrLit("../core"), StrLit(EXE_SHDC));
 			FixPathSlashes(shdcExe, PATH_SEP_CHAR);
 			RunCliProgramAndExitOnFailure(shdcExe, &cmd, StrLit(EXE_SHDC_NAME " failed on TODO:!"));
 			AssertFileExist(realHeaderPath, true);
@@ -592,67 +599,75 @@ int main(int argc, char* argv[])
 		//Then compile each header file to an .o/.obj file
 		for (u64 sIndex = 0; sIndex < findContext.shaderPaths.length; sIndex++)
 		{
-			Str8 headerPath = findContext.headerPaths.strings[sIndex];
-			Str8 sourcePath = findContext.sourcePaths.strings[sIndex];
-			Str8 headerFileName = GetFileNamePart(headerPath, true);
-			Str8 headerDirectory = GetDirectoryPart(headerPath, true);
-			Str8 realSourcePath = StrReplace(sourcePath, StrLit("[ROOT]"), StrLit(".."), false);
+			Str headerPath = findContext.headerPaths.strings[sIndex];
+			Str sourcePath = findContext.sourcePaths.strings[sIndex];
+			Str headerFileName = GetFileNamePart(headerPath, true);
+			Str headerDirectory = GetDirectoryPart(headerPath, true);
+			Str realSourcePath = ResolveRootTo(sourcePath, StrLit(".."));
 			
 			//We need a .c file that #includes shader_include.h (which defines SOKOL_SHDC_IMPL) and then the shader header file
-			Str8 sourceFileContents = JoinStrings3(
+			Str sourceFileContents = JoinStrings3(
 				StrLit("\n#include \"shader_include.h\"\n\n#include \""),
 				headerFileName,
-				StrLit("\"\n"),
-				false
+				StrLit("\"\n")
 			);
 			PrintLine("Generating \"%.*s\"...", StrPrint(realSourcePath));
 			CreateAndWriteFile(realSourcePath, sourceFileContents, true);
 			
 			if (BUILD_WINDOWS)
 			{
-				Str8 objPath = findContext.objPaths.strings[sIndex];
+				Str objPath = findContext.objPaths.strings[sIndex];
 				
-				CliArgList cmd = ZEROED;
+				CliArgs cmd = EMPTY;
 				AddArg(&cmd, CL_COMPILE);
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
 				AddArgStr(&cmd, CL_OBJ_FILE, objPath);
 				AddArgStr(&cmd, CL_INCLUDE_DIR, headerDirectory);
-				AddArgList(&cmd, &cl_CommonFlags);
-				AddArgList(&cmd, &cl_LangCFlags);
+				AddArgList(&cmd, &commonCompilerFlags);
 				
-				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build TODO: for Windows!"));
+				StrArray tags = EMPTY;
+				AddStrArray(&tags, &commonTags);
+				AddTag(&tags, T_MSVC_CL);
+				AddTag(&tags, T_WINDOWS);
+				AddTag(&tags, T_LANG_C);
+				
+				RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build TODO: for Windows!"));
 				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
 			{
-				Str8 oPath = findContext.oPaths.strings[sIndex];
+				Str oPath = findContext.oPaths.strings[sIndex];
 				//TODO: The path we store in the findContext needs to have [ROOT] at the beginning somehow so we can get rid of this logic
-				// Str8 fixedSourcePath = BUILDING_ON_LINUX ? CopyStr8(sourcePath, false) : JoinStrings2(StrLit("../"), sourcePath, false);
+				// Str fixedSourcePath = BUILDING_ON_LINUX ? CopyStr(sourcePath) : JoinStrings2(StrLit("../"), sourcePath, false);
 				// FixPathSlashes(fixedSourcePath, '/');
-				// Str8 fixedHeaderDirectory = BUILDING_ON_LINUX ? CopyStr8(headerDirectory, false) : JoinStrings2(StrLit("../"), headerDirectory, false);
+				// Str fixedHeaderDirectory = BUILDING_ON_LINUX ? CopyStr(headerDirectory) : JoinStrings2(StrLit("../"), headerDirectory, false);
 				// FixPathSlashes(fixedHeaderDirectory, '/');
 				
-				CliArgList cmd = ZEROED;
+				CliArgs cmd = EMPTY;
 				cmd.pathSepChar = '/';
 				AddArg(&cmd, CLANG_COMPILE);
 				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
 				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
 				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
 				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument"); //Clang likes to warn about _lib_debug/_lib_release library folder being unused
-				AddArgList(&cmd, &clang_CommonFlags);
-				AddArgList(&cmd, &clang_LangCFlags);
-				AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+				AddArgList(&cmd, &commonCompilerFlags);
+				
+				StrArray tags = EMPTY;
+				AddStrArray(&tags, &commonTags);
+				AddTag(&tags, T_CLANG);
+				AddTag(&tags, T_LINUX);
+				AddTag(&tags, T_LANG_C);
 				
 				#if BUILDING_ON_LINUX
-				Str8 clangExe = StrLit(EXE_CLANG);
+				Str clangExe = StrLit(EXE_CLANG);
 				#else
-				Str8 clangExe = StrLit(EXE_WSL_CLANG);
+				Str clangExe = StrLit(EXE_WSL_CLANG);
 				mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 				chdir(FOLDERNAME_LINUX);
 				cmd.rootDirPath = StrLit("../..");
 				#endif
 				
-				RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build TODO: for Linux!"));
+				RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build TODO: for Linux!"));
 				AssertFileExist(oPath, true);
 				
 				#if !BUILDING_ON_LINUX
@@ -680,19 +695,25 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/dll/dll_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
 			AddArgNt(&cmd, CL_DEFINE, "PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL=1");
-			AddArgList(&cmd, &cl_CommonFlags);
-			AddArgList(&cmd, &cl_LangCFlags);
+			AddArgList(&cmd, &commonCompilerFlags);
 			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "pig_core.asm"); }
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
-			AddArgList(&cmd, &cl_CommonLinkerFlags);
-			AddArgList(&cmd, &cl_PigCoreLibraries);
+			AddArgList(&cmd, &commonLinkerFlags);
 			
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_PIG_CORE);
+			AddTag(&tags, T_LIBRARY);
+			
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_DLL "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_DLL), true);
 			PrintLine("[Built %s for Windows!]", FILENAME_PIG_CORE_DLL);
 		}
@@ -700,30 +721,34 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %s for Linux...]", FILENAME_PIG_CORE_SO);
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/dll/dll_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
 			AddArgNt(&cmd, CLANG_DEFINE, "PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL=1");
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
+			AddArgList(&cmd, &commonCompilerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
+			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_PIG_CORE);
+			AddTag(&tags, T_LIBRARY);
 			
 			#if BUILDING_ON_LINUX
-			Str8 clangExe = StrLit(EXE_CLANG);
+			Str clangExe = StrLit(EXE_CLANG);
 			#else
-			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			Str clangExe = StrLit(EXE_WSL_CLANG);
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build " FILENAME_PIG_CORE_SO "!"));
 			AssertFileExist(StrLit(FILENAME_PIG_CORE_SO), true);
 			PrintLine("[Built %s for Linux!]", FILENAME_PIG_CORE_SO);
 			
@@ -749,28 +774,34 @@ int main(int argc, char* argv[])
 			if (!DoesFileExist(StrLit(FILENAME_WIN_RESOURCES_RES)))
 			{
 				PrintLine("Generating %s...", FILENAME_WIN_RESOURCES_RES);
-				CliArgList rcCmd = ZEROED;
+				CliArgs rcCmd = EMPTY;
 				AddArg(&rcCmd, RC_NO_LOGO);
 				AddArgNt(&rcCmd, RC_OUTPUT_FILE, FILENAME_WIN_RESOURCES_RES);
 				AddArgNt(&rcCmd, CLI_QUOTED_ARG, "[ROOT]/app/win_resources.rc");
 				RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_RC), &rcCmd, StrLit("Failed to generate resources.res for Windows embedded icon in .exe!"));
 			}
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppExe);
-			AddArgList(&cmd, &cl_CommonFlags);
-			AddArgList(&cmd, &cl_LangCFlags);
+			AddArgList(&cmd, &commonCompilerFlags);
 			if (DUMP_ASSEMBLY) { AddArgStr(&cmd, CL_ASSEMB_LISTING_FILE, filenameAppAsm); }
 			AddArg(&cmd, CL_LINK);
-			AddArgList(&cmd, &cl_CommonLinkerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB); }
 			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &cl_ShaderObjects); }
-			AddArgList(&cmd, &cl_PigCoreLibraries);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_WIN_RESOURCES_RES);
 			
-			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"), false);
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_PROGRAM);
+			if (BUILD_INTO_SINGLE_UNIT) { AddTag(&tags, T_PIG_CORE); }
+			
+			Str errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"));
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, errorStr);
 			AssertFileExist(filenameAppExe, true);
 			PrintLine("[Built %.*s for Windows!]", StrPrint(filenameAppExe));
 		}
@@ -779,31 +810,34 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %.*s for Linux...]", StrPrint(filenameApp));
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
+			AddArgList(&cmd, &commonCompilerFlags);
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
 			if (BUILD_INTO_SINGLE_UNIT) { AddArgList(&cmd, &clang_ShaderObjects); }
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
+			AddArgList(&cmd, &commonLinkerFlags);
+			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_PROGRAM);
+			if (BUILD_INTO_SINGLE_UNIT) { AddTag(&tags, T_PIG_CORE); }
 			
 			#if BUILDING_ON_LINUX
-			Str8 clangExe = StrLit(EXE_CLANG);
+			Str clangExe = StrLit(EXE_CLANG);
 			#else
-			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			Str clangExe = StrLit(EXE_WSL_CLANG);
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameApp, StrLit("!"), false);
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, errorStr);
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, FormatStr("Failed to build %.*s!", StrPrint(filenameApp)));
 			AssertFileExist(filenameApp, true);
 			PrintLine("[Built %.*s for Linux!]", StrPrint(filenameApp));
 			
@@ -827,21 +861,25 @@ int main(int argc, char* argv[])
 			InitializeMsvcIf(StrLit("../core"), &isMsvcInitialized);
 			PrintLine("\n[Building %.*s for Windows...]", StrPrint(filenameAppDll));
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/app_main.c");
 			AddArgStr(&cmd, CL_BINARY_FILE, filenameAppDll);
-			AddArgList(&cmd, &cl_CommonFlags);
-			AddArgList(&cmd, &cl_LangCFlags);
+			AddArgList(&cmd, &commonCompilerFlags);
 			if (DUMP_ASSEMBLY) { AddArgStr(&cmd, CL_ASSEMB_LISTING_FILE, filenameAppDllAsm); }
 			AddArg(&cmd, CL_LINK);
 			AddArg(&cmd, LINK_BUILD_DLL);
-			AddArgList(&cmd, &cl_CommonLinkerFlags);
-			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
-			AddArgList(&cmd, &cl_PigCoreLibraries);
+			AddArgList(&cmd, &commonLinkerFlags);
 			AddArgList(&cmd, &cl_ShaderObjects);
+			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_LIB);
 			
-			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppDll, StrLit("!"), false);
-			RunCliProgramAndExitOnFailure(StrLit(EXE_MSVC_CL), &cmd, errorStr);
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_MSVC_CL);
+			AddTag(&tags, T_WINDOWS);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_LIBRARY);
+			
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, FormatStr("Failed to build %.*s!", StrPrint(filenameAppDll)));
 			AssertFileExist(filenameAppDll, true);
 			PrintLine("[Built %.*s for Windows!]", StrPrint(filenameAppDll));
 		}
@@ -850,32 +888,34 @@ int main(int argc, char* argv[])
 		{
 			PrintLine("\n[Building %.*s for Linux...]", StrPrint(filenameAppSo));
 			
-			CliArgList cmd = ZEROED;
+			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/app_main.c");
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameAppSo);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
-			AddArgList(&cmd, &clang_CommonFlags);
-			AddArgList(&cmd, &clang_LangCFlags);
-			AddArgList(&cmd, &clang_LinuxOrOsxFlags);
 			AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO);
-			AddArgList(&cmd, &clang_CommonLibraries);
-			AddArgList(&cmd, &clang_LinuxCommonLibraries);
-			AddArgList(&cmd, &clang_PigCoreLinuxLibraries);
+			AddArgList(&cmd, &commonCompilerFlags);
+			AddArgList(&cmd, &commonLinkerFlags);
 			AddArgList(&cmd, &clang_ShaderObjects);
 			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_LIBRARY);
+			
 			#if BUILDING_ON_LINUX
-			Str8 clangExe = StrLit(EXE_CLANG);
+			Str clangExe = StrLit(EXE_CLANG);
 			#else
-			Str8 clangExe = StrLit(EXE_WSL_CLANG);
+			Str clangExe = StrLit(EXE_WSL_CLANG);
 			mkdir(FOLDERNAME_LINUX, FOLDER_PERMISSIONS);
 			chdir(FOLDERNAME_LINUX);
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			Str8 errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppSo, StrLit("!"), false);
-			RunCliProgramAndExitOnFailure(clangExe, &cmd, errorStr);
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, FormatStr("Failed to build %.*s!", StrPrint(filenameAppSo)));
 			AssertFileExist(filenameAppSo, true);
 			PrintLine("[Built %.*s for Linux!]", StrPrint(filenameAppSo));
 			
@@ -892,7 +932,7 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	if (COPY_TO_DATA_DIRECTORY)
 	{
-		Str8 dataFolder = StrLit("../_data");
+		Str dataFolder = StrLit("../_data");
 		PrintLine("Copying files to %.*s...", StrPrint(dataFolder));
 		#if BUILDING_ON_WINDOWS
 		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder, true); }
@@ -911,12 +951,10 @@ int main(int argc, char* argv[])
 	// +--------------------------------------------------------------+
 	if (RUN_APP)
 	{
-		Str8 appBinaryName = BUILDING_ON_WINDOWS ? filenameAppExe : filenameApp;
-		Str8 runAppStr = JoinStrings2(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX), appBinaryName, false);
+		Str appBinaryName = BUILDING_ON_WINDOWS ? filenameAppExe : filenameApp;
+		Str runAppStr = JoinStrings2(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX), appBinaryName);
 		PrintLine("\n[%.*s]", StrPrint(runAppStr));
-		CliArgList cmd = ZEROED;
-		Str8 errorStr = JoinStrings2(appBinaryName, StrLit(" Exited With Error"), false);
-		RunCliProgramAndExitOnFailure(runAppStr, &cmd, errorStr);
+		RunCliProgramAndExitOnFailure(runAppStr, nullptr, FormatStr("%.*s exited with error!", StrPrint(appBinaryName)));
 	}
 	
 	PrintLine("\n[%s Finished Successfully]", BUILD_SCRIPT_EXE_NAME);

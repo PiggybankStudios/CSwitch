@@ -9,6 +9,7 @@
 				"_data",
 				"core",
 				"third_party",
+				"pig_build",
 			],
 			"file_exclude_patterns": [
 				"*.glsl.h",
@@ -47,6 +48,13 @@
 				"build_config.h",
 				"build_script.c",
 				"shader_include.h",
+			],
+		},
+		{
+			"name": "PigBuild",
+			"path": "pig_build",
+			"folder_exclude_patterns": [
+				"examples",
 			],
 		},
 		{
@@ -1966,6 +1974,7 @@
 			"void EditTextInsertAt(EditableText* editText, Str8 newText, uxx insertionIndex)",
 			"void EditTextResetCursorBlink(EditableText* editText)",
 			"void FillFontKerningTable(PigFont* font)",
+			"void FillPigCoreFlags(CliArgs* compilerFlags, CliArgs* linkerFlags, Str pigCorePath)",
 			"void FontNewFrame(PigFont* font, u64 programTime)",
 			"void FreeAppBindingSet(AppBindingSet* bindings)",
 			"void FreeAppSettings(AppSettings* settings)",
