@@ -473,6 +473,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			#endif //BUILD_WITH_CLAY
 		} break;
 		
+		#if BUILD_WITH_CLAY
 		#define CALC_SMALL_OPTION_GRID_SPECS(optionsAreaWidthVarName, buttonMarginVarName, buttonWidthVarName, numColumnsVarName, numRowsVarName)           \
 			r32 optionsAreaWidthVarName = (r32)appIn->screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2); \
 			u16 buttonMarginVarName = UI_U16(SMALL_BTN_MARGIN);                                                                                             \
@@ -480,6 +481,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			i32 numColumnsVarName = FloorR32i((optionsAreaWidthVarName - (r32)buttonMarginVarName) / (buttonWidthVarName + (r32)buttonMarginVarName));      \
 			if (numColumnsVarName <= 0) { numColumnsVarName = 1; }                                                                                          \
 			i32 numRowsVarName = CeilDivI32((i32)app->currentTab->fileOptions.length, numColumnsVarName)
+		#endif // BUILD_WITH_CLAY
 		
 		// +==============================+
 		// |   AppCommand_SelectMoveUp    |
@@ -498,6 +500,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				{
 					if (app->settings.smallButtons)
 					{
+						#if BUILD_WITH_CLAY
 						CALC_SMALL_OPTION_GRID_SPECS(optionsAreaWidth, buttonMargin, buttonWidth, numColumns, numRows);
 						UNUSED(numRows);
 						
@@ -511,6 +514,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 							app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
 							AutoScrollToSelectedOptionAfterMove();
 						}
+						#endif //BUILD_WITH_CLAY
 					}
 					else
 					{
@@ -546,6 +550,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				{
 					if (app->settings.smallButtons)
 					{
+						#if BUILD_WITH_CLAY
 						CALC_SMALL_OPTION_GRID_SPECS(optionsAreaWidth, buttonMargin, buttonWidth, numColumns, numRows);
 						
 						if (((i32)app->currentTab->selectedOptionIndex / numColumns) < numRows-1)
@@ -562,6 +567,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 							app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
 							AutoScrollToSelectedOptionAfterMove();
 						}
+						#endif //BUILD_WITH_CLAY
 					}
 					else
 					{

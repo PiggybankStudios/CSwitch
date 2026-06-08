@@ -229,6 +229,8 @@ struct AppData
 	ClayUIRenderer clay;
 	u16 clayUiFontId;
 	u16 clayMainFontId;
+	#elif BUILD_WITH_PIG_UI
+	UiContext ui;
 	#endif //BUILD_WITH_CLAY
 	
 	bool isFileMenuOpen;

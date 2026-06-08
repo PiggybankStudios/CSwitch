@@ -366,6 +366,8 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	AttachTooltipRegistryToUIRenderer(&app->clay, &app->tooltips);
 	app->clayUiFontId = AddClayUIRendererFont(&app->clay, &app->uiFont, UI_FONT_STYLE);
 	app->clayMainFontId = AddClayUIRendererFont(&app->clay, &app->mainFont, MAIN_FONT_STYLE);
+	#elif BUILD_WITH_PIG_UI
+	InitUiContext(stdHeap, &app->ui);
 	#endif //BUILD_WITH_CLAY
 	
 	app->usingKeyboardToSelect = false;
@@ -892,6 +894,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		SetProjectionMat(projMat);
 		SetViewMat(Mat4_Identity);
 		
+		u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
+		
+		// +--------------------------------------------------------------+
+		// |                           Clay UI                            |
+		// +--------------------------------------------------------------+
 		#if BUILD_WITH_CLAY
 		uiArena = scratch3;
 		FlagSet(uiArena->flags, ArenaFlag_DontPop);
@@ -922,7 +929,6 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, appIn->elapsedMs, false, clayMouseScrollInput, false);
 		BeginClayUIRender(&app->clay.clay, screenSize, false, mousePos, IsMouseDownRaw(MouseBtn_Left));
 		{
-			u16 fullscreenBorderThickness = (appIn->isWindowTopmost ? 1 : 0);
 			CLAY({ .id = CLAY_ID("FullscreenContainer"),
 				.layout = {
 					.layoutDirection = CLAY_TOP_TO_BOTTOM,
@@ -1571,6 +1577,80 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
 		DrawText(shortenedPath, MakeV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
 		#endif
+		
+		// +--------------------------------------------------------------+
+		// |                            Pig UI                            |
+		// +--------------------------------------------------------------+
+		#elif BUILD_WITH_PIG_UI
+		StartUiFrame(&app->ui,
+			screenSize,
+			app->settings.uiScale,
+			appIn->programTime,
+			app->settings.smoothScrollingDisabled ? 0.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,
+			&appIn->keyboard,
+			&appIn->mouse,
+			&appIn->touch);
+		{
+			UIELEM({ .id = UiIdLit("FullscreenContainer"),
+				.direction = UiLayoutDir_TopDown,
+				.sizing = UI_EXPAND2(),
+				.padding = { .inner = FillV4r(fullscreenBorderThickness), },
+				.borderThickness = FillV4r(fullscreenBorderThickness),
+				.borderColor = GetThemeColor(TopmostBorder),
+				// .color = GetThemeColor(OptionListBack), //TODO: Remove me once having a border with no fill color doesn't cause the entire container to get filled with the border color
+			})
+			{
+				
+			}
+		}
+		
+		UiRenderList* uiRenderList = GetUiRenderList();
+		//TODO: Send this off to some Ui Renderer implementation
+		VarArrayLoop(&uiRenderList->commands, cIndex)
+		{
+			VarArrayLoopGet(UiRenderCmd, cmd, &uiRenderList->commands, cIndex);
+			SetClipRec(ToReciFromf(cmd->clipRec));
+			switch (cmd->type)
+			{
+				case UiRenderCmdType_Rectangle:
+				{
+					if (cmd->color.a > 0)
+					{
+						if (cmd->rectangle.texture != nullptr)
+						{
+							DrawTexturedRectangleEx(cmd->rectangle.rectangle, cmd->color, cmd->rectangle.texture, cmd->rectangle.sourceRec);
+						}
+						else
+						{
+							DrawRectangle(cmd->rectangle.rectangle, cmd->color);
+						}
+					}
+					if (cmd->rectangle.borderThickness.X > 0.0f)
+					{
+						DrawRectangleOutlineSidesEx(
+							cmd->rectangle.rectangle,
+							cmd->rectangle.borderThickness.Left, cmd->rectangle.borderThickness.Right, cmd->rectangle.borderThickness.Top, cmd->rectangle.borderThickness.Bottom,
+							cmd->rectangle.borderColor,
+							false
+						);
+					}
+				} break;
+				
+				case UiRenderCmdType_Text:
+				{
+					RichStr richStr = ToRichStr(cmd->text.text);
+					DrawWrappedRichTextWithFont(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, richStr, cmd->text.position, cmd->text.wrapWidth, cmd->color);
+				} break;
+				
+				case UiRenderCmdType_RichText:
+				{
+					DrawWrappedRichTextWithFont(cmd->richText.font, cmd->richText.fontSize, cmd->richText.fontStyle, cmd->richText.text, cmd->richText.position, cmd->richText.wrapWidth, cmd->color);
+				} break;
+			}
+		}
+		DisableClipRec();
+		
+		EndUiFrame();
 		
 		#endif //BUILD_WITH_CLAY
 		
