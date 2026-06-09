@@ -1601,7 +1601,123 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				// .color = GetThemeColor(OptionListBack), //TODO: Remove me once having a border with no fill color doesn't cause the entire container to get filled with the border color
 			})
 			{
+				// +==============================+
+				// |            Topbar            |
+				// +==============================+
+				if (!app->minimalModeEnabled || app->isFileMenuOpen || app->isViewMenuOpen)
+				{
+					UiSizingAxis topbarHeight = app->minimalModeEnabled ? (UiSizingAxis)UI_FIXED(0.1f) : (UiSizingAxis)UI_FIT();
+					UIELEM({ .id = UiIdLit("Topbar"),
+						.direction = UiLayoutDir_LeftToRight,
+						.sizing = {
+							.width = UI_EXPAND(),
+							.height = topbarHeight,
+						},
+						//TODO: Do we need padding to account for border on bottom?
+						.padding = { .child = 2 },
+						.alignment = { .x=UiAlign_Left, .vertical=UiAlign_Center },
+						.color = GetThemeColor(TopbarBack),
+						.borderColor = GetThemeColor(TopbarBorder),
+						.borderThickness = MakeV4r(0, 0, 0, 1),
+					})
+					{
+						UIELEM_LEAF({ .text=StrLit("File"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .sizing=UI_FIT2(), .textColor=GetThemeColor(TopbarBtnText) });
+						UIELEM_LEAF({ .text=StrLit("View"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .sizing=UI_FIT2(), .textColor=GetThemeColor(TopbarBtnText) });
+					}
+				}
 				
+				// +==============================+
+				// |             Tabs             |
+				// +==============================+
+				if (app->tabs.length > 1)
+				{
+					
+				}
+				
+				// +==============================+
+				// |         Options List         |
+				// +==============================+
+				UIELEM({ .id=UiIdLit("OptionsList_ScrollBarSplitter"),
+					.direction = UiLayoutDir_LeftToRight,
+				})
+				{
+					if (app->currentTab != nullptr)
+					{
+						UIELEM({ .id=UiIdLit("OptionsList"),
+							.direction = UiLayoutDir_TopDown,
+							.scrolling = UI_SCROLL_VERTICAL(),
+							.padding = { .inner = FillV4r(4), .child=OPTION_UI_GAP },
+						})
+						{
+							// +==============================+
+							// |        Large Options         |
+							// +==============================+
+							if (app->settings.smallButtons == false)
+							{
+								VarArrayLoop(&app->currentTab->fileOptions, oIndex)
+								{
+									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+									bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
+									
+									UIELEM_LEAF({ .text=option->name, .font=&app->mainFont, .fontSize=app->mainFontSize, .fontStyle=MAIN_FONT_STYLE, .sizing=UI_FIT2(), .textColor=GetThemeColor(OptionOnNameText) });
+									
+									if (option->type == FileOptionType_Bool)
+									{
+										//NOTE: We have to put a copy of valueStr in uiArena because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
+										// if (ClayOptionBtn(optionsContainerId, option->name, oIndex, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool, isOptionSelected))
+										// {
+										// 	ToggleOption(app->currentTab, option);
+										// }
+									}
+									else if (option->type == FileOptionType_CommentDefine)
+									{
+										// if (ClayOptionBtn(optionsContainerId, option->name, oIndex, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
+										// {
+										// 	ToggleOption(app->currentTab, option);
+										// }
+									}
+									else
+									{
+										// if (ClayOptionBtn(optionsContainerId, option->name, oIndex, option->name, StrLit("-"), false, isOptionSelected))
+										// {
+										// 	ToggleOption(app->currentTab, option);
+										// }
+									}
+									if (option->numEmptyLinesAfter > 0)
+									{
+										// UIELEM({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED(UI_R32((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP)) } } }) {}
+									}
+								}
+							}
+							// +==============================+
+							// |        Small Options         |
+							// +==============================+
+							else
+							{
+								VarArrayLoop(&app->currentTab->fileOptions, oIndex)
+								{
+									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+								}
+							}
+						}
+						
+						// +==============================+
+						// |          Scrollbar           |
+						// +==============================+
+						UIELEM({ .id=UiIdLit("OptionsList_ScrollBar"),
+							.direction = UiLayoutDir_TopDown,
+							.sizing = {
+								.width=UI_FIXED(app->minimalModeEnabled ? 0.0f : SCROLLBAR_WIDTH),
+								.height=UI_EXPAND()
+							},
+							.color = GetThemeColor(ScrollGutter),
+							.padding = { .inner = MakeV4r(1, 0, 0, 0) },
+						})
+						{
+							
+						}
+					}
+				}
 			}
 		}
 		
