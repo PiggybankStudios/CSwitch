@@ -1584,6 +1584,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		#elif BUILD_WITH_PIG_UI
 		StartUiFrame(&app->ui,
 			screenSize,
+			GetThemeColor(OptionListBack),
 			app->settings.uiScale,
 			appIn->programTime,
 			app->settings.smoothScrollingDisabled ? 0.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,

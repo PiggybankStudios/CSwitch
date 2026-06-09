@@ -2107,6 +2107,7 @@
 			"void SetOptionValue(FileTab* tab, FileOption* option, Str8 newValueStr)",
 			"void SetTextureFilePath(Texture* texture, Str8 filePath)",
 			"void ShowTooltip(TooltipState* tooltip, TooltipRegion* region)",
+			"void StartUiFrame(UiContext* context, v2 screenSize, Color32 backgroundColor, r32 scale, u64 programTime, r32 defaultScrollLagDivisor, KeyboardState* keyboard, MouseState* mouse, TouchscreenState* touchscreen)",
 			"void StopAllThreadsInPool(ThreadPool* pool)",
 			"void ToggleOption(FileTab* tab, FileOption* option)",
 			"void TwoPassPrint(TwoPassStr8* twoPassStrPntr, const char* formatString, ...)",
