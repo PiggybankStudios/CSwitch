@@ -1723,7 +1723,7 @@
 			"Str8* GetAppSettingPntrStr8(AppSettings* settings, uxx settingIndex)",
 			"TextMeasure MeasureRichTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, RichStr text, FontFlow* flowOut)",
 			"TextMeasure MeasureText(const PigFont* font, Str8 text)",
-			"TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)",
+			"TextMeasure MeasureTextEx(const PigFont* font, r32 fontSize, u8 styleFlags, bool includeAdvanceX, r32 wrapWidth, Str8 text)",
 			"TextMeasure MeasureTextFlow(const PigFont* font, r32 fontSize, u8 styleFlags, Str8 text, FontFlow* flowOut)",
 			"Texture InitTexture(Arena* arena, Str8 name, v2i size, const void* pixelsPntr, u8 flags)",
 			"ThemeDefEntry* FindThemeDefEntry(ThemeDefinition* theme, ThemeMode mode, bool allowModeNone, ThemeState state, bool allowStateAny, Str8 key)",

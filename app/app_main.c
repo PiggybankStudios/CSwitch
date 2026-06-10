@@ -1594,6 +1594,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		{
 			UIELEM({ .id = UiIdLit("FullscreenContainer"),
 				.direction = UiLayoutDir_TopDown,
+				.alignment = UI_ALIGN_TOP_LEFT(),
 				.sizing = UI_EXPAND2(),
 				.padding = { .inner = FillV4r(fullscreenBorderThickness), },
 				.borderThickness = FillV4r(fullscreenBorderThickness),
@@ -1609,20 +1610,21 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 					UiSizingAxis topbarHeight = app->minimalModeEnabled ? (UiSizingAxis)UI_FIXED(0.1f) : (UiSizingAxis)UI_FIT();
 					UIELEM({ .id = UiIdLit("Topbar"),
 						.direction = UiLayoutDir_LeftToRight,
+						.alignment = UI_ALIGN_LEFT_CENTER(),
 						.sizing = {
 							.width = UI_EXPAND(),
 							.height = topbarHeight,
 						},
 						//TODO: Do we need padding to account for border on bottom?
 						.padding = { .child = 2 },
-						.alignment = { .x=UiAlign_Left, .vertical=UiAlign_Center },
 						.color = GetThemeColor(TopbarBack),
 						.borderColor = GetThemeColor(TopbarBorder),
 						.borderThickness = MakeV4r(0, 0, 0, 1),
 					})
 					{
-						UIELEM_LEAF({ .text=StrLit("File"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .sizing=UI_FIT2(), .textColor=GetThemeColor(TopbarBtnText) });
-						UIELEM_LEAF({ .text=StrLit("View"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .sizing=UI_FIT2(), .textColor=GetThemeColor(TopbarBtnText) });
+						//TODO: The size of text-holding elements should be auto-calculated
+						UIELEM({.sizing = UI_FIXED2(50, GetFontLineHeight(&app->uiFont, app->uiFontSize, UI_FONT_STYLE)) }) { UIELEM_LEAF({ .text=StrLit("File"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .textColor=GetThemeColor(TopbarBtnText) }); }
+						UIELEM({.sizing = UI_FIXED2(50, GetFontLineHeight(&app->uiFont, app->uiFontSize, UI_FONT_STYLE)) }) { UIELEM_LEAF({ .text=StrLit("View"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .textColor=GetThemeColor(TopbarBtnText) }); }
 					}
 				}
 				
@@ -1639,12 +1641,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				// +==============================+
 				UIELEM({ .id=UiIdLit("OptionsList_ScrollBarSplitter"),
 					.direction = UiLayoutDir_LeftToRight,
+					.alignment = UI_ALIGN_TOP_LEFT(),
 				})
 				{
 					if (app->currentTab != nullptr)
 					{
 						UIELEM({ .id=UiIdLit("OptionsList"),
 							.direction = UiLayoutDir_TopDown,
+							.alignment = UI_ALIGN_TOP_LEFT(),
 							.scrolling = UI_SCROLL_VERTICAL(),
 							.padding = { .inner = FillV4r(4), .child=OPTION_UI_GAP },
 						})
@@ -1659,7 +1663,14 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 									VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
 									bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
 									
-									UIELEM_LEAF({ .text=option->name, .font=&app->mainFont, .fontSize=app->mainFontSize, .fontStyle=MAIN_FONT_STYLE, .sizing=UI_FIT2(), .textColor=GetThemeColor(OptionOnNameText) });
+									TextMeasure nameSize = MeasureTextEx(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE, false, 0, option->name);
+									UIELEM({
+										.sizing = { .width=UI_EXPAND(), .height=UI_FIXED(nameSize.Height + 10) },
+										.color = option->valueBool ? GetThemeColor(OptionOnBack) : GetThemeColor(OptionOffBack), //GetMonokaiColorByIndex(oIndex),
+									})
+									{
+										UIELEM_LEAF({ .text=option->name, .font=&app->mainFont, .fontSize=app->mainFontSize, .fontStyle=MAIN_FONT_STYLE, .textColor=GetThemeColor(OptionOnNameText) });
+									}
 									
 									if (option->type == FileOptionType_Bool)
 									{
