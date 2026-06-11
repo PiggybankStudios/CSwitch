@@ -75,6 +75,7 @@ static Arena* stdHeap = nullptr;
 #include "app_helpers.c"
 #include "app_tab.c"
 #include "app_clay.c"
+#include "app_ui_widgets.c"
 #include "app_commands.c"
 
 // +==============================+
@@ -1582,6 +1583,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		// |                            Pig UI                            |
 		// +--------------------------------------------------------------+
 		#elif BUILD_WITH_PIG_UI
+		uiArena = scratch3;
+		FlagSet(uiArena->flags, ArenaFlag_DontPop);
+		uxx uiArenaMark = ArenaGetMark(uiArena);
+		
 		StartUiFrame(&app->ui,
 			screenSize,
 			GetThemeColor(OptionListBack),
@@ -1607,24 +1612,54 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 				// +==============================+
 				if (!app->minimalModeEnabled || app->isFileMenuOpen || app->isViewMenuOpen)
 				{
-					UiSizingAxis topbarHeight = app->minimalModeEnabled ? (UiSizingAxis)UI_FIXED(0.1f) : (UiSizingAxis)UI_FIT();
-					UIELEM({ .id = UiIdLit("Topbar"),
-						.direction = UiLayoutDir_LeftToRight,
-						.alignment = UI_ALIGN_LEFT_CENTER(),
-						.sizing = {
-							.width = UI_EXPAND(),
-							.height = topbarHeight,
-						},
-						//TODO: Do we need padding to account for border on bottom?
-						.padding = { .child = 2 },
-						.color = GetThemeColor(TopbarBack),
-						.borderColor = GetThemeColor(TopbarBorder),
-						.borderThickness = MakeV4r(0, 0, 0, 1),
-					})
+					UiTopbar(UiIdLit("Topbar"), !app->minimalModeEnabled)
 					{
-						//TODO: The size of text-holding elements should be auto-calculated
-						UIELEM({.sizing = UI_FIXED2(50, GetFontLineHeight(&app->uiFont, app->uiFontSize, UI_FONT_STYLE)) }) { UIELEM_LEAF({ .text=StrLit("File"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .textColor=GetThemeColor(TopbarBtnText) }); }
-						UIELEM({.sizing = UI_FIXED2(50, GetFontLineHeight(&app->uiFont, app->uiFontSize, UI_FONT_STYLE)) }) { UIELEM_LEAF({ .text=StrLit("View"), .font=&app->uiFont, .fontSize=app->uiFontSize, .fontStyle=UI_FONT_STYLE, .textColor=GetThemeColor(TopbarBtnText) }); }
+						// +==============================+
+						// |          File Menu           |
+						// +==============================+
+						UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), &app->isFileMenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
+						{
+							if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), GetBindingStrForAppCommand(&app->bindings, AppCommand_OpenFile, uiArena, 0), StrLit("Open a file")))
+							{
+								RunAppCommand(AppCommand_OpenFile);
+								app->isFileMenuOpen = false;
+							}
+							
+							//TODO: Open Recent submenu
+							
+							if (UiDropdownBtn(UiIdLit("ResetFileBtn"), (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), AppIcon_ResetFile, StrLit("Reset File"), GetBindingStrForAppCommand(&app->bindings, AppCommand_ResetFile, uiArena, 0), StrLit("Reset file to how it was when first opened")))
+							{
+								RunAppCommand(AppCommand_ResetFile);
+								app->isFileMenuOpen = false;
+							}
+							
+							if (UiDropdownBtn(UiIdLit("ReloadingEnabledBtn"), (app->tabs.length > 0), AppIcon_None, ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"), GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleFileReloading, uiArena, 0), StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes")))
+							{
+								RunAppCommand(AppCommand_ToggleFileReloading);
+							}
+							
+							if (UiDropdownBtn(UiIdLit("CloseFileBtn"), (app->currentTab != nullptr), AppIcon_CloseFile, StrLit("Close File"), GetBindingStrForAppCommand(&app->bindings, AppCommand_CloseTab, uiArena, 0), StrLit("Close the current file tab")))
+							{
+								RunAppCommand(AppCommand_CloseTab);
+								app->isFileMenuOpen = false;
+							}
+						}
+						
+						// +==============================+
+						// |          View Menu           |
+						// +==============================+
+						UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
+						{
+							ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
+								? ThemeMode_Debug
+								: ((app->currentThemeMode == ThemeMode_Dark) ? ThemeMode_Light : ThemeMode_Dark)
+							);
+							if (UiDropdownBtn(UiIdLit("LightModeBtn"), true, AppIcon_LightDark, ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleLightMode, uiArena, 0), StrLit("Toggle between dark and light mode")))
+							{
+								RunAppCommand(AppCommand_ToggleLightMode);
+							}
+							
+						}
 					}
 				}
 				
@@ -1779,6 +1814,10 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		DisableClipRec();
 		
 		EndUiFrame();
+		
+		FlagUnset(uiArena->flags, ArenaFlag_DontPop);
+		ArenaResetToMark(uiArena, uiArenaMark);
+		uiArena = nullptr;
 		
 		#endif //BUILD_WITH_CLAY
 		

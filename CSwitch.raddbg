@@ -1,5 +1,6 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "app/app_commands.c"
 recent_file: path: "core/ui/ui_system.h"
 recent_file: path: "app/app_main.c"
 recent_file: path: "core/base/base_notifications_impl.h"
@@ -159,4 +160,19 @@ debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
   timestamp: 66217094700455
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/CSwitch/build/cswitch.pdb"
+  timestamp: 66217141765601
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/CSwitch/build/pig_core.pdb"
+  timestamp: 66217141764508
+}
+debug_info:
+{
+  path: "C:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
+  timestamp: 66217146550173
 }
