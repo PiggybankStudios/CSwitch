@@ -1,13 +1,13 @@
 // raddbg 0.9.24 project file
 
-recent_file: path: "app/app_commands.c"
 recent_file: path: "core/ui/ui_system.h"
+recent_file: path: "core/base/base_debug_output_impl.h"
+recent_file: path: "app/app_commands.c"
 recent_file: path: "app/app_main.c"
 recent_file: path: "core/base/base_notifications_impl.h"
 recent_file: path: "core/os/os_thread_pool.h"
 recent_file: path: "core/os/os_virtual_mem.h"
 recent_file: path: "core/mem/mem_arena.h"
-recent_file: path: "core/base/base_debug_output_impl.h"
 recent_file: path: "app/app_theme.c"
 recent_file: path: "app/app_helpers.c"
 recent_file: path: "app/app_theme.h"
@@ -149,17 +149,17 @@ type_view:
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/cswitch.pdb"
-  timestamp: 66217094119367
+  timestamp: 66217271926294
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/pig_core.pdb"
-  timestamp: 66217094118367
+  timestamp: 66217271925581
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
-  timestamp: 66217094700455
+  timestamp: 66217271928131
 }
 debug_info:
 {

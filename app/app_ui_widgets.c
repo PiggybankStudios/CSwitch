@@ -34,10 +34,6 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 {
 	//TODO: Add MakeSuffixId(baseId, suffixStr)
 	UiId menuId = CalcUiId(btnId, StrLit("_Menu"), 0);
-	PigFont* font = &app->uiFont;
-	r32 fontSize = app->uiFontSize;
-	u8 fontStyle = UI_FONT_STYLE;
-	TextMeasure displayTextSize = MeasureTextEx(font, fontSize, fontStyle, false, 0, displayText);
 	
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isMenuHovered = IsUiElementHovered(menuId);
@@ -47,23 +43,22 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 	Color32 borderColor = GetThemeColorEx(TopbarBtnBorder, btnThemeState);
 	Color32 textColor = GetThemeColorEx(TopbarBtnText, btnThemeState);
 	
-	//TODO: The size of text-holding elements should be auto-calculated
 	UIELEM({ .id = btnId,
-		.sizing = UI_FIXED2((displayTextSize.Width / app->settings.uiScale) + 5*2, (displayTextSize.Height / app->settings.uiScale) + 2*2),
+		.sizing = UI_FIT2(),
+		.padding = { .inner = MakeV4r(4, 2, 4, 2) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
 		.borderThickness = FillV4r(1),
-		//Add a radius of 4px
-		// .padding = { .inner=MakeV4r(4, 2, 4, 2) },
+		//TODO: Add a radius of 4px
 	})
 	{
 		UIELEM_LEAF({
 			.text = displayText,
-			.font = font,
-			.fontSize = fontSize,
-			.fontStyle = fontStyle,
+			.font = &app->uiFont,
+			.fontSize = app->uiFontSize,
+			.fontStyle = UI_FONT_STYLE,
 			.textColor = textColor,
-			.sizing = UI_FIXED2((displayTextSize.Width / app->settings.uiScale), (displayTextSize.Height / app->settings.uiScale)),
+			.sizing = UI_TEXT_FULL(),
 		});
 	}
 	
@@ -101,11 +96,6 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 
 bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, Str8 hotkeyStr, Str8 tooltipStr)
 {
-	PigFont* font = &app->uiFont;
-	r32 fontSize = app->uiFontSize;
-	u8 fontStyle = UI_FONT_STYLE;
-	TextMeasure displayTextSize = MeasureTextEx(font, fontSize, fontStyle, false, 0, displayText);
-	
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
 	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : ThemeState_Default));
@@ -129,11 +119,11 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 	{
 		UIELEM_LEAF({
 			.text = displayText,
-			.font = font,
-			.fontSize = fontSize,
-			.fontStyle = fontStyle,
+			.font = &app->uiFont,
+			.fontSize = app->uiFontSize,
+			.fontStyle = UI_FONT_STYLE,
 			.textColor = textColor,
-			.sizing = UI_FIXED2((displayTextSize.Width / app->settings.uiScale), (displayTextSize.Height / app->settings.uiScale)),
+			.sizing = UI_TEXT_FULL(),
 		});
 	}
 	
