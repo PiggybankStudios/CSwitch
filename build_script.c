@@ -274,6 +274,7 @@ int main(int argc, char* argv[])
 			AddStrArray(&tags, &commonTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddTag(&tags, T_LANG_C);
 			
 			#if BUILDING_ON_LINUX
@@ -390,6 +391,7 @@ int main(int argc, char* argv[])
 			AddStrArray(&tags, &commonTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddTag(&tags, T_LANG_CPP);
 			
 			#if BUILDING_ON_LINUX
@@ -654,6 +656,7 @@ int main(int argc, char* argv[])
 				AddStrArray(&tags, &commonTags);
 				AddTag(&tags, T_CLANG);
 				AddTag(&tags, T_LINUX);
+				AddTag(&tags, T_UNIX);
 				AddTag(&tags, T_LANG_C);
 				
 				#if BUILDING_ON_LINUX
@@ -733,6 +736,7 @@ int main(int argc, char* argv[])
 			AddStrArray(&tags, &commonTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_PIG_CORE);
 			AddTag(&tags, T_LIBRARY);
@@ -816,6 +820,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
 			AddArgList(&cmd, &commonCompilerFlags);
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GL"); //TODO: We should update pig_build_pig_core_flags.h tags so this gets added based on our tags chosen below
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
 			AddArgList(&cmd, &commonLinkerFlags);
@@ -824,6 +829,7 @@ int main(int argc, char* argv[])
 			AddStrArray(&tags, &commonTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_PROGRAM);
 			if (BUILD_INTO_SINGLE_UNIT)
@@ -906,6 +912,7 @@ int main(int argc, char* argv[])
 			AddStrArray(&tags, &commonTags);
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_LINUX);
+			AddTag(&tags, T_UNIX);
 			AddTag(&tags, T_LANG_C);
 			AddTag(&tags, T_LIBRARY);
 			AddTag(&tags, T_SHADER_OBJS);
