@@ -9,9 +9,10 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
-//TODO: Layout values need to be rounded to whole numbers, esp. when rendering things like borders
 //TODO: Some text gets cut off on the right-hand side, esp. when scaling to large text sizes
-//TODO: Add a way to make a new UiId based on one passed in, but with an extra suffix added to the string
+//TODO: Disable smooth scrolling
+//TODO: Topbar doesn't completely disappear
+//TODO: Add a debug menu for Pig UI
 
 //TODO: Move this implementation into PigCore
 #if BUILD_WITH_PIG_UI
@@ -39,7 +40,8 @@ void RenderPigUi(UiRenderList* renderList)
 						}
 					}
 					
-					if (cmd->rectangle.borderThickness.X > 0.0f)
+					if (cmd->rectangle.borderThickness.Left > 0.0f || cmd->rectangle.borderThickness.Top > 0.0f ||
+						cmd->rectangle.borderThickness.Right > 0.0f || cmd->rectangle.borderThickness.Bottom > 0.0f)
 					{
 						DrawRectangleOutlineSidesEx(
 							cmd->rectangle.rectangle,
@@ -182,11 +184,135 @@ void DoCSwitchAppUI(v2 screenSize)
 						? ThemeMode_Debug
 						: ((app->currentThemeMode == ThemeMode_Dark) ? ThemeMode_Light : ThemeMode_Dark)
 					);
-					if (UiDropdownBtn(UiIdLit("LightModeBtn"), true, AppIcon_LightDark, ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), AppCommand_ToggleLightMode, StrLit("Toggle between dark and light mode")))
+					if (UiDropdownBtn(UiIdLit("LightModeBtn"),
+						true, //enabled
+						AppIcon_LightDark,
+						ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)),
+						AppCommand_ToggleLightMode,
+						StrLit("Toggle between dark and light mode")))
 					{
 						RunAppCommand(AppCommand_ToggleLightMode);
 					}
 					
+					if (UiDropdownBtn(UiIdLit("SmallButtonsBtn"),
+						true, //enabled
+						AppIcon_SmallBtn,
+						ScratchPrintStr("%s Buttons", app->settings.smallButtons ? "Large" : "Small"),
+						AppCommand_ToggleSmallButtons,
+						StrLit("Toggle between small buttons with abbreviations laid out in a grid and large buttons with full names in a vertical list")))
+					{
+						RunAppCommand(AppCommand_ToggleSmallButtons);
+					}
+					
+					if (UiDropdownBtn(UiIdLit("TopmostBtn"),
+						true, //enabled
+						appIn->isWindowTopmost ? AppIcon_TopmostEnabled : AppIcon_TopmostDisabled,
+						ScratchPrintStr("%s Topmost", appIn->isWindowTopmost ? "Disable" : "Enable"),
+						AppCommand_ToggleTopmost,
+						StrLit("Toggle forcing this window to display on top of other windows even when it's not focused (Windows only)")))
+					{
+						RunAppCommand(AppCommand_ToggleTopmost);
+					}
+					
+					if (UiDropdownBtn(UiIdLit("ClipNamesBtn"),
+						true, //enabled
+						app->settings.clipNamesLeft ? AppIcon_ClipLeft : AppIcon_ClipRight,
+						ScratchPrintStr("Clip Names on %s", app->settings.clipNamesLeft ? "Left" : "Right"),
+						AppCommand_ToggleClipSide,
+						StrLit("Changes which side of the full name we should omit on a button when there is not enough horizontal space")))
+					{
+						RunAppCommand(AppCommand_ToggleClipSide);
+					}
+					
+					if (UiDropdownBtn(UiIdLit("SmoothScrollingBtn"),
+						true, //enabled
+						AppIcon_SmoothScroll,
+						ScratchPrintStr("%s Smooth Scrolling", app->settings.smoothScrollingDisabled ? "Enable" : "Disable"),
+						AppCommand_ToggleSmoothScrolling,
+						StrLit("Toggles whether the scrollable list should animate over time after being moved with mouse scroll wheel")))
+					{
+						RunAppCommand(AppCommand_ToggleSmoothScrolling);
+					}
+					
+					if (UiDropdownBtn(UiIdLit("TooltipsBtn"),
+						true, //enabled
+						AppIcon_Tooltip,
+						ScratchPrintStr("%s Option Tooltips", app->settings.optionTooltipsDisabled ? "Enable" : "Disable"),
+						AppCommand_ToggleOptionTooltips,
+						StrLit("Toggles whether tooltips with full name should be displayed when hovering over a button in the list")))
+					{
+						RunAppCommand(AppCommand_ToggleOptionTooltips);
+					}
+					
+					if (UiDropdownBtn(UiIdLit("HideTopbarBtn"),
+						true, //enabled
+						AppIcon_Topbar,
+						ScratchPrintStr("%s Topbar", app->minimalModeEnabled ? "Show" : "Hide"),
+						AppCommand_ToggleTopbar,
+						StrLit("Toggles visibility of this topbar, usually only useful if we need to maximize use of vertical space")))
+					{
+						RunAppCommand(AppCommand_ToggleTopbar);
+					}
+					
+					Str8 currentThemeStr = !IsEmptyStr(app->settings.userThemePath)
+						? PrintInArenaStr(uiArena, "current: \"%.*s\"", StrPrint(app->settings.userThemePath))
+						: StrLit("current: -");
+					Str8 openThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Open a custom user theme file"), '\n', currentThemeStr, false);
+					if (UiDropdownBtn(UiIdLit("OpenThemeBtn"),
+						true, //enabled
+						AppIcon_StarFile,
+						StrLit("Open Custom Theme" UNICODE_ELLIPSIS_STR),
+						AppCommand_OpenCustomTheme,
+						openThemeTooltipStr))
+					{
+						RunAppCommand(AppCommand_OpenCustomTheme);
+						app->isFileMenuOpen = false;
+					}
+					
+					Str8 clearThemeTooltipStr = JoinStringsInArenaWithChar(uiArena, StrLit("Remove the custom user theme"), '\n', currentThemeStr, false);
+					if (UiDropdownBtn(UiIdLit("ClearThemeBtn"),
+						!IsEmptyStr(app->settings.userThemePath), //enabled
+						AppIcon_CloseFile,
+						StrLit("Clear Custom Theme"),
+						AppCommand_ClearCustomTheme,
+						clearThemeTooltipStr))
+					{
+						RunAppCommand(AppCommand_ClearCustomTheme);
+					}
+					
+					#if DEBUG_BUILD
+					
+					// if (UiDropdownBtn(UiIdLit("ClayDebugBtn"),
+					// 	true, //enabled
+					// 	AppIcon_Debug,
+					// 	ScratchPrintStr("%s Clay UI Debug", Clay_IsDebugModeEnabled() ? "Hide" : "Show"),
+					// 	AppCommand_ToggleClayDebug,
+					// 	StrLit("Toggles the debug sidebar for Clay")))
+					// {
+					// 	RunAppCommand(AppCommand_ToggleClayDebug);
+					// }
+					
+					if (UiDropdownBtn(UiIdLit("SleepBtn"),
+						true, //enabled
+						AppIcon_None,
+						ScratchPrintStr("%s Sleeping", app->sleepingDisabled ? "Enable" : "Disable"),
+						AppCommand_ToggleSleeping,
+						StrLit("Toggles whether the rendering loop is allowed to \"sleep\" when nothing is changing")))
+					{
+						RunAppCommand(AppCommand_ToggleSleeping);
+					}
+					
+					if (UiDropdownBtn(UiIdLit("FrameIndicatorBtn"),
+						true, //enabled
+						AppIcon_None,
+						ScratchPrintStr("%s Frame Indicator", app->enableFrameUpdateIndicator ? "Disable" : "Enable"),
+						AppCommand_ToggleFrameIndicator,
+						StrLit("Toggles a indicator that changes every frame, helpful when debugging \"sleep\" behavior or trying to visualize the framerate")))
+					{
+						RunAppCommand(AppCommand_ToggleFrameIndicator);
+					}
+					
+					#endif //DEBUG_BUILD
 				}
 			}
 		}

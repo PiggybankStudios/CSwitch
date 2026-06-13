@@ -298,7 +298,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				#if (TARGET_IS_WINDOWS || TARGET_IS_LINUX)
 				app->openFileDialogIsForTheme = true;
 				OsDoOpenFileDialogAsync(stdHeap, true, &app->openFileDialog);
-				NotNull(app->openFileDialog.arena);
+				Assert(app->openFileDialog.arena != nullptr || app->openFileDialog.error == Result_Canceled);
 				#else //!(TARGET_IS_WINDOWS || TARGET_IS_LINUX)
 				Notify_W("Open File dialog is not implemented on OSX currently! Please set the theme path in the settings.txt");
 				#endif

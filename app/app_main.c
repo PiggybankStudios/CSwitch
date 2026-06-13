@@ -596,6 +596,8 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
 		#if BUILD_WITH_CLAY
 		if (app->tooltips.openTooltipId != TOOLTIP_ID_INVALID || app->tooltips.hoverTooltipId != TOOLTIP_ID_INVALID) { refreshScreen = true; }
+		#elif BUILD_WITH_PIG_UI
+		if (app->ui.smoothScrollingInProgress) { refreshScreen = true; }
 		#endif //BUILD_WITH_CLAY
 		if (app->recentFilesWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->recentFilesWatchId, RECENT_FILES_RELOAD_DELAY))
 		{
