@@ -21,25 +21,62 @@ void RenderPigUi(UiRenderList* renderList)
 		{
 			case UiRenderCmdType_Rectangle:
 			{
-				if (cmd->color.a > 0)
+				if (AreEqualV4r(cmd->rectangle.cornerRadius, V4r_Zero))
+				{
+					if (cmd->color.a > 0)
+					{
+						if (cmd->rectangle.texture != nullptr)
+						{
+							DrawTexturedRectangleEx(cmd->rectangle.rectangle, cmd->color, cmd->rectangle.texture, cmd->rectangle.sourceRec);
+						}
+						else
+						{
+							DrawRectangle(cmd->rectangle.rectangle, cmd->color);
+						}
+					}
+					
+					if (cmd->rectangle.borderThickness.X > 0.0f)
+					{
+						DrawRectangleOutlineSidesEx(
+							cmd->rectangle.rectangle,
+							cmd->rectangle.borderThickness.Left, cmd->rectangle.borderThickness.Right, cmd->rectangle.borderThickness.Top, cmd->rectangle.borderThickness.Bottom,
+							cmd->rectangle.borderColor,
+							false
+						);
+					}
+				}
+				else
 				{
 					if (cmd->rectangle.texture != nullptr)
 					{
-						DrawTexturedRectangleEx(cmd->rectangle.rectangle, cmd->color, cmd->rectangle.texture, cmd->rectangle.sourceRec);
+						DrawRoundedRectangleEx(cmd->rectangle.rectangle,
+							cmd->rectangle.cornerRadius.TopLeft, cmd->rectangle.cornerRadius.TopRight, cmd->rectangle.cornerRadius.BottomRight, cmd->rectangle.cornerRadius.BottomLeft,
+							cmd->color
+						);
 					}
 					else
 					{
-						DrawRectangle(cmd->rectangle.rectangle, cmd->color);
+						DrawTexturedRoundedRectangleEx(cmd->rectangle.rectangle,
+							cmd->rectangle.cornerRadius.TopLeft, cmd->rectangle.cornerRadius.TopRight, cmd->rectangle.cornerRadius.BottomRight, cmd->rectangle.cornerRadius.BottomLeft,
+							cmd->color,
+							cmd->rectangle.texture,
+							cmd->rectangle.sourceRec
+						);
 					}
-				}
-				if (cmd->rectangle.borderThickness.X > 0.0f)
-				{
-					DrawRectangleOutlineSidesEx(
-						cmd->rectangle.rectangle,
-						cmd->rectangle.borderThickness.Left, cmd->rectangle.borderThickness.Right, cmd->rectangle.borderThickness.Top, cmd->rectangle.borderThickness.Bottom,
-						cmd->rectangle.borderColor,
-						false
-					);
+					
+					r32 borderThickness = MaxR32(MaxR32(cmd->rectangle.borderThickness.X, cmd->rectangle.borderThickness.Y), MaxR32(cmd->rectangle.borderThickness.Z, cmd->rectangle.borderThickness.W));
+					if (borderThickness && cmd->rectangle.borderColor.a > 0)
+					{
+						DrawTexturedRoundedRectangleOutlineEx(
+							cmd->rectangle.rectangle,
+							borderThickness,
+							cmd->rectangle.cornerRadius.TopLeft, cmd->rectangle.cornerRadius.TopRight, cmd->rectangle.cornerRadius.BottomRight, cmd->rectangle.cornerRadius.BottomLeft,
+							cmd->rectangle.borderColor,
+							/*outside=*/false,
+							nullptr,
+							Rec_Zero
+						);
+					}
 				}
 			} break;
 			
@@ -92,7 +129,6 @@ void DoCSwitchAppUI(v2 screenSize)
 		.padding = { .inner = FillV4r(fullscreenBorderThickness), },
 		.borderThickness = FillV4r(fullscreenBorderThickness),
 		.borderColor = GetThemeColor(TopmostBorder),
-		// .color = GetThemeColor(OptionListBack), //TODO: Remove me once having a border with no fill color doesn't cause the entire container to get filled with the border color
 	})
 	{
 		// +==============================+
@@ -107,7 +143,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), &app->isFileMenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
 				{
-					if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), GetBindingStrForAppCommand(&app->bindings, AppCommand_OpenFile, uiArena, 0), StrLit("Open a file")))
+					if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), AppCommand_OpenFile, StrLit("Open a file")))
 					{
 						RunAppCommand(AppCommand_OpenFile);
 						app->isFileMenuOpen = false;
@@ -115,18 +151,18 @@ void DoCSwitchAppUI(v2 screenSize)
 					
 					//TODO: Open Recent submenu
 					
-					if (UiDropdownBtn(UiIdLit("ResetFileBtn"), (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), AppIcon_ResetFile, StrLit("Reset File"), GetBindingStrForAppCommand(&app->bindings, AppCommand_ResetFile, uiArena, 0), StrLit("Reset file to how it was when first opened")))
+					if (UiDropdownBtn(UiIdLit("ResetFileBtn"), (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), AppIcon_ResetFile, StrLit("Reset File"), AppCommand_ResetFile, StrLit("Reset file to how it was when first opened")))
 					{
 						RunAppCommand(AppCommand_ResetFile);
 						app->isFileMenuOpen = false;
 					}
 					
-					if (UiDropdownBtn(UiIdLit("ReloadingEnabledBtn"), (app->tabs.length > 0), AppIcon_None, ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"), GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleFileReloading, uiArena, 0), StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes")))
+					if (UiDropdownBtn(UiIdLit("ReloadingEnabledBtn"), (app->tabs.length > 0), AppIcon_None, ScratchPrintStr("%s File Reloading", app->settings.dontAutoReloadFile ? "Enable" : "Disable"), AppCommand_ToggleFileReloading, StrLit("When an open file is changed externally, should CSwitch automatically read the new state of the file and display it. There is a small performance cost for watching the file for changes")))
 					{
 						RunAppCommand(AppCommand_ToggleFileReloading);
 					}
 					
-					if (UiDropdownBtn(UiIdLit("CloseFileBtn"), (app->currentTab != nullptr), AppIcon_CloseFile, StrLit("Close File"), GetBindingStrForAppCommand(&app->bindings, AppCommand_CloseTab, uiArena, 0), StrLit("Close the current file tab")))
+					if (UiDropdownBtn(UiIdLit("CloseFileBtn"), (app->currentTab != nullptr), AppIcon_CloseFile, StrLit("Close File"), AppCommand_CloseTab, StrLit("Close the current file tab")))
 					{
 						RunAppCommand(AppCommand_CloseTab);
 						app->isFileMenuOpen = false;
@@ -142,7 +178,7 @@ void DoCSwitchAppUI(v2 screenSize)
 						? ThemeMode_Debug
 						: ((app->currentThemeMode == ThemeMode_Dark) ? ThemeMode_Light : ThemeMode_Dark)
 					);
-					if (UiDropdownBtn(UiIdLit("LightModeBtn"), true, AppIcon_LightDark, ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), GetBindingStrForAppCommand(&app->bindings, AppCommand_ToggleLightMode, uiArena, 0), StrLit("Toggle between dark and light mode")))
+					if (UiDropdownBtn(UiIdLit("LightModeBtn"), true, AppIcon_LightDark, ScratchPrintStr("%s Mode", GetThemeModeStr(otherThemeMode)), AppCommand_ToggleLightMode, StrLit("Toggle between dark and light mode")))
 					{
 						RunAppCommand(AppCommand_ToggleLightMode);
 					}

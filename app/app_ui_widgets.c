@@ -94,7 +94,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 }
 #define UiTopbarMenuBtn(...) DeferIfBlockCondEnd(UiTopbarMenuBtn_(__VA_ARGS__), CloseUiElement())
 
-bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, Str8 hotkeyStr, Str8 tooltipStr)
+bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, AppCommand commandForHotkeyDisplay, Str8 tooltipStr)
 {
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
@@ -111,12 +111,22 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 		.direction = UiLayoutDir_LeftToRight,
 		.sizing = { .width=UI_EXPAND(), .height=UI_FIT(), },
 		.alignment = UI_ALIGN_LEFT_CENTER(),
-		.padding = { .inner=MakeV4r(4,2,4,6) },
+		.padding = { .inner=MakeV4r(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
 		.color = backgroundColor,
 		.borderColor = borderColor,
 		.borderThickness = FillV4r(1),
 	})
 	{
+		if (appIcon != AppIcon_None)
+		{
+			UIELEM_LEAF({
+				.sizing = UI_FIXED2(TOPBAR_ICONS_SIZE, TOPBAR_ICONS_SIZE),
+				.texture = &app->appIconsSheet.texture,
+				.textureSourceRec = GetSheetCellRec(&app->appIconsSheet, app->appIconSheetCell[appIcon]),
+				.color = iconColor,
+			});
+		}
+		
 		UIELEM_LEAF({
 			.text = displayText,
 			.font = &app->uiFont,
@@ -125,6 +135,35 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 			.textColor = textColor,
 			.sizing = UI_TEXT_FULL(),
 		});
+		
+		if (commandForHotkeyDisplay != AppCommand_None)
+		{
+			UIELEM_LEAF({});
+			
+			Str8 hotkeyText = GetBindingStrForAppCommand(&app->bindings, commandForHotkeyDisplay, uiArena, 0);
+			if (!IsEmptyStr(hotkeyText))
+			{
+				UIELEM({
+					.sizing = UI_FIT2(),
+					.padding = { .inner = { .Left=2, .Right=2, .Top=1, .Bottom=1 } },
+					.color = hotkeyBackColor,
+					.borderColor = hotkeyBorderColor,
+					.borderThickness = FillV4r(1),
+					.cornerRadius = FillV4r(5),
+				})
+				{
+					UIELEM_LEAF({
+						.text = hotkeyText,
+						.font = &app->uiFont,
+						.fontSize = app->uiFontSize,
+						.fontStyle = UI_FONT_STYLE,
+						.textColor = hotkeyTextColor,
+						//TODO: Add corner radius
+						.sizing = UI_TEXT_FULL(),
+					});
+				}
+			}
+		}
 	}
 	
 	return (isBtnHovered && isEnabled && MouseLeftClicked());
