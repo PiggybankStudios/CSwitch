@@ -49,7 +49,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 		.color = backgroundColor,
 		.borderColor = borderColor,
 		.borderThickness = FillV4r(1),
-		//TODO: Add a radius of 4px
+		.cornerRadius = FillV4r(4),
 	})
 	{
 		UIELEM_LEAF({
@@ -85,7 +85,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 				.parentSide = UiSide_BottomLeft,
 				.elemSide = UiSide_TopLeft,
 			},
-			//TODO: Add radius to bottomLeft and bottomRight corners
+			.cornerRadius = { .BottomLeft=4, .BottomRight=4 },
 		});
 		menuNeedsClosing = true;
 	}
@@ -115,6 +115,7 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 		.color = backgroundColor,
 		.borderColor = borderColor,
 		.borderThickness = FillV4r(1),
+		.cornerRadius = FillV4r(4),
 	})
 	{
 		if (appIcon != AppIcon_None)

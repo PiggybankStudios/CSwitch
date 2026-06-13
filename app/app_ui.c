@@ -9,6 +9,10 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
+//TODO: Layout values need to be rounded to whole numbers, esp. when rendering things like borders
+//TODO: Some text gets cut off on the right-hand side, esp. when scaling to large text sizes
+//TODO: Add a way to make a new UiId based on one passed in, but with an extra suffix added to the string
+
 //TODO: Move this implementation into PigCore
 #if BUILD_WITH_PIG_UI
 void RenderPigUi(UiRenderList* renderList)
