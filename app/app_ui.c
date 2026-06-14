@@ -19,6 +19,8 @@ Description:
 //TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
 //TODO: Add tooltips!
 //TODO: Make sure keyboard controls work
+//TODO: Border thickness should be rounded just like sizes are rounded to produce full pixel sizes
+//TODO: Old version of CSwitch crashes when settings.txt contains UiScale entry?
 
 //TODO: Move this implementation into PigCore
 #if BUILD_WITH_PIG_UI
@@ -319,6 +321,52 @@ void DoCSwitchAppUI(v2 screenSize)
 					}
 					
 					#endif //DEBUG_BUILD
+				}
+				
+				// +==============================+
+				// |       Frame Indicator        |
+				// +==============================+
+				if (app->enableFrameUpdateIndicator)
+				{
+					//NOTE: This little visual makes it easier to tell when we are rendering new frames and when we are asleep by having a little bar move every frame
+					UIELEM({ .id=UiIdLit("FrameUpdateIndicatorContainer"),
+						.direction = UiLayoutDir_TopDown,
+						.sizing = { .width=UI_FIXED(4), .height=UI_PERCENT(1.0f) },
+						.color = Black,
+					})
+					{
+						for (uxx pIndex = 0; pIndex < 10; pIndex++)
+						{
+							UIELEM_LEAF({
+								.sizing = { .width=UI_EXPAND(), .height=UI_PERCENT(0.1f) },
+								.color = ((appIn->frameIndex % 10) == pIndex) ? MonokaiWhite : Black,
+							});
+						}
+					}
+				}
+				
+				// +==============================+
+				// |      File Path Display       |
+				// +==============================+
+				if (app->currentTab != nullptr)
+				{
+					UIELEM({ .id = UiIdLit("FilePathDisplay"),
+						.direction = UiLayoutDir_LeftToRight,
+						.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
+						.alignment = UI_ALIGN_RIGHT_CENTER(),
+					})
+					{
+						//TODO: How do we specify elipses logic to shrink path text?
+						UIELEM_LEAF({
+							.text = app->currentTab->filePath,
+							.padding = { .outer={ .Right=4 } },
+							.font = &app->uiFont,
+							.fontSize = app->uiFontSize,
+							.fontStyle = UI_FONT_STYLE,
+							.textColor = GetThemeColor(TopbarPathText),
+							.sizing = UI_TEXT_FULL(),
+						});
+					}
 				}
 			}
 		}
