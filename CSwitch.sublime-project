@@ -1968,6 +1968,7 @@
 			"bool UI_THEMER_CALLBACK_DEF(struct UiContext* context, UiElement* element, void* userPntr)",
 			"bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, Str8 hotkeyStr, Str8 tooltipStr)",
 			"bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)",
+			"bool UiSmallOptionBtn(UiId btnId, Str8 abbrevStr, bool enabled, bool isSelected, r32 buttonWidth)",
 			"bool UiTopbar(UiId topbarId, bool isEnabled)",
 			"bool UpdateBtnState(BtnState* state, u64 currentTime, bool isDown, bool isRepeated, u8 modifierKeys)",
 			"bool UpdateClayScrolling(ClayUI* clay, r32 elapsedMs, bool isMouseOverOther, v2 mouseScrollDelta, bool allowTouchScrolling)",

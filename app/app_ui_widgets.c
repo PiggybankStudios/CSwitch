@@ -214,4 +214,38 @@ bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isS
 	return (isHovered && MouseLeftClicked());
 }
 
+bool UiSmallOptionBtn(UiId btnId, Str8 abbrevStr, bool enabled, bool isSelected, r32 buttonWidth)
+{
+	bool isHovered = IsUiElementHovered(btnId);
+	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
+
+	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
+	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
+	Color32 borderColor     = enabled ? GetThemeColorEx(OptionOnBorder,    btnThemeState) : GetThemeColorEx(OptionOffBorder,    btnThemeState);
+	Color32 nameTextColor   = enabled ? GetThemeColorEx(OptionOnNameText,  btnThemeState) : GetThemeColorEx(OptionOffNameText,  btnThemeState);
+	
+	UIELEM({ .id = btnId,
+		.direction = UiLayoutDir_LeftToRight,
+		.alignment = UI_ALIGN_CENTER(),
+		.sizing = { .width=UI_FIXED(buttonWidth), .height=UI_FIT() },
+		.padding = { .inner = MakeV4r(SMALL_BTN_PADDING_X, SMALL_BTN_PADDING_Y, SMALL_BTN_PADDING_X, SMALL_BTN_PADDING_Y) },
+		.color = backgroundColor,
+		.cornerRadius = FillV4r(4),
+		.borderColor = borderColor,
+		.borderThickness = FillV4r(2),
+	})
+	{
+		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Name"),
+			.sizing = UI_TEXT_FULL(),
+			.text = abbrevStr,
+			.textColor = nameTextColor,
+			.font = &app->mainFont,
+			.fontSize = app->mainFontSize,
+			.fontStyle = MAIN_FONT_STYLE,
+		});
+	}
+	
+	return (isHovered && MouseLeftClicked());
+}
+
 #endif //BUILD_WITH_PIG_UI

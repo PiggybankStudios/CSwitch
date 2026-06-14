@@ -148,6 +148,9 @@ void CalculateLongestAbbreviationWidth(FileTab* tab)
 		#if BUILD_WITH_CLAY
 		v2 abbreviationSize = ClayUiTextSize(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE, option->abbreviation);
 		if (tab->longestAbbreviationWidth < abbreviationSize.Width) { tab->longestAbbreviationWidth = abbreviationSize.Width; }
+		#elif BUILD_WITH_PIG_UI
+		v2 abbreviationSize = MeasureTextEx(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE, false, 0.0f, option->abbreviation).visualRec.Size;
+		if (tab->longestAbbreviationWidth < abbreviationSize.Width) { tab->longestAbbreviationWidth = abbreviationSize.Width; }
 		#endif //BUILD_WITH_CLAY
 	}
 	tab->longestAbbreviationWidthFontSize = app->mainFontSize;

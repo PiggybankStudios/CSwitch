@@ -392,10 +392,61 @@ void DoCSwitchAppUI(v2 screenSize)
 					// +==============================+
 					else
 					{
+						UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+						r32 optionsAreaWidth = (optionsListElem != nullptr)
+							? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
+							: screenSize.Width;
+						u16 buttonMargin = (u16)RoundR32i(SMALL_BTN_MARGIN * app->settings.uiScale);
+						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
+						r32 unscaledButtonWidth = buttonWidth / app->settings.uiScale;
+						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
+						if (numColumns <= 0) { numColumns = 1; }
+						// PrintLine_D("buttonWidth: %g/%g", buttonWidth, unscaledButtonWidth);
+						// PrintLine_D("optionsAreaWidth: %g (%g)", optionsAreaWidth, optionsListElem->layoutRec.Width);
+						PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
+						// PrintLine_D("numColumns: %d", numColumns);
+						
+						bool containerStarted = false;
 						VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 						{
 							VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+							bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
+							
+							if ((oIndex % numColumns) == 0)
+							{
+								if (containerStarted) { CloseUiElement(); }
+								OpenUiElement((UiElemConfig){
+									.direction = UiLayoutDir_LeftToRight,
+									.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
+									.alignment = UI_ALIGN_LEFT_CENTER(),
+									.padding = { .child=SMALL_BTN_MARGIN },
+								});
+								containerStarted = true;
+							}
+							
+							if (option->type == FileOptionType_Bool)
+							{
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, unscaledButtonWidth))
+								{
+									ToggleOption(app->currentTab, option);
+								}
+							}
+							else if (option->type == FileOptionType_CommentDefine)
+							{
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, unscaledButtonWidth))
+								{
+									ToggleOption(app->currentTab, option);
+								}
+							}
+							else
+							{
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, unscaledButtonWidth))
+								{
+									ToggleOption(app->currentTab, option);
+								}
+							}
 						}
+						if (containerStarted) { CloseUiElement(); }
 					}
 				}
 				
