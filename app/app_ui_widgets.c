@@ -47,7 +47,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 		.padding = { .inner = MakeV4r(4, 2, 4, 2) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
-		.borderThickness = FillV4r((borderColor.a > 0) ? 1.0f : 0.0f),
+		.borderThickness = FillV4r(1.0f),
 		.cornerRadius = FillV4r(4),
 	})
 	{
@@ -113,7 +113,7 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 		.padding = { .inner=MakeV4r(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
 		.color = backgroundColor,
 		.borderColor = borderColor,
-		.borderThickness = FillV4r((borderColor.a > 0) ? 1.0f : 0.0f),
+		.borderThickness = FillV4r(1.0f),
 		.cornerRadius = FillV4r(4),
 	})
 	{

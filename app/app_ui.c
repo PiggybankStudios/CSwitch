@@ -122,7 +122,7 @@ void DoCSwitchAppUI(v2 screenSize)
 		GetThemeColor(OptionListBack),
 		app->settings.uiScale,
 		appIn->programTime,
-		app->settings.smoothScrollingDisabled ? 0.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,
+		app->settings.smoothScrollingDisabled ? -1.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,
 		&appIn->keyboard,
 		&appIn->mouse,
 		&appIn->touch
