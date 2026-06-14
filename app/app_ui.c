@@ -10,9 +10,15 @@ Description:
 */
 
 //TODO: Some text gets cut off on the right-hand side, esp. when scaling to large text sizes
-//TODO: Disable smooth scrolling
 //TODO: Topbar doesn't completely disappear
+//TODO: Can we make scroll-bars easy to add to scrolling containers?
+//TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
+//TODO: Make scrolling framerate independent
+//TODO: Shrink option buttons if they are wider than available width
 //TODO: Add a debug menu for Pig UI
+//TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
+//TODO: Add tooltips!
+//TODO: Make sure keyboard controls work
 
 //TODO: Move this implementation into PigCore
 #if BUILD_WITH_PIG_UI
@@ -352,40 +358,32 @@ void DoCSwitchAppUI(v2 screenSize)
 							VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
 							bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
 							
-							TextMeasure nameSize = MeasureTextEx(&app->mainFont, app->mainFontSize, MAIN_FONT_STYLE, false, 0, option->name);
-							UIELEM({
-								.sizing = { .width=UI_EXPAND(), .height=UI_FIXED(nameSize.Height + 10) },
-								.color = option->valueBool ? GetThemeColor(OptionOnBack) : GetThemeColor(OptionOffBack), //GetMonokaiColorByIndex(oIndex),
-							})
-							{
-								UIELEM_LEAF({ .text=option->name, .font=&app->mainFont, .fontSize=app->mainFontSize, .fontStyle=MAIN_FONT_STYLE, .textColor=GetThemeColor(OptionOnNameText) });
-							}
-							
 							if (option->type == FileOptionType_Bool)
 							{
-								//NOTE: We have to put a copy of valueStr in uiArena because the current valueStr might be deallocated before the end of the frame when Clay needs to render the text!
-								// if (ClayOptionBtn(optionsContainerId, option->name, oIndex, option->name, PrintInArenaStr(uiArena, "%.*s", StrPrint(option->valueStr)), option->valueBool, isOptionSelected))
-								// {
-								// 	ToggleOption(app->currentTab, option);
-								// }
+								if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), option->name, option->valueStr, option->valueBool, isOptionSelected))
+								{
+									ToggleOption(app->currentTab, option);
+								}
 							}
 							else if (option->type == FileOptionType_CommentDefine)
 							{
-								// if (ClayOptionBtn(optionsContainerId, option->name, oIndex, ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
-								// {
-								// 	ToggleOption(app->currentTab, option);
-								// }
+								if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
+								{
+									ToggleOption(app->currentTab, option);
+								}
 							}
 							else
 							{
-								// if (ClayOptionBtn(optionsContainerId, option->name, oIndex, option->name, StrLit("-"), false, isOptionSelected))
-								// {
-								// 	ToggleOption(app->currentTab, option);
-								// }
+								if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), option->name, StrLit("-"), false, isOptionSelected))
+								{
+									ToggleOption(app->currentTab, option);
+								}
 							}
 							if (option->numEmptyLinesAfter > 0)
 							{
-								// UIELEM({ .layout = { .sizing = { .height=CLAY_SIZING_FIXED(UI_R32((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP)) } } }) {}
+								UIELEM_LEAF({
+									.sizing = { .height=UI_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) },
+								});
 							}
 						}
 					}

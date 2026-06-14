@@ -1,10 +1,10 @@
 // raddbg 0.9.24 project file
 
+recent_file: path: "core/ui/ui_system.h"
 recent_file: path: "core/base/base_notifications_impl.h"
 recent_file: path: "app/app_commands.c"
 recent_file: path: "app/app_ui.c"
 recent_file: path: "app/app_ui_widgets.c"
-recent_file: path: "core/ui/ui_system.h"
 recent_file: path: "core/struct/struct_var_array.h"
 recent_file: path: "app/app_main.c"
 recent_file: path: "core/os/os_thread_pool.h"
@@ -146,17 +146,17 @@ type_view:
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/cswitch.pdb"
-  timestamp: 66217445886982
+  timestamp: 66217449154476
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/pig_core.pdb"
-  timestamp: 66217445898495
+  timestamp: 66217449153635
 }
 debug_info:
 {
   path: "D:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
-  timestamp: 66217445900231
+  timestamp: 66217449155267
 }
 debug_info:
 {
@@ -172,4 +172,11 @@ debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
   timestamp: 66217365279803
+}
+breakpoint:
+{
+  source_location: "core/ui/ui_system.h:901:1"
+  condition: "*preferredSizePntr > 10000"
+  hit_count: 0
+  enabled: 0
 }

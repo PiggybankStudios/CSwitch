@@ -138,7 +138,7 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 		
 		if (commandForHotkeyDisplay != AppCommand_None)
 		{
-			UIELEM_LEAF({});
+			UIEXPANDER_HORI();
 			
 			Str8 hotkeyText = GetBindingStrForAppCommand(&app->bindings, commandForHotkeyDisplay, uiArena, 0);
 			if (!IsEmptyStr(hotkeyText))
@@ -167,6 +167,51 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 	}
 	
 	return (isBtnHovered && isEnabled && MouseLeftClicked());
+}
+
+bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)
+{
+	ScratchBegin(scratch);
+	bool isHovered = IsUiElementHovered(btnId);
+	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
+	
+	ThemeState btnThemeState = isPressed ? ThemeState_Pressed : (isSelected ? ThemeState_Selected : (isHovered ? ThemeState_Hovered : ThemeState_Default));
+	Color32 backgroundColor = enabled ? GetThemeColorEx(OptionOnBack,      btnThemeState) : GetThemeColorEx(OptionOffBack,      btnThemeState);
+	Color32 borderColor     = enabled ? GetThemeColorEx(OptionOnBorder,    btnThemeState) : GetThemeColorEx(OptionOffBorder,    btnThemeState);
+	Color32 nameTextColor   = enabled ? GetThemeColorEx(OptionOnNameText,  btnThemeState) : GetThemeColorEx(OptionOffNameText,  btnThemeState);
+	Color32 valueTextColor  = enabled ? GetThemeColorEx(OptionOnValueText, btnThemeState) : GetThemeColorEx(OptionOffValueText, btnThemeState);
+	
+	UIELEM({ .id = btnId,
+		.direction = UiLayoutDir_LeftToRight,
+		.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
+		.padding = { .inner=FillV4r(4) },
+		.color = backgroundColor,
+		.borderColor = borderColor,
+		.borderThickness = FillV4r(2),
+		.cornerRadius = FillV4r(4),
+	})
+	{
+		//TODO: Determine the clipping style (left vs right)
+		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Name"),
+			.sizing = UI_TEXT_FULL(),
+			.text = nameStr,
+			.textColor = nameTextColor,
+			.font = &app->mainFont,
+			.fontSize = app->mainFontSize,
+			.fontStyle = MAIN_FONT_STYLE,
+		});
+		UIEXPANDER_HORI();
+		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Value"),
+			.sizing = UI_TEXT_FULL(),
+			.text = valueStr,
+			.textColor = nameTextColor,
+			.font = &app->mainFont,
+			.fontSize = app->mainFontSize,
+			.fontStyle = MAIN_FONT_STYLE,
+		});
+	}
+	
+	return (isHovered && MouseLeftClicked());
 }
 
 #endif //BUILD_WITH_PIG_UI
