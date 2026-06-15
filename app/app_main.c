@@ -75,6 +75,7 @@ static Arena* stdHeap = nullptr;
 #include "app_helpers.c"
 #include "app_tab.c"
 #include "app_clay.c"
+#include "app_ui_renderer.c"
 #include "app_ui_widgets.c"
 #include "app_commands.c"
 #include "app_ui.c"
