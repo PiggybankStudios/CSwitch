@@ -161,22 +161,15 @@ debug_info:
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/cswitch.pdb"
-  timestamp: 66217554846319
+  timestamp: 66217566925228
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/pig_core.pdb"
-  timestamp: 66217554844334
+  timestamp: 66217566924280
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
-  timestamp: 66217554847304
-}
-breakpoint:
-{
-  source_location: "core/ui/ui_system.h:901:1"
-  condition: "*preferredSizePntr > 10000"
-  hit_count: 0
-  enabled: 0
+  timestamp: 66217566926199
 }

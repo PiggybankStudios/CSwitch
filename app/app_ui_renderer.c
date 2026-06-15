@@ -83,7 +83,49 @@ void RenderPigUi(UiRenderList* renderList)
 			case UiRenderCmdType_Text:
 			{
 				RichStr richStr = ToRichStr(cmd->text.text);
-				if (cmd->params.textContraction == TextContraction_EllipseFilePath)
+				v2 textPos = cmd->text.position;
+				
+				// NOTE: TextContraction_ClipRight is the default behavior
+				if (cmd->params.textContraction == TextContraction_ClipLeft)
+				{
+					TextMeasure textMeasure = MeasureRichTextEx(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, true, cmd->text.wrapWidth, richStr);
+					if (textMeasure.Width > cmd->clipRec.Width)
+					{
+						textPos.X -= (textMeasure.Width - cmd->clipRec.Width);
+					}
+				}
+				else if (cmd->params.textContraction == TextContraction_EllipseLeft)
+				{
+					Str8 text = ShortenTextStartToFitWidth(scratch,
+						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
+						cmd->text.text,
+						CeilR32(cmd->clipRec.Width),
+						StrLit(UNICODE_ELLIPSIS_STR)
+					);
+					richStr = ToRichStr(text);
+				}
+				else if (cmd->params.textContraction == TextContraction_EllipseMiddle)
+				{
+					Str8 text = ShortenTextToFitWidth(scratch,
+						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
+						cmd->text.text,
+						CeilR32(cmd->clipRec.Width),
+						StrLit(UNICODE_ELLIPSIS_STR),
+						cmd->text.text.length/2
+					);
+					richStr = ToRichStr(text);
+				}
+				else if (cmd->params.textContraction == TextContraction_EllipseRight)
+				{
+					Str8 text = ShortenTextEndToFitWidth(scratch,
+						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
+						cmd->text.text,
+						CeilR32(cmd->clipRec.Width),
+						StrLit(UNICODE_ELLIPSIS_STR)
+					);
+					richStr = ToRichStr(text);
+				}
+				else if (cmd->params.textContraction == TextContraction_EllipseFilePath)
 				{
 					Str8 text = ShortenFilePathToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
@@ -93,7 +135,7 @@ void RenderPigUi(UiRenderList* renderList)
 					);
 					richStr = ToRichStr(text);
 				}
-				DrawWrappedRichTextWithFont(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, richStr, cmd->text.position, cmd->text.wrapWidth, cmd->color);
+				DrawWrappedRichTextWithFont(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, richStr, textPos, cmd->text.wrapWidth, cmd->color);
 			} break;
 			
 			case UiRenderCmdType_RichText:

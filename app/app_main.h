@@ -231,6 +231,7 @@ struct AppData
 	u16 clayMainFontId;
 	#elif BUILD_WITH_PIG_UI
 	UiContext ui;
+	UiScrollbarState optionsListScrollbarState;
 	#endif //BUILD_WITH_CLAY
 	
 	bool isFileMenuOpen;

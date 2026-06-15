@@ -278,9 +278,7 @@ void DoCSwitchAppUI(v2 screenSize)
 							.fontStyle = UI_FONT_STYLE,
 							.textColor = GetThemeColor(TopbarPathText),
 							.sizing = UI_TEXT_FULL(),
-							.renderer = {
-								.textContraction = TextContraction_EllipseFilePath,
-							},
+							.renderer = { .textContraction = TextContraction_EllipseFilePath },
 						});
 					}
 				}
@@ -298,138 +296,144 @@ void DoCSwitchAppUI(v2 screenSize)
 		// +==============================+
 		// |         Options List         |
 		// +==============================+
-		UIELEM({ .id=UiIdLit("OptionsList_ScrollBarSplitter"),
-			.direction = UiLayoutDir_LeftToRight,
+		app->optionsListScrollbarState.gutterColor = GetThemeColor(ScrollGutter);
+		ThemeState barState = (app->optionsListScrollbarState.isDragging
+			? ThemeState_Pressed
+			: (app->optionsListScrollbarState.isHovered
+				? ThemeState_Hovered
+				: ThemeState_Default)
+		);
+		app->optionsListScrollbarState.barColor = GetThemeColorEx(ScrollBar, barState);
+		UiElemConfig optionsListScrollbarSplitterConfig = NEW_STRUCT(UiElemConfig){
+			.sizing = UI_EXPAND2(),
+		};
+		UiElemConfig optionsListViewConfig = NEW_STRUCT(UiElemConfig){
+			.direction = UiLayoutDir_TopDown,
 			.alignment = UI_ALIGN_TOP_LEFT(),
-		})
+			.scrolling = UI_SCROLL_VERTICAL(),
+			.padding = { .inner = FillV4r(4), .child=OPTION_UI_GAP },
+		};
+		ContainerWithVerticalScrollbar(UiIdLit("OptionsList"), &app->optionsListScrollbarState, optionsListScrollbarSplitterConfig, optionsListViewConfig)
 		{
 			if (app->currentTab != nullptr)
 			{
-				UIELEM({ .id=UiIdLit("OptionsList"),
-					.direction = UiLayoutDir_TopDown,
-					.alignment = UI_ALIGN_TOP_LEFT(),
-					.scrolling = UI_SCROLL_VERTICAL(),
-					.padding = { .inner = FillV4r(4), .child=OPTION_UI_GAP },
-				})
+				// +==============================+
+				// |        Large Options         |
+				// +==============================+
+				if (app->settings.smallButtons == false)
 				{
-					// +==============================+
-					// |        Large Options         |
-					// +==============================+
-					if (app->settings.smallButtons == false)
+					VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 					{
-						VarArrayLoop(&app->currentTab->fileOptions, oIndex)
-						{
-							VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
-							bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
-							
-							if (option->type == FileOptionType_Bool)
-							{
-								if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), option->name, option->valueStr, option->valueBool, isOptionSelected))
-								{
-									ToggleOption(app->currentTab, option);
-								}
-							}
-							else if (option->type == FileOptionType_CommentDefine)
-							{
-								if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
-								{
-									ToggleOption(app->currentTab, option);
-								}
-							}
-							else
-							{
-								if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), option->name, StrLit("-"), false, isOptionSelected))
-								{
-									ToggleOption(app->currentTab, option);
-								}
-							}
-							if (option->numEmptyLinesAfter > 0)
-							{
-								UIELEM_LEAF({
-									.sizing = { .height=UI_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) },
-								});
-							}
-						}
-					}
-					// +==============================+
-					// |        Small Options         |
-					// +==============================+
-					else
-					{
-						UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
-						r32 optionsAreaWidth = (optionsListElem != nullptr)
-							? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
-							: screenSize.Width;
-						u16 buttonMargin = (u16)RoundR32i(SMALL_BTN_MARGIN * app->settings.uiScale);
-						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
-						r32 unscaledButtonWidth = buttonWidth / app->settings.uiScale;
-						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
-						if (numColumns <= 0) { numColumns = 1; }
-						// PrintLine_D("buttonWidth: %g/%g", buttonWidth, unscaledButtonWidth);
-						// PrintLine_D("optionsAreaWidth: %g (%g)", optionsAreaWidth, optionsListElem->layoutRec.Width);
-						PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
-						// PrintLine_D("numColumns: %d", numColumns);
+						VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+						bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
 						
-						bool containerStarted = false;
-						VarArrayLoop(&app->currentTab->fileOptions, oIndex)
+						if (option->type == FileOptionType_Bool)
 						{
-							VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
-							bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
-							
-							if ((oIndex % numColumns) == 0)
+							if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), option->name, option->valueStr, option->valueBool, isOptionSelected))
 							{
-								if (containerStarted) { CloseUiElement(); }
-								OpenUiElement((UiElemConfig){
-									.direction = UiLayoutDir_LeftToRight,
-									.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
-									.alignment = UI_ALIGN_LEFT_CENTER(),
-									.padding = { .child=SMALL_BTN_MARGIN },
-								});
-								containerStarted = true;
-							}
-							
-							if (option->type == FileOptionType_Bool)
-							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, unscaledButtonWidth))
-								{
-									ToggleOption(app->currentTab, option);
-								}
-							}
-							else if (option->type == FileOptionType_CommentDefine)
-							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, unscaledButtonWidth))
-								{
-									ToggleOption(app->currentTab, option);
-								}
-							}
-							else
-							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, unscaledButtonWidth))
-								{
-									ToggleOption(app->currentTab, option);
-								}
+								ToggleOption(app->currentTab, option);
 							}
 						}
-						if (containerStarted) { CloseUiElement(); }
+						else if (option->type == FileOptionType_CommentDefine)
+						{
+							if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), ScratchPrintStr("%s%.*s", option->isUncommented ? "" : "// ", StrPrint(option->name)), Str8_Empty, option->isUncommented, isOptionSelected))
+							{
+								ToggleOption(app->currentTab, option);
+							}
+						}
+						else
+						{
+							if (UiOptionBtn(UiIdStrIndex(option->name, oIndex), option->name, StrLit("-"), false, isOptionSelected))
+							{
+								ToggleOption(app->currentTab, option);
+							}
+						}
+						if (option->numEmptyLinesAfter > 0)
+						{
+							UIELEM_LEAF({
+								.sizing = { .height=UI_FIXED((r32)option->numEmptyLinesAfter * LINE_BREAK_EXTRA_UI_GAP) },
+							});
+						}
 					}
 				}
-				
 				// +==============================+
-				// |          Scrollbar           |
+				// |        Small Options         |
 				// +==============================+
-				UIELEM({ .id=UiIdLit("OptionsList_ScrollBar"),
-					.direction = UiLayoutDir_TopDown,
-					.sizing = {
-						.width=UI_FIXED(app->minimalModeEnabled ? 0.0f : SCROLLBAR_WIDTH),
-						.height=UI_EXPAND()
-					},
-					.color = GetThemeColor(ScrollGutter),
-					.padding = { .inner = MakeV4r(1, 0, 0, 0) },
-				})
+				else
 				{
+					UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+					r32 optionsAreaWidth = (optionsListElem != nullptr)
+						? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
+						: screenSize.Width;
+					u16 buttonMargin = (u16)RoundR32i(SMALL_BTN_MARGIN * app->settings.uiScale);
+					r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
+					r32 unscaledButtonWidth = buttonWidth / app->settings.uiScale;
+					i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
+					if (numColumns <= 0) { numColumns = 1; }
+					// PrintLine_D("buttonWidth: %g/%g", buttonWidth, unscaledButtonWidth);
+					// PrintLine_D("optionsAreaWidth: %g (%g)", optionsAreaWidth, optionsListElem->layoutRec.Width);
+					PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
+					// PrintLine_D("numColumns: %d", numColumns);
 					
+					bool containerStarted = false;
+					VarArrayLoop(&app->currentTab->fileOptions, oIndex)
+					{
+						VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
+						bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
+						
+						if ((oIndex % numColumns) == 0)
+						{
+							if (containerStarted) { CloseUiElement(); }
+							OpenUiElement((UiElemConfig){
+								.direction = UiLayoutDir_LeftToRight,
+								.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
+								.alignment = UI_ALIGN_LEFT_CENTER(),
+								.padding = { .child=SMALL_BTN_MARGIN },
+							});
+							containerStarted = true;
+						}
+						
+						if (option->type == FileOptionType_Bool)
+						{
+							if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, unscaledButtonWidth))
+							{
+								ToggleOption(app->currentTab, option);
+							}
+						}
+						else if (option->type == FileOptionType_CommentDefine)
+						{
+							if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, unscaledButtonWidth))
+							{
+								ToggleOption(app->currentTab, option);
+							}
+						}
+						else
+						{
+							if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, unscaledButtonWidth))
+							{
+								ToggleOption(app->currentTab, option);
+							}
+						}
+					}
+					if (containerStarted) { CloseUiElement(); }
 				}
 			}
+			
+			// // +==============================+
+			// // |          Scrollbar           |
+			// // +==============================+
+			// UIELEM({ .id=UiIdLit("OptionsList_ScrollBar"),
+			// 	.direction = UiLayoutDir_TopDown,
+			// 	.sizing = {
+			// 		.width=UI_FIXED(app->minimalModeEnabled ? 0.0f : SCROLLBAR_WIDTH),
+			// 		.height=UI_EXPAND()
+			// 	},
+			// 	.color = GetThemeColor(ScrollGutter),
+			// 	.padding = { .inner = MakeV4r(1, 0, 0, 0) },
+			// })
+			// {
+				
+			// }
 		}
 	}
 	

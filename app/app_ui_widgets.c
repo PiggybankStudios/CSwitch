@@ -12,7 +12,7 @@ Description:
 
 bool UiTopbar_(UiId topbarId, bool isEnabled)
 {
-	UiSizingAxis topbarHeight = isEnabled ? (UiSizingAxis)UI_FIT() : (UiSizingAxis)UI_FIXED(0.1f);
+	UiSizingAxis topbarHeight = isEnabled ? UI_FIT() : UI_FIXED(0.1f);
 	bool isTopbarOpen = OpenUiElementConditional(NEW_STRUCT(UiElemConfig){ .id = topbarId,
 		.direction = UiLayoutDir_LeftToRight,
 		.alignment = UI_ALIGN_LEFT_CENTER(),
@@ -199,6 +199,7 @@ bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isS
 			.font = &app->mainFont,
 			.fontSize = app->mainFontSize,
 			.fontStyle = MAIN_FONT_STYLE,
+			.renderer = { .textContraction = (app->settings.clipNamesLeft ? TextContraction_EllipseLeft : TextContraction_EllipseRight) },
 		});
 		UIEXPANDER_HORI();
 		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Value"),
