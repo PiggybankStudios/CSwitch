@@ -415,7 +415,7 @@ Result TryParseAppSettingsFile(Str8 fileContents, AppSettings* settingsOut)
 				}
 				else
 				{
-					PrintLine_W("Unknown setting on line %llu of settings file: \"%.*s\"", parser.lineParser.lineIndex, token.key);
+					PrintLine_W("Unknown setting on line %llu of settings file: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key));
 				}
 			} break;
 			
