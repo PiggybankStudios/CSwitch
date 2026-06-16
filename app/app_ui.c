@@ -328,7 +328,6 @@ void DoCSwitchAppUI(v2 screenSize)
 						.color = backgroundColor,
 						.borderColor = borderColor,
 						.borderThickness = { .Left=2, .Top=2, .Right=2 },//TODO: Add support to Pig UI Renderer for missing sides when both corners don't have a radius!
-						.colorRecursive = MakeColor(255, 255, 255, (u8)((isCurrentTab && IsKeyboardKeyDown(&appIn->keyboard, nullptr, Key_Shift)) ? 100 : 255)),
 					})
 					{
 						Str8 displayPath = GetUniqueTabFilePath(tab->filePath);
