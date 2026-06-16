@@ -276,8 +276,8 @@ void DoCSwitchAppUI(v2 screenSize)
 							.fontSize = app->uiFontSize,
 							.fontStyle = UI_FONT_STYLE,
 							.textColor = GetThemeColor(TopbarPathText),
-							.sizing = UI_TEXT_FULL(),
-							// .renderer = { .textContraction = TextContraction_EllipseFilePath },
+							.sizing = UI_TEXT_CLIP(0),
+							.renderer = { .textContraction = TextContraction_EllipseFilePath },
 						});
 					}
 				}
@@ -289,7 +289,73 @@ void DoCSwitchAppUI(v2 screenSize)
 		// +==============================+
 		if (app->tabs.length > 1)
 		{
-			
+			UIELEM({ .id = UiIdLit("TabGutter"),
+				.direction = UiLayoutDir_LeftToRight,
+				.alignment = UI_ALIGN_TOP_LEFT(),
+				.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
+				.padding = { .inner = { .Top=4 } },
+				.color = GetThemeColor(TopbarBack),
+			})
+			{
+				bool wasPrevHovered = false;
+				VarArrayLoop(&app->tabs, tIndex)
+				{
+					VarArrayLoopGet(FileTab, tab, &app->tabs, tIndex);
+					bool isCurrentTab = (app->currentTabIndex == tIndex);
+					UiId tabId = UiIdStrIndex(JoinStringsInArena(uiArena, StrLit("Tab_"), tab->filePath, false), tIndex);
+					bool isHovered = IsUiElementHovered(tabId);
+					ThemeState tabThemeState = isCurrentTab ? ThemeState_Open : (isHovered ? ThemeState_Hovered : ThemeState_Default);
+					Color32 backgroundColor = GetThemeColorEx(FileTabBack,   tabThemeState);
+					Color32 borderColor     = GetThemeColorEx(FileTabBorder, tabThemeState);
+					Color32 textColor       = GetThemeColorEx(FileTabText,   tabThemeState);
+					
+					// Dividers in-between not-selected and not-hovered tabs
+					if (tIndex > 0)
+					{
+						bool shouldShowDivider = (!isCurrentTab && app->currentTabIndex != tIndex-1 && !isHovered && !wasPrevHovered);
+						UIELEM_LEAF({ .id = UiIdLitIndex("TabDivider", tIndex),
+							.sizing = { .width=UI_FIXED(1), .height=UI_PERCENT(1.0f) },
+							.color = (shouldShowDivider ? GetThemeColor(FileTabDivider) : Transparent),
+						});
+					}
+					
+					UIELEM({ .id = tabId,
+						.direction = UiLayoutDir_LeftToRight,
+						.alignment = UI_ALIGN_CENTER(),
+						.sizing = { .width=UI_PERCENT(1.0f / (r32)app->tabs.length), .height=UI_FIT() },
+						.padding = { .inner=FillV4r(4) },
+						.cornerRadius = { .TopLeft=4, .TopRight=4 },
+						.color = backgroundColor,
+						.borderColor = borderColor,
+						.borderThickness = { .Left=2, .Top=2, .Right=2 },//TODO: Add support to Pig UI Renderer for missing sides when both corners don't have a radius!
+						.colorRecursive = MakeColor(255, 255, 255, (u8)((isCurrentTab && IsKeyboardKeyDown(&appIn->keyboard, nullptr, Key_Shift)) ? 100 : 255)),
+					})
+					{
+						Str8 displayPath = GetUniqueTabFilePath(tab->filePath);
+						UIELEM_LEAF({
+							.text = displayPath,
+							.font = &app->uiFont,
+							.fontSize = app->uiFontSize,
+							.fontStyle = UI_FONT_STYLE,
+							.textColor = textColor,
+							.sizing = UI_TEXT_FULL(),
+							.renderer = { .textContraction = TextContraction_EllipseRight },
+						});
+						
+						if (isHovered && MouseLeftClicked())
+						{
+							AppChangeTab(tIndex);
+						}
+						if (isHovered && MouseMiddleClicked())
+						{
+							AppCloseFileTab(tIndex);
+							tIndex--;
+						}
+					}
+					
+					wasPrevHovered = isHovered;
+				}
+			}
 		}
 		
 		// +==============================+
