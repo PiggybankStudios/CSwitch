@@ -10,10 +10,22 @@ Description:
 
 #if BUILD_WITH_PIG_UI
 
-bool UiTopbar_(UiId topbarId, bool isEnabled)
+void SetScrollbarColors(UiScrollbarState* scrollbarState)
+{
+	scrollbarState->gutterColor = GetThemeColor(ScrollGutter);
+	ThemeState themeState = (scrollbarState->isDragging
+		? ThemeState_Pressed
+		: (scrollbarState->isHovered
+			? ThemeState_Hovered
+			: ThemeState_Default)
+	);
+	scrollbarState->barColor = GetThemeColorEx(ScrollBar, themeState);
+}
+
+void UiTopbar_(UiId topbarId, bool isEnabled)
 {
 	UiSizingAxis topbarHeight = isEnabled ? UI_FIT() : UI_FIXED(0.1f);
-	bool isTopbarOpen = OpenUiElementConditional(NEW_STRUCT(UiElemConfig){ .id = topbarId,
+	OpenUiElement(NEW_STRUCT(UiElemConfig){ .id = topbarId,
 		.direction = UiLayoutDir_LeftToRight,
 		.alignment = UI_ALIGN_LEFT_CENTER(),
 		.sizing = {
@@ -25,10 +37,10 @@ bool UiTopbar_(UiId topbarId, bool isEnabled)
 		.color = GetThemeColor(TopbarBack),
 		.borderColor = GetThemeColor(TopbarBorder),
 		.borderThickness = { .Bottom=1 },
+		.scrolling = UI_SCROLL_HORIZONTAL(),
 	});
-	return isTopbarOpen;
 }
-#define UiTopbar(...) DeferIfBlockCondEnd(UiTopbar_(__VA_ARGS__), CloseUiElement())
+#define UiTopbar(...) DeferBlockWithStart(UiTopbar_(__VA_ARGS__), CloseUiElement())
 
 bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keepOpenUntilMouseover, bool isSubmenuOpen)
 {

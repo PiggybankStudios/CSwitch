@@ -161,15 +161,15 @@ debug_info:
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/cswitch.pdb"
-  timestamp: 66217566925228
+  timestamp: 66217574273279
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/pig_core.pdb"
-  timestamp: 66217566924280
+  timestamp: 66217574272289
 }
 debug_info:
 {
   path: "C:/gamedev/projects/CSwitch/build/cswitch_app.pdb"
-  timestamp: 66217566926199
+  timestamp: 66217574274258
 }
