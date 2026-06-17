@@ -429,7 +429,7 @@ void DoCSwitchAppUI(v2 screenSize)
 						if (numColumns <= 0) { numColumns = 1; }
 						// PrintLine_D("buttonWidth: %g/%g", buttonWidth, unscaledButtonWidth);
 						// PrintLine_D("optionsAreaWidth: %g (%g)", optionsAreaWidth, optionsListElem->layoutRec.Width);
-						PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
+						// PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
 						// PrintLine_D("numColumns: %d", numColumns);
 						
 						bool containerStarted = false;

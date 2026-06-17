@@ -10,7 +10,6 @@ Description:
 
 void RenderPigUi(UiRenderList* renderList)
 {
-	
 	VarArrayLoop(&renderList->commands, cIndex)
 	{
 		VarArrayLoopGet(UiRenderCmd, cmd, &renderList->commands, cIndex);
@@ -143,11 +142,11 @@ void RenderPigUi(UiRenderList* renderList)
 				DrawWrappedRichTextWithFont(cmd->richText.font, cmd->richText.fontSize, cmd->richText.fontStyle, cmd->richText.text, cmd->richText.position, cmd->richText.wrapWidth, cmd->color);
 			} break;
 		}
+		// DrawRectangleOutline(cmd->clipRec, 2, ColorWithAlpha(GetPureColorByIndex(cIndex), 0.2f));
 		
 		ScratchEnd(scratch);
 	}
 	DisableClipRec();
-	
 }
 
 #endif

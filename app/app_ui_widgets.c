@@ -37,7 +37,6 @@ void UiTopbar_(UiId topbarId, bool isEnabled)
 		.color = GetThemeColor(TopbarBack),
 		.borderColor = GetThemeColor(TopbarBorder),
 		.borderThickness = { .Bottom=1 },
-		.scrolling = UI_SCROLL_HORIZONTAL(),
 	});
 }
 #define UiTopbar(...) DeferBlockWithStart(UiTopbar_(__VA_ARGS__), CloseUiElement())
