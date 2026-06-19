@@ -67,7 +67,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          File Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), &app->isFileMenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
+				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
 				{
 					if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), AppCommand_OpenFile, StrLit("Open a file")))
 					{
@@ -75,7 +75,26 @@ void DoCSwitchAppUI(v2 screenSize)
 						app->isFileMenuOpen = false;
 					}
 					
-					//TODO: Open Recent submenu
+					UiDropdownSubmenuBtn(UiIdLit("OpenRecentSubmenu"), (app->recentFiles.length > 0), AppIcon_OpenRecent, StrLit("Open Recent " UNICODE_RIGHT_ARROW_STR), &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver)
+					{
+						VarArrayLoop(&app->recentFiles, fIndex)
+						{
+							VarArrayLoopGetReverse(RecentFile, recentFile, &app->recentFiles, fIndex);
+							Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
+							bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
+							Str8 tooltipStr = PrintInArenaStr(uiArena, "%.*s%s", StrPrint(recentFile->path), recentFile->fileExists ? "" : " (MISSING)");
+							UiId btnId = UiIdStrIndex(JoinStringsInArena(uiArena, StrLit("RecentFileBtn_"), displayPath, false), fIndex);
+							if (UiDropdownBtn(btnId, !isOpenFile && recentFile->fileExists, AppIcon_None, displayPath, AppCommand_None, tooltipStr))
+							{
+								FileTab* newTab = AppOpenFileTab(recentFile->path);
+								if (newTab != nullptr)
+								{
+									app->isOpenRecentSubmenuOpen = false;
+									app->isFileMenuOpen = false;
+								}
+							}
+						}
+					}
 					
 					if (UiDropdownBtn(UiIdLit("ResetFileBtn"), (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), AppIcon_ResetFile, StrLit("Reset File"), AppCommand_ResetFile, StrLit("Reset file to how it was when first opened")))
 					{
