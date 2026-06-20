@@ -17,6 +17,9 @@ void RenderPigUi(UiRenderList* renderList)
 		SetClipRec(ToReciFromf(cmd->clipRec));
 		switch (cmd->type)
 		{
+			// +==============================+
+			// |  UiRenderCmdType_Rectangle   |
+			// +==============================+
 			case UiRenderCmdType_Rectangle:
 			{
 				if (AreEqualV4r(cmd->rectangle.cornerRadius, V4r_Zero))
@@ -79,6 +82,9 @@ void RenderPigUi(UiRenderList* renderList)
 				}
 			} break;
 			
+			// +==============================+
+			// |     UiRenderCmdType_Text     |
+			// +==============================+
 			case UiRenderCmdType_Text:
 			{
 				RichStr richStr = ToRichStr(cmd->text.text);
@@ -88,9 +94,9 @@ void RenderPigUi(UiRenderList* renderList)
 				if (cmd->params.textContraction == TextContraction_ClipLeft)
 				{
 					TextMeasure textMeasure = MeasureRichTextEx(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, true, cmd->text.wrapWidth, richStr);
-					if (textMeasure.Width > cmd->clipRec.Width)
+					if (textMeasure.Width > cmd->text.bounds.Width)
 					{
-						textPos.X -= (textMeasure.Width - cmd->clipRec.Width);
+						textPos.X -= (textMeasure.Width - cmd->text.bounds.Width);
 					}
 				}
 				else if (cmd->params.textContraction == TextContraction_EllipseLeft)
@@ -98,7 +104,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenTextStartToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->clipRec.Width),
+						CeilR32(cmd->text.bounds.Width),
 						StrLit(UNICODE_ELLIPSIS_STR)
 					);
 					richStr = ToRichStr(text);
@@ -108,7 +114,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenTextToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->clipRec.Width),
+						CeilR32(cmd->text.bounds.Width),
 						StrLit(UNICODE_ELLIPSIS_STR),
 						cmd->text.text.length/2
 					);
@@ -119,7 +125,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenTextEndToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->clipRec.Width),
+						CeilR32(cmd->text.bounds.Width),
 						StrLit(UNICODE_ELLIPSIS_STR)
 					);
 					richStr = ToRichStr(text);
@@ -129,19 +135,37 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenFilePathToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->clipRec.Width),
+						CeilR32(cmd->text.bounds.Width),
 						StrLit(UNICODE_ELLIPSIS_STR)
 					);
 					richStr = ToRichStr(text);
 				}
+				else
+				{
+					if (cmd->text.alignment.x != UiAlign_Left)
+					{
+						TextMeasure textMeasure = MeasureRichTextEx(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, true, cmd->text.wrapWidth, richStr);
+						if (textMeasure.Width < cmd->text.bounds.Width)
+						{
+							textPos.X = (cmd->text.alignment.x == UiAlign_Right)
+								? FloorR32(cmd->text.bounds.X + cmd->text.bounds.Width - textMeasure.Width)
+								: RoundR32(cmd->text.bounds.X + cmd->text.bounds.Width/2 - textMeasure.Width/2);
+						}
+					}
+					//TODO: Should we handle cmd->text.alignment.y?
+				}
 				DrawWrappedRichTextWithFont(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, richStr, textPos, cmd->text.wrapWidth, cmd->color);
 			} break;
 			
+			// +==============================+
+			// |   UiRenderCmdType_RichText   |
+			// +==============================+
 			case UiRenderCmdType_RichText:
 			{
 				DrawWrappedRichTextWithFont(cmd->richText.font, cmd->richText.fontSize, cmd->richText.fontStyle, cmd->richText.text, cmd->richText.position, cmd->richText.wrapWidth, cmd->color);
 			} break;
 		}
+		// DisableClipRec();
 		// DrawRectangleOutline(cmd->clipRec, 2, ColorWithAlpha(GetPureColorByIndex(cIndex), 0.2f));
 		
 		ScratchEnd(scratch);

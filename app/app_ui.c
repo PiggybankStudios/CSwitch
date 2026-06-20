@@ -9,18 +9,21 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
-//TODO: Topbar doesn't completely disappear
+//TODO: Hide the scrollbar if in minimal mode
+//TODO: Moving selection with keyboard should scroll options viewport
+//TODO: Scrolling while hovering scrollbar should work
+//TODO: Topbar doesn't completely disappear (only when File or View menu are open now?)
+//TODO: Add tooltips!
 //TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
 //TODO: Make scrolling framerate independent
 //TODO: Add a debug menu for Pig UI
 //TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
-//TODO: Add tooltips!
 //TODO: Border thickness should be rounded just like sizes are rounded to produce full pixel sizes
-//TODO: Old version of CSwitch crashes when settings.txt contains UiScale entry?
-//TODO: Make a generic renderer implementation into PigCore?
-//TODO: Ctrl+Scroll should now scroll the options
-//TODO: Scrolling while hovering scrollbar should work
-//TODO: Moving selection with keyboard should scroll options viewport
+//TODO: Make a generic renderer implementation in PigCore?
+//TODO: Dropdown+Submenu should fit to window width? Or maybe submenu should just overlap?
+//TODO: Topbar+Dropdown+Submenu should have better logic, hover to open submenu, corner cutting areas, etc.
+//TODO: Add notifications!
+//TODO: Add input handling support to the entire UI system
 
 void DoCSwitchAppUI(v2 screenSize)
 {
@@ -67,7 +70,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          File Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
+				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), IsKeyDownRaw(Key_Alt), &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
 				{
 					if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), AppCommand_OpenFile, StrLit("Open a file")))
 					{
@@ -117,7 +120,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          View Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
+				UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), IsKeyDownRaw(Key_Alt), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
 				{
 					ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
 						? ThemeMode_Debug

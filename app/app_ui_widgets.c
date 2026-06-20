@@ -41,9 +41,14 @@ void UiTopbar_(UiId topbarId, bool isEnabled)
 }
 #define UiTopbar(...) DeferBlockWithStart(UiTopbar_(__VA_ARGS__), CloseUiElement())
 
-bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keepOpenUntilMouseover, bool isSubmenuOpen)
+bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMenuOpen, bool* keepOpenUntilMouseover, bool isSubmenuOpen)
 {
 	UiId menuId = UiIdSuffixLit(btnId, "_Menu");
+	
+	Assert(displayText.length >= 1);
+	Str8 altDisplayStr = PrintInArenaStr(uiArena, "(%c)%.*s", displayText.chars[0], displayText.length-1, &displayText.chars[1]);
+	v2 displayTextSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, displayText).logicalRec.Size;
+	v2 altDisplayStrSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, altDisplayStr).logicalRec.Size;
 	
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isMenuHovered = IsUiElementHovered(menuId);
@@ -55,6 +60,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 	
 	UIELEM({ .id = btnId,
 		.sizing = UI_FIT2(),
+		.alignment = UI_ALIGN_CENTER(),
 		.padding = { .inner = MakeV4r(4, 2, 4, 2) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
@@ -63,12 +69,13 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 	})
 	{
 		UIELEM_LEAF({
-			.text = displayText,
+			.text = showAltText ? altDisplayStr : displayText,
+			.alignment = UI_ALIGN_CENTER(),
 			.font = &app->uiFont,
 			.fontSize = app->uiFontSize,
 			.fontStyle = UI_FONT_STYLE,
 			.textColor = textColor,
-			.sizing = UI_TEXT_FULL(),
+			.sizing = { .width=UI_FIXED(MaxR32(displayTextSize.Width, altDisplayStrSize.Width)), .height={.type=UiSizingType_TextClip} },
 		});
 	}
 	
