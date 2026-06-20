@@ -13,39 +13,6 @@ void SelectAnOption()
 	app->currentTab->selectedOptionIndex = 0;
 }
 
-void AutoScrollToSelectedOptionAfterMove()
-{
-	// Auto-scroll up/down to the newly selected option if needed
-	if (app->currentTab->selectedOptionIndex >= 0)
-	{
-		ScratchBegin(scratch);
-		#if BUILD_WITH_CLAY
-		rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
-		Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
-		Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
-		ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
-		rec optionRec = GetClayElementDrawRec(btnId);
-		if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
-		{
-			r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
-			r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
-			r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
-			r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
-			if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
-			{
-				viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
-			}
-			else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
-			{
-				viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
-			}
-		}
-		#endif //BUILD_WITH_CLAY
-		ScratchEnd(scratch);
-	}
-}
-
 // +==================================+
 // | AppResetCurrentFilePopupCallback |
 // +==================================+
@@ -494,7 +461,11 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
 				{
 					SelectAnOption();
+					#if BUILD_WITH_CLAY
 					AutoScrollToSelectedOptionAfterMove();
+					#elif BUILD_WITH_PIG_UI
+					app->scrollToSelectedOption = true;
+					#endif //BUILD_WITH_CLAY
 				}
 				else if (app->currentTab->selectedOptionIndex >= 0)
 				{
@@ -514,6 +485,17 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 							app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)numColumns - app->currentTab->selectedOptionIndex);
 							AutoScrollToSelectedOptionAfterMove();
 						}
+						#elif BUILD_WITH_PIG_UI
+						if (app->currentTab->selectedOptionIndex >= (ixx)app->smallBtnNumColumns)
+						{
+							app->currentTab->selectedOptionIndex -= app->smallBtnNumColumns;
+							app->scrollToSelectedOption = true;
+						}
+						else if (true /*upPressed*/) //TODO: Re-enable this distinction somehow? We only wanna loop around if the key was pressed, not when it was held down and OS-level repeated
+						{
+							app->currentTab->selectedOptionIndex = (ixx)(app->currentTab->fileOptions.length-1) - ((ixx)app->smallBtnNumColumns - app->currentTab->selectedOptionIndex);
+							app->scrollToSelectedOption = true;
+						}
 						#endif //BUILD_WITH_CLAY
 					}
 					else
@@ -521,12 +503,20 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 						if (app->currentTab->selectedOptionIndex > 0)
 						{
 							app->currentTab->selectedOptionIndex--;
+							#if BUILD_WITH_CLAY
 							AutoScrollToSelectedOptionAfterMove();
+							#elif BUILD_WITH_PIG_UI
+							app->scrollToSelectedOption = true;
+							#endif //BUILD_WITH_CLAY
 						}
 						else if (true /*upPressed*/) //TODO: Re-enable this distinction somehow? We only wanna loop around if the key was pressed, not when it was held down and OS-level repeated
 						{
 							app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+							#if BUILD_WITH_CLAY
 							AutoScrollToSelectedOptionAfterMove();
+							#elif BUILD_WITH_PIG_UI
+							app->scrollToSelectedOption = true;
+							#endif //BUILD_WITH_CLAY
 						}
 					}
 				}
@@ -544,7 +534,11 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
 				{
 					SelectAnOption();
+					#if BUILD_WITH_CLAY
 					AutoScrollToSelectedOptionAfterMove();
+					#elif BUILD_WITH_PIG_UI
+					app->scrollToSelectedOption = true;
+					#endif //BUILD_WITH_CLAY
 				}
 				else if (app->currentTab->selectedOptionIndex >= 0)
 				{
@@ -567,6 +561,21 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 							app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + numColumns) % (ixx)app->currentTab->fileOptions.length;
 							AutoScrollToSelectedOptionAfterMove();
 						}
+						#elif BUILD_WITH_PIG_UI
+						if (((i32)app->currentTab->selectedOptionIndex / app->smallBtnNumColumns) < app->smallBtnNumRows-1)
+						{
+							app->currentTab->selectedOptionIndex += app->smallBtnNumColumns;
+							if ((uxx)app->currentTab->selectedOptionIndex >= app->currentTab->fileOptions.length)
+							{
+								app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+							}
+							app->scrollToSelectedOption = true;
+						}
+						else if (true /*downPressed*/) //TODO: Re-enable this distinction somehow? We only wanna loop around if the key was pressed, not when it was held down and OS-level repeated
+						{
+							app->currentTab->selectedOptionIndex = (app->currentTab->selectedOptionIndex + app->smallBtnNumColumns) % (ixx)app->currentTab->fileOptions.length;
+							app->scrollToSelectedOption = true;
+						}
 						#endif //BUILD_WITH_CLAY
 					}
 					else
@@ -574,12 +583,20 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 						if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
 						{
 							app->currentTab->selectedOptionIndex++;
+							#if BUILD_WITH_CLAY
 							AutoScrollToSelectedOptionAfterMove();
+							#elif BUILD_WITH_PIG_UI
+							app->scrollToSelectedOption = true;
+							#endif //BUILD_WITH_CLAY
 						}
 						else if (true /*downPressed*/) //TODO: Re-enable this distinction somehow? We only wanna loop around if the key was pressed, not when it was held down and OS-level repeated
 						{
 							app->currentTab->selectedOptionIndex = 0;
+							#if BUILD_WITH_CLAY
 							AutoScrollToSelectedOptionAfterMove();
+							#elif BUILD_WITH_PIG_UI
+							app->scrollToSelectedOption = true;
+							#endif //BUILD_WITH_CLAY
 						}
 					}
 				}
@@ -597,19 +614,31 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
 				{
 					SelectAnOption();
+					#if BUILD_WITH_CLAY
 					AutoScrollToSelectedOptionAfterMove();
+					#elif BUILD_WITH_PIG_UI
+					app->scrollToSelectedOption = true;
+					#endif //BUILD_WITH_CLAY
 				}
 				else if (app->currentTab->selectedOptionIndex >= 0 && app->settings.smallButtons)
 				{
 					if (app->currentTab->selectedOptionIndex > 0)
 					{
 						app->currentTab->selectedOptionIndex--;
+						#if BUILD_WITH_CLAY
 						AutoScrollToSelectedOptionAfterMove();
+						#elif BUILD_WITH_PIG_UI
+						app->scrollToSelectedOption = true;
+						#endif //BUILD_WITH_CLAY
 					}
 					else if (true /*leftPressed*/) //TODO: Re-enable this distinction somehow? We only wanna loop around if the key was pressed, not when it was held down and OS-level repeated
 					{
 						app->currentTab->selectedOptionIndex = (ixx)app->currentTab->fileOptions.length-1;
+						#if BUILD_WITH_CLAY
 						AutoScrollToSelectedOptionAfterMove();
+						#elif BUILD_WITH_PIG_UI
+						app->scrollToSelectedOption = true;
+						#endif //BUILD_WITH_CLAY
 					}
 				}
 			}
@@ -626,19 +655,31 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				if (app->currentTab->selectedOptionIndex == -1 && app->currentTab->fileOptions.length > 0)
 				{
 					SelectAnOption();
+					#if BUILD_WITH_CLAY
 					AutoScrollToSelectedOptionAfterMove();
+					#elif BUILD_WITH_PIG_UI
+					app->scrollToSelectedOption = true;
+					#endif //BUILD_WITH_CLAY
 				}
 				else if (app->currentTab->selectedOptionIndex >= 0 && app->settings.smallButtons)
 				{
 					if ((uxx)app->currentTab->selectedOptionIndex < app->currentTab->fileOptions.length-1)
 					{
 						app->currentTab->selectedOptionIndex++;
+						#if BUILD_WITH_CLAY
 						AutoScrollToSelectedOptionAfterMove();
+						#elif BUILD_WITH_PIG_UI
+						app->scrollToSelectedOption = true;
+						#endif //BUILD_WITH_CLAY
 					}
 					else if (true /*rightPressed*/) //TODO: Re-enable this distinction somehow? We only wanna loop around if the key was pressed, not when it was held down and OS-level repeated
 					{
 						app->currentTab->selectedOptionIndex = 0;
+						#if BUILD_WITH_CLAY
 						AutoScrollToSelectedOptionAfterMove();
+						#elif BUILD_WITH_PIG_UI
+						app->scrollToSelectedOption = true;
+						#endif //BUILD_WITH_CLAY
 					}
 				}
 			}

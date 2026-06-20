@@ -22,9 +22,9 @@ void SetScrollbarColors(UiScrollbarState* scrollbarState)
 	scrollbarState->barColor = GetThemeColorEx(ScrollBar, themeState);
 }
 
-void UiTopbar_(UiId topbarId, bool isEnabled)
+void UiTopbar_(UiId topbarId)
 {
-	UiSizingAxis topbarHeight = isEnabled ? UI_FIT() : UI_FIXED(0.1f);
+	UiSizingAxis topbarHeight = UI_FIT();
 	OpenUiElement(NEW_STRUCT(UiElemConfig){ .id = topbarId,
 		.direction = UiLayoutDir_LeftToRight,
 		.alignment = UI_ALIGN_LEFT_CENTER(),

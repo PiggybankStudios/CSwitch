@@ -9,10 +9,7 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
-//TODO: Hide the scrollbar if in minimal mode
-//TODO: Moving selection with keyboard should scroll options viewport
 //TODO: Scrolling while hovering scrollbar should work
-//TODO: Topbar doesn't completely disappear (only when File or View menu are open now?)
 //TODO: Add tooltips!
 //TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
 //TODO: Make scrolling framerate independent
@@ -24,6 +21,8 @@ Description:
 //TODO: Topbar+Dropdown+Submenu should have better logic, hover to open submenu, corner cutting areas, etc.
 //TODO: Add notifications!
 //TODO: Add input handling support to the entire UI system
+//TODO: Move TextContraction and alignment logic to Pig UI render function
+//TODO: Stretch small button widths to span entire window width
 
 void DoCSwitchAppUI(v2 screenSize)
 {
@@ -51,6 +50,13 @@ void DoCSwitchAppUI(v2 screenSize)
 		&appIn->touch
 	);
 	
+	AppCalculateSmallButtonsGrid();
+	if (app->scrollToSelectedOption)
+	{
+		AutoScrollToSelectedOptionAfterMove();
+		app->scrollToSelectedOption = false;
+	}
+	
 	UIELEM({ .id = UiIdLit("FullscreenContainer"),
 		.direction = UiLayoutDir_TopDown,
 		.alignment = UI_ALIGN_TOP_LEFT(),
@@ -65,7 +71,7 @@ void DoCSwitchAppUI(v2 screenSize)
 		// +==============================+
 		if (!app->minimalModeEnabled || app->isFileMenuOpen || app->isViewMenuOpen)
 		{
-			UiTopbar(UiIdLit("Topbar"), !app->minimalModeEnabled)
+			UiTopbar(UiIdLit("Topbar"))
 			{
 				// +==============================+
 				// |          File Menu           |
@@ -384,6 +390,7 @@ void DoCSwitchAppUI(v2 screenSize)
 		// +==============================+
 		SetScrollbarColors(&app->optionsListScrollbarState);
 		app->optionsListScrollbarState.autohide = true;
+		app->optionsListScrollbarState.hidden = app->minimalModeEnabled;
 		ContainerWithVerticalScrollbar(UiIdLit("OptionsList"), &app->optionsListScrollbarState, { })
 		{
 			UIELEM({ .id = UiIdLit("OptionsList"),
@@ -440,27 +447,13 @@ void DoCSwitchAppUI(v2 screenSize)
 					// +==============================+
 					else
 					{
-						UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
-						r32 optionsAreaWidth = (optionsListElem != nullptr)
-							? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
-							: screenSize.Width;
-						u16 buttonMargin = (u16)RoundR32i(SMALL_BTN_MARGIN * app->settings.uiScale);
-						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
-						r32 unscaledButtonWidth = buttonWidth / app->settings.uiScale;
-						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
-						if (numColumns <= 0) { numColumns = 1; }
-						// PrintLine_D("buttonWidth: %g/%g", buttonWidth, unscaledButtonWidth);
-						// PrintLine_D("optionsAreaWidth: %g (%g)", optionsAreaWidth, optionsListElem->layoutRec.Width);
-						// PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
-						// PrintLine_D("numColumns: %d", numColumns);
-						
 						bool containerStarted = false;
 						VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 						{
 							VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
 							bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
 							
-							if ((oIndex % numColumns) == 0)
+							if ((oIndex % app->smallBtnNumColumns) == 0)
 							{
 								if (containerStarted) { CloseUiElement(); }
 								OpenUiElement((UiElemConfig){
@@ -474,21 +467,21 @@ void DoCSwitchAppUI(v2 screenSize)
 							
 							if (option->type == FileOptionType_Bool)
 							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, unscaledButtonWidth))
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, app->smallBtnWidth))
 								{
 									ToggleOption(app->currentTab, option);
 								}
 							}
 							else if (option->type == FileOptionType_CommentDefine)
 							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, unscaledButtonWidth))
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, app->smallBtnWidth))
 								{
 									ToggleOption(app->currentTab, option);
 								}
 							}
 							else
 							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, unscaledButtonWidth))
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, app->smallBtnWidth))
 								{
 									ToggleOption(app->currentTab, option);
 								}

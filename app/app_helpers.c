@@ -802,3 +802,75 @@ void AppBakeTheme(bool clearUserThemeIfBakeFails)
 	
 	ScratchEnd(scratch);
 }
+
+void AppCalculateSmallButtonsGrid()
+{
+	UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+	r32 optionsAreaWidth = (optionsListElem != nullptr)
+		? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
+		: appIn->screenSize.Width;
+	r32 scaledMargin = (SMALL_BTN_MARGIN * app->settings.uiScale);
+	r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
+	app->smallBtnNumColumns = FloorR32i((optionsAreaWidth - scaledMargin) / (buttonWidth + scaledMargin));
+	app->smallBtnWidth = FloorR32i((optionsAreaWidth - (SMALL_BTN_MARGIN * (app->smallBtnNumColumns+1))) / app->smallBtnNumColumns) / app->settings.uiScale;
+	if (app->smallBtnNumColumns <= 0) { app->smallBtnNumColumns = 1; }
+	u64 numOptions = (app->currentTab != nullptr) ? app->currentTab->fileOptions.length : 1;
+	app->smallBtnNumRows = CeilDivU64(numOptions, app->smallBtnNumColumns);
+}
+
+void AutoScrollToSelectedOptionAfterMove()
+{
+	// Auto-scroll up/down to the newly selected option if needed
+	if (app->currentTab->selectedOptionIndex >= 0)
+	{
+		ScratchBegin(scratch);
+		#if BUILD_WITH_CLAY
+		rec viewportRec = GetClayElementDrawRec(CLAY_ID("OptionsList"));
+		Clay_ScrollContainerData viewportScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
+		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
+		Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
+		ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
+		rec optionRec = GetClayElementDrawRec(btnId);
+		if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
+		{
+			r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
+			r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
+			r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
+			r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
+			if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
+			{
+				viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
+			}
+			else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
+			{
+				viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
+			}
+		}
+		#elif BUILD_WITH_PIG_UI
+		UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+		FileOption* selectedOption = VarArrayGetHard(FileOption, &app->currentTab->fileOptions, (uxx)app->currentTab->selectedOptionIndex);
+		UiId btnId = UiIdStrIndex(selectedOption->name, (uxx)app->currentTab->selectedOptionIndex);
+		UiElement* optionBtnElem = GetUiElementByIdInPrevFrame(btnId, true);
+		if (optionsListElem != nullptr && optionBtnElem != nullptr)
+		{
+			// r32 maxScroll = MaxR32(0, optionsListElem->contentSize.Height - optionsListElem->layoutRec.Height);
+			r32 optionYPosition = (optionBtnElem->layoutRec.Y - (optionsListElem->layoutRec.Y + optionsListElem->config.padding.inner.Top * app->settings.uiScale)) + optionsListElem->scroll.Y;
+			r32 bufferHeight = (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * optionsListElem->layoutRec.Height);
+			r32 scrollUpTarget = MaxR32(0.0f, optionYPosition - bufferHeight);
+			r32 scrollDownTarget = MinR32(optionsListElem->scrollMax.Y, optionYPosition + optionBtnElem->layoutRec.Height + bufferHeight - optionsListElem->layoutRec.Height);
+			PrintLine_D("Scroll to up=%g down=%g (current=%g, yPos=%g)", scrollUpTarget, scrollDownTarget, optionsListElem->scrollGoto.Y, optionYPosition);
+			if (optionsListElem->scrollGoto.Y < scrollDownTarget)
+			{
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, scrollDownTarget));
+				WriteLine_D("Scrolling Down!");
+			}
+			else if (optionsListElem->scrollGoto.Y > scrollUpTarget)
+			{
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, scrollUpTarget));
+				WriteLine_D("Scrolling Up!");
+			}
+		}
+		#endif //BUILD_WITH_CLAY
+		ScratchEnd(scratch);
+	}
+}

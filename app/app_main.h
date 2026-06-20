@@ -283,6 +283,12 @@ struct AppData
 	OsThreadHandle testThread;
 	Mutex testMutex;
 	AtomicBundle atomicBundle;
+	
+	r32 smallBtnWidth; //before uiScale is applied
+	uxx smallBtnNumColumns;
+	uxx smallBtnNumRows;
+	
+	bool scrollToSelectedOption;
 };
 
 #endif //  _APP_MAIN_H
