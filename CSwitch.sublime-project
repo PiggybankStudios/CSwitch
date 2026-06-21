@@ -1018,6 +1018,7 @@
 			"UiElemConfigField_RendererParams",
 			"UiElemConfigField_RepeatingTexture",
 			"UiElemConfigField_RichText",
+			"UiElemConfigField_ScrollRelayId",
 			"UiElemConfigField_Scrolling",
 			"UiElemConfigField_ScrollingLag",
 			"UiElemConfigField_ScrollingLagX",

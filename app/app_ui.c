@@ -9,7 +9,6 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
-//TODO: Scrolling while hovering scrollbar should work
 //TODO: Add tooltips!
 //TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
 //TODO: Make scrolling framerate independent
@@ -19,7 +18,6 @@ Description:
 //TODO: Make a generic renderer implementation in PigCore?
 //TODO: Dropdown+Submenu should fit to window width? Or maybe submenu should just overlap?
 //TODO: Topbar+Dropdown+Submenu should have better logic, hover to open submenu, corner cutting areas, etc.
-//TODO: Add notifications!
 //TODO: Add input handling support to the entire UI system
 //TODO: Move TextContraction and alignment logic to Pig UI render function
 //TODO: Stretch small button widths to span entire window width
