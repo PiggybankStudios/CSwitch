@@ -91,4 +91,7 @@ Date:   02\25\2025
 #define NOTIFICATION_ICON_SIZE             32 //px
 #define NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT 0.5f //percent of screen height
 
+#define NOTIFICATION_DEPTH -101
+#define POPUP_DEPTH        -100
+
 #endif //  _DEFINES_H

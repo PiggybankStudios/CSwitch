@@ -9,13 +9,15 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
+//TODO: UI_TEXT_WRAP(0) is causing the last character to wrap when it doesn't need to!
 //TODO: Add tooltips!
-//TODO: Add popup dialog!
+//TODO: Implement ScrollToTop/Bottom AppCommands
 //TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
 //TODO: Border thickness should be rounded just like sizes are rounded to produce full pixel sizes
 //TODO: Make a generic renderer implementation in PigCore?
 //TODO: Dropdown+Submenu should fit to window width? Or maybe submenu should just overlap?
 //TODO: Move TextContraction and alignment logic to Pig UI render function
+//TODO: Add support for minimum size when using "Fit" sizing style
 
 //TODO: Add a debug menu for Pig UI
 //TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
@@ -101,6 +103,14 @@ void DoCSwitchAppUI(v2 screenSize)
 									app->isFileMenuOpen = false;
 								}
 							}
+						}
+						
+						Str8 clearRecentFilesTooltipStr = PrintInArenaStr(uiArena, "Remove %llu path%s from the \"Recent Files\" list", app->recentFiles.length, Plural(app->recentFiles.length, "s"));
+						if (UiDropdownBtn(UiIdLit("ClearRecentBtn"), (app->recentFiles.length > 0), AppIcon_Trash, StrLit("Clear Recent Files"), AppCommand_ClearRecentFiles, clearRecentFilesTooltipStr))
+						{
+							RunAppCommand(AppCommand_ClearRecentFiles);
+							app->isOpenRecentSubmenuOpen = false;
+							app->isFileMenuOpen = false;
 						}
 					}
 					
@@ -493,7 +503,8 @@ void DoCSwitchAppUI(v2 screenSize)
 		}
 	}
 	
-	DoUiNotificationQueue(&app->notificationQueue, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, RoundV2i(screenSize));
+	DoUiNotificationQueue(&app->notificationQueue, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, RoundV2i(screenSize), NOTIFICATION_DEPTH);
+	RenderPopupDialog(&app->popup);
 	
 	RenderPigUi(GetUiRenderList());
 	EndUiFrame();

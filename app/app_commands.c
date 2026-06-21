@@ -70,9 +70,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			if (app->popup.isOpen)
 			{
-				#if BUILD_WITH_CLAY
 				ClosePopupDialog(&app->popup, nullptr);
-				#endif //BUILD_WITH_CLAY
 			}
 			else if (app->isFileMenuOpen)
 			{
@@ -155,14 +153,12 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			if (!app->popup.isOpen)
 			{
-				#if BUILD_WITH_CLAY
 				OpenPopupDialog(stdHeap, &app->popup,
 					StrLit("Do you want to reset the file to the state it was in when it was opened?"),
 					AppResetCurrentFilePopupCallback, nullptr
 				);
 				AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
 				AddPopupButton(&app->popup, 2, StrLit("Reset"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
-				#endif //BUILD_WITH_CLAY
 			}
 		} break;
 		
@@ -705,14 +701,12 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			if (app->recentFiles.length > 0 && !app->popup.isOpen)
 			{
-				#if BUILD_WITH_CLAY
 				OpenPopupDialog(stdHeap, &app->popup,
 					ScratchPrintStr("Are you sure you want to clear %s%llu recent file entr%s?", (app->recentFiles.length > 1) ? "all " : "", app->recentFiles.length, PluralEx(app->recentFiles.length, "y", "ies")),
 					AppClearRecentFilesPopupCallback, nullptr
 				);
 				AddPopupButton(&app->popup, 1, StrLit("Cancel"), PopupDialogResult_No, GetThemeColor(ConfirmDialogNeutralBtnBorder));
 				AddPopupButton(&app->popup, 2, StrLit("Clear Recent Files"), PopupDialogResult_Yes, GetThemeColor(ConfirmDialogNegativeBtnBorder));
-				#endif //BUILD_WITH_CLAY
 			}
 		} break;
 		

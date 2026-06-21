@@ -801,6 +801,7 @@ void AppBakeTheme(bool clearUserThemeIfBakeFails)
 	ScratchEnd(scratch);
 }
 
+#if BUILD_WITH_PIG_UI
 void AppCalculateSmallButtonsGrid()
 {
 	UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
@@ -808,13 +809,15 @@ void AppCalculateSmallButtonsGrid()
 		? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
 		: appIn->screenSize.Width;
 	r32 scaledMargin = (SMALL_BTN_MARGIN * app->settings.uiScale);
-	r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
+	r32 longestAbbreviationWidth = (app->currentTab != nullptr) ? app->currentTab->longestAbbreviationWidth : 0.0f;
+	r32 buttonWidth = longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
 	app->smallBtnNumColumns = FloorR32i((optionsAreaWidth - scaledMargin) / (buttonWidth + scaledMargin));
 	if (app->smallBtnNumColumns <= 0) { app->smallBtnNumColumns = 1; }
 	app->smallBtnWidth = FloorR32i((optionsAreaWidth - (SMALL_BTN_MARGIN * (app->smallBtnNumColumns-1))) / app->smallBtnNumColumns) / app->settings.uiScale;
 	u64 numOptions = (app->currentTab != nullptr) ? app->currentTab->fileOptions.length : 1;
 	app->smallBtnNumRows = CeilDivU64(numOptions, app->smallBtnNumColumns);
 }
+#endif //BUILD_WITH_PIG_UI
 
 void AutoScrollToSelectedOptionAfterMove()
 {

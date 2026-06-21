@@ -506,6 +506,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	ScratchBegin2(scratch3, scratch, scratch2);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, input, inputHandling);
 	TracyCZoneN(_funcZone, "AppUpdate", true);
+	#if BUILD_WITH_PIG_UI
+	SetUiContext(&app->ui);
+	#endif
 	
 	if (app->testThread.isFilled)
 	{
@@ -518,9 +521,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	TracyCZoneN(Zone_Update, "Update", true);
 	app->notificationQueue.currentProgramTime = appIn->programTime;
 	UpdateFileWatches(&app->fileWatches);
-	#if BUILD_WITH_CLAY
 	UpdatePopupDialog(&app->popup);
-	#endif //BUILD_WITH_CLAY
 	if (appIn->frameIndex != 0 && app->renderedLastFrame)
 	{
 		r32 fullUpdateMs = platformInfo->updateMs + app->prevUpdateMs;
@@ -588,6 +589,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
 	// +====================================+
+	//NOTE: We will early out inside this block if we don't need to re-render the screen!
 	{
 		if (AppCheckForFileChanges()) { refreshScreen = true; }
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
@@ -639,6 +641,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		
 		if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
 		{
+			#if BUILD_WITH_PIG_UI
+			SetUiContext(nullptr);
+			#endif
 			if (app->testThread.isFilled)
 			{
 				TracyCZoneN(Zone_UnlockTestMutex, "UnlockMutex", true);
