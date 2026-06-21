@@ -494,6 +494,8 @@ void DoCSwitchAppUI(v2 screenSize)
 		}
 	}
 	
+	DoUiNotificationQueue(&app->notificationQueue, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, RoundV2i(screenSize));
+	
 	RenderPigUi(GetUiRenderList());
 	EndUiFrame();
 	

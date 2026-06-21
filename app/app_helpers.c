@@ -75,9 +75,7 @@ void LoadNotificationIcons()
 				cellSize.Height * cellPos.Y,
 				cellSize.Width, cellSize.Height
 			);
-			#if BUILD_WITH_CLAY
 			SetNotificationIconEx(&app->notificationQueue, dbgLevel, &app->notificationIconsTexture, iconScale, GetDbgLevelTextColor(dbgLevel), iconSourceRec);
-			#endif //BUILD_WITH_CLAY
 		}
 	}
 }
@@ -812,8 +810,8 @@ void AppCalculateSmallButtonsGrid()
 	r32 scaledMargin = (SMALL_BTN_MARGIN * app->settings.uiScale);
 	r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
 	app->smallBtnNumColumns = FloorR32i((optionsAreaWidth - scaledMargin) / (buttonWidth + scaledMargin));
-	app->smallBtnWidth = FloorR32i((optionsAreaWidth - (SMALL_BTN_MARGIN * (app->smallBtnNumColumns+1))) / app->smallBtnNumColumns) / app->settings.uiScale;
 	if (app->smallBtnNumColumns <= 0) { app->smallBtnNumColumns = 1; }
+	app->smallBtnWidth = FloorR32i((optionsAreaWidth - (SMALL_BTN_MARGIN * (app->smallBtnNumColumns-1))) / app->smallBtnNumColumns) / app->settings.uiScale;
 	u64 numOptions = (app->currentTab != nullptr) ? app->currentTab->fileOptions.length : 1;
 	app->smallBtnNumRows = CeilDivU64(numOptions, app->smallBtnNumColumns);
 }

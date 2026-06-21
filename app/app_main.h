@@ -243,9 +243,7 @@ struct AppData
 	bool wasClayScrollingPrevFrame;
 	
 	PopupDialog popup;
-	#if BUILD_WITH_CLAY
 	NotificationQueue notificationQueue;
-	#endif //BUILD_WITH_CLAY
 	Texture notificationIconsTexture;
 	#if BUILD_WITH_CLAY
 	TooltipRegistry tooltips;

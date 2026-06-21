@@ -342,9 +342,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	AddThreadToPool(&app->threadPool);
 	#endif
 	
-	#if BUILD_WITH_CLAY
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
-	#endif //BUILD_WITH_CLAY
 	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
@@ -518,9 +516,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	
 	TracyCZoneN(Zone_Update, "Update", true);
-	#if BUILD_WITH_CLAY
 	app->notificationQueue.currentProgramTime = appIn->programTime;
-	#endif //BUILD_WITH_CLAY
 	UpdateFileWatches(&app->fileWatches);
 	#if BUILD_WITH_CLAY
 	UpdatePopupDialog(&app->popup);
@@ -628,9 +624,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
-		#if BUILD_WITH_CLAY
 		if (app->notificationQueue.notifications.length > 0) { refreshScreen = true; }
-		#endif //BUILD_WITH_CLAY
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 		if (WasMouseReleasedRaw(MouseBtn_Left) || IsMouseDownRaw(MouseBtn_Left)) { refreshScreen = true; }
 		if (WasMouseReleasedRaw(MouseBtn_Right) || IsMouseDownRaw(MouseBtn_Right)) { refreshScreen = true; }
@@ -811,13 +805,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
-	#if BUILD_WITH_CLAY
 	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
-	#endif //BUILD_WITH_CLAY
 	if (WasKeyComboPressed(ModifierKey_None, Key_D, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);

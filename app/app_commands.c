@@ -83,11 +83,9 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			{
 				app->isViewMenuOpen = false;
 			}
-			#if BUILD_WITH_CLAY
 			else if (DismissNotification(&app->notificationQueue, appIn->programTime, false))
 			{
 			}
-			#endif //BUILD_WITH_CLAY
 			else if (app->minimalModeEnabled)
 			{
 				app->minimalModeEnabled = false;
