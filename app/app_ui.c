@@ -10,17 +10,17 @@ Description:
 */
 
 //TODO: Add tooltips!
+//TODO: Add popup dialog!
 //TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
-//TODO: Make scrolling framerate independent
-//TODO: Add a debug menu for Pig UI
-//TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
 //TODO: Border thickness should be rounded just like sizes are rounded to produce full pixel sizes
 //TODO: Make a generic renderer implementation in PigCore?
 //TODO: Dropdown+Submenu should fit to window width? Or maybe submenu should just overlap?
+//TODO: Move TextContraction and alignment logic to Pig UI render function
+
+//TODO: Add a debug menu for Pig UI
+//TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
 //TODO: Topbar+Dropdown+Submenu should have better logic, hover to open submenu, corner cutting areas, etc.
 //TODO: Add input handling support to the entire UI system
-//TODO: Move TextContraction and alignment logic to Pig UI render function
-//TODO: Stretch small button widths to span entire window width
 
 void DoCSwitchAppUI(v2 screenSize)
 {
@@ -42,6 +42,7 @@ void DoCSwitchAppUI(v2 screenSize)
 		GetThemeColor(OptionListBack),
 		app->settings.uiScale,
 		appIn->programTime,
+		appIn->elapsedMs,
 		app->settings.smoothScrollingDisabled ? -1.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,
 		&appIn->keyboard,
 		&appIn->mouse,
