@@ -659,7 +659,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	// v2 screenCenter = Div(screenSize, 2.0f);
 	// v2i mousePosi = RoundV2i(appIn->mouse.position);
-	v2 mousePos = appIn->mouse.position;
+	// v2 mousePos = appIn->mouse.position;
 	FontNewFrame(&app->uiFont, appIn->programTime);
 	FontNewFrame(&app->mainFont, appIn->programTime);
 	#if BUILD_WITH_CLAY

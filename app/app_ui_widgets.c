@@ -113,6 +113,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 
 bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, AppCommand commandForHotkeyDisplay, Str8 tooltipStr)
 {
+	UNUSED(tooltipStr); //TODO: Add tooltip support!
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
 	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : ThemeState_Default));
@@ -176,7 +177,6 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 						.fontSize = app->uiFontSize,
 						.fontStyle = UI_FONT_STYLE,
 						.textColor = hotkeyTextColor,
-						//TODO: Add corner radius
 						.sizing = UI_TEXT_FULL(),
 					});
 				}
@@ -212,9 +212,6 @@ bool UiDropdownSubmenuBtn_(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 dis
 	Color32 borderColor       = GetThemeColorEx(DropdownBtnBorder, btnThemeState);
 	Color32 textColor         = GetThemeColorEx(DropdownBtnText,   btnThemeState);
 	Color32 iconColor         = GetThemeColorEx(DropdownBtnIcon,   btnThemeState);
-	Color32 hotkeyBackColor   = GetThemeColorEx(HotkeyBack,        btnThemeState);
-	Color32 hotkeyBorderColor = GetThemeColorEx(HotkeyBorder,      btnThemeState);
-	Color32 hotkeyTextColor   = GetThemeColorEx(HotkeyText,        btnThemeState);
 	
 	UIELEM({ .id = btnId,
 		.direction = UiLayoutDir_LeftToRight,
@@ -272,7 +269,6 @@ bool UiDropdownSubmenuBtn_(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 dis
 
 bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)
 {
-	ScratchBegin(scratch);
 	bool isHovered = IsUiElementHovered(btnId);
 	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 	
@@ -306,7 +302,7 @@ bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isS
 		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Value"),
 			.sizing = UI_TEXT_FULL(),
 			.text = valueStr,
-			.textColor = nameTextColor,
+			.textColor = valueTextColor,
 			.font = &app->mainFont,
 			.fontSize = app->mainFontSize,
 			.fontStyle = MAIN_FONT_STYLE,
