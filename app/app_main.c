@@ -960,6 +960,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		TracyCZoneEnd(Zone_UnlockTestMutex);
 	}
 	
+	#if BUILD_WITH_PIG_UI
+	SetUiContext(nullptr);
+	#endif
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);

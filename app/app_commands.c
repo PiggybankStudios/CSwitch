@@ -386,6 +386,8 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			#if BUILD_WITH_CLAY
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
+			#elif BUILD_WITH_PIG_UI
+			SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, 0));
 			#endif //BUILD_WITH_CLAY
 		} break;
 		
@@ -400,6 +402,12 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			{
 				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 				optionsListScrollData.scrollTarget->Y = -maxScroll;
+			}
+			#elif BUILD_WITH_PIG_UI
+			UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+			if (optionsListElem != nullptr)
+			{
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, optionsListElem->scrollMax.Y));
 			}
 			#endif //BUILD_WITH_CLAY
 		} break;
@@ -416,6 +424,12 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 				optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
 			}
+			#elif BUILD_WITH_PIG_UI
+			UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+			if (optionsListElem != nullptr)
+			{
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, MaxR32(0.0f, optionsListElem->scroll.Y - optionsListElem->layoutRec.Height))); //TODO: Should we take inner padding into account here?
+			}
 			#endif //BUILD_WITH_CLAY
 		} break;
 		
@@ -430,6 +444,12 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			{
 				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
 				optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
+			}
+			#elif BUILD_WITH_PIG_UI
+			UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
+			if (optionsListElem != nullptr)
+			{
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, MinR32(optionsListElem->scrollMax.Y, optionsListElem->scroll.Y + optionsListElem->layoutRec.Height))); //TODO: Should we take inner padding into account here?
 			}
 			#endif //BUILD_WITH_CLAY
 		} break;
