@@ -250,6 +250,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 	// |        Pig UI Version        |
 	// +==============================+
 	#elif BUILD_WITH_PIG_UI
+	UNUSED(dialogMaxWidth); //TODO: Use this once it's supported in Pig UI
 	
 	UIELEM({ .id = UiIdLit("PopupDialogScreenOverlay"),
 		.depth = POPUP_DEPTH,

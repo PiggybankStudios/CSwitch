@@ -34,6 +34,8 @@
 				"third_party",
 				"wasm",
 				"tests",
+				"build",
+				"pig_build",
 			],
 			"file_exclude_patterns": [
 				".gitignore",
@@ -48,6 +50,8 @@
 				"build_config.h",
 				"build_script.c",
 				"shader_include.h",
+				"pig_ui_config.h",
+				"shader_include.h",
 			],
 		},
 		{
@@ -55,6 +59,13 @@
 			"path": "pig_build",
 			"folder_exclude_patterns": [
 				"examples",
+			],
+			"file_exclude_patterns": [
+				".gitignore",
+				"LICENSE.txt",
+				"NOTES.todo",
+				"*.sublime-*",
+				"README.md",
 			],
 		},
 		{
