@@ -16,6 +16,7 @@ Description:
 
 #define PIG_BUILD_PRINT_SYS_CMDS 0
 #define PIG_BUILD_INCLUDE_OPTIONAL_HEADERS 1
+#define PIG_BUILD_FOLDER_PATH "../pig_build"
 #include "pig_build.h"
 
 #if 0
@@ -40,9 +41,11 @@ Description:
 #define FILENAME_TRACY_DLL         "tracy.dll"
 #define FILENAME_TRACY_LIB         "tracy.lib"
 #define FILENAME_TRACY_SO          "tracy.so"
+#define FILENAME_TRACY_DYLIB       "tracy.dylib"
 #define FILENAME_PIG_CORE_DLL      "pig_core.dll"
 #define FILENAME_PIG_CORE_LIB      "pig_core.lib"
 #define FILENAME_PIG_CORE_SO       "libpig_core.so"
+#define FILENAME_PIG_CORE_DYLIB    "libpig_core.dylib"
 
 #if BUILDING_ON_WINDOWS
 #define TOOL_EXE_NAME      "pig_build.exe"
@@ -865,7 +868,7 @@ int main(int argc, char* argv[])
 			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/platform_main.c"); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
 			AddArgList(&cmd, &commonCompilerFlags);
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GL"); //TODO: We should update pig_build_pig_core_flags.h tags so this gets added based on our tags chosen below
+			// AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GL"); //TODO: This should be getting added by PigCore flags!
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
 			AddArgList(&cmd, &commonLinkerFlags);
@@ -917,7 +920,6 @@ int main(int argc, char* argv[])
 			AddArgStr(&cmd, CLI_QUOTED_ARG, platformMainMPath); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
 			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
 			AddArgList(&cmd, &commonCompilerFlags);
-			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GL"); //TODO: We should update pig_build_pig_core_flags.h tags so this gets added based on our tags chosen below
 			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
 			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
 			AddArgList(&cmd, &commonLinkerFlags);
@@ -927,7 +929,7 @@ int main(int argc, char* argv[])
 			AddTag(&tags, T_CLANG);
 			AddTag(&tags, T_OSX);
 			AddTag(&tags, T_UNIX);
-			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_LANG_OBJECTIVEC);
 			AddTag(&tags, T_PROGRAM);
 			if (BUILD_INTO_SINGLE_UNIT)
 			{
@@ -1036,6 +1038,11 @@ int main(int argc, char* argv[])
 		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder, true); }
 		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppSo, dataFolder, true); }
 		if (PROFILING_ENABLED) { CopyFileToFolder(StrLit(FILENAME_TRACY_SO), dataFolder, true); }
+		#elif BUILDING_ON_OSX
+		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DYLIB), dataFolder, true); }
+		if (BUILD_APP_EXE) { CopyFileToFolder(filenameApp, dataFolder, true); }
+		if (BUILD_APP_DLL) { CopyFileToFolder(filenameAppDylib, dataFolder, true); }
+		if (PROFILING_ENABLED) { CopyFileToFolder(StrLit(FILENAME_TRACY_DYLIB), dataFolder, true); }
 		#endif
 	}
 	
