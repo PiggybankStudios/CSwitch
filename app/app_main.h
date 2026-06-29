@@ -243,9 +243,7 @@ struct AppData
 	bool wasClayScrollingPrevFrame;
 	
 	PopupDialog popup;
-	#if BUILD_WITH_CLAY
 	NotificationQueue notificationQueue;
-	#endif //BUILD_WITH_CLAY
 	Texture notificationIconsTexture;
 	#if BUILD_WITH_CLAY
 	TooltipRegistry tooltips;
@@ -283,6 +281,12 @@ struct AppData
 	OsThreadHandle testThread;
 	Mutex testMutex;
 	AtomicBundle atomicBundle;
+	
+	r32 smallBtnWidth; //before uiScale is applied
+	uxx smallBtnNumColumns;
+	uxx smallBtnNumRows;
+	
+	bool scrollToSelectedOption;
 };
 
 #endif //  _APP_MAIN_H

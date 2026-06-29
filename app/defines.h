@@ -50,7 +50,7 @@ Date:   02\25\2025
 #define SCROLLBAR_WIDTH            10 //px (at uiScale=1.0f)
 
 #define OPTION_UI_GAP                    2 //px (at uiScale=1.0f)
-#define OPTIONS_SMOOTH_SCROLLING_DIVISOR 5 //divisor
+#define OPTIONS_SMOOTH_SCROLLING_DIVISOR 15 //divisor
 #define OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW 0.15f //percent of viewport
 #define LINUX_SCROLL_WHEEL_SCALING       4 //multiplier TODO: Figure out how to ask the OS for the appropriate scroll speed scalar
 #define LINE_BREAK_EXTRA_UI_GAP          4 //px (at uiScale=1.0f)
@@ -90,5 +90,8 @@ Date:   02\25\2025
 #define NOTIFICATION_SCREEN_MARGIN_BOTTOM  4 //px
 #define NOTIFICATION_ICON_SIZE             32 //px
 #define NOTIFICATION_AUTO_DISMISS_SCREEN_HEIGHT_PERCENT 0.5f //percent of screen height
+
+#define NOTIFICATION_DEPTH -101
+#define POPUP_DEPTH        -100
 
 #endif //  _DEFINES_H

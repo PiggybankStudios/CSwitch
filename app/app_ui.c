@@ -9,18 +9,20 @@ Description:
 	** one using Clay (clay.h in third_party)
 */
 
-//TODO: Topbar doesn't completely disappear
+//TODO: UI_TEXT_WRAP(0) is causing the last character to wrap when it doesn't need to!
+//TODO: Add tooltips!
+//TODO: Implement ScrollToTop/Bottom AppCommands
 //TODO: If we have a FIT element wrapping an EXPAND element, what should happen? Should the outer container have an infinite preferred size, or zero preferred size?
-//TODO: Make scrolling framerate independent
+//TODO: Border thickness should be rounded just like sizes are rounded to produce full pixel sizes
+//TODO: Make a generic renderer implementation in PigCore?
+//TODO: Dropdown+Submenu should fit to window width? Or maybe submenu should just overlap?
+//TODO: Move TextContraction and alignment logic to Pig UI render function
+//TODO: Add support for minimum size when using "Fit" sizing style
+
 //TODO: Add a debug menu for Pig UI
 //TODO: Can we have grid-style layout options built-in to the UI system somehow? For small buttons for example?
-//TODO: Add tooltips!
-//TODO: Border thickness should be rounded just like sizes are rounded to produce full pixel sizes
-//TODO: Old version of CSwitch crashes when settings.txt contains UiScale entry?
-//TODO: Make a generic renderer implementation into PigCore?
-//TODO: Ctrl+Scroll should now scroll the options
-//TODO: Scrolling while hovering scrollbar should work
-//TODO: Moving selection with keyboard should scroll options viewport
+//TODO: Topbar+Dropdown+Submenu should have better logic, hover to open submenu, corner cutting areas, etc.
+//TODO: Add input handling support to the entire UI system
 
 void DoCSwitchAppUI(v2 screenSize)
 {
@@ -42,11 +44,19 @@ void DoCSwitchAppUI(v2 screenSize)
 		GetThemeColor(OptionListBack),
 		app->settings.uiScale,
 		appIn->programTime,
+		appIn->elapsedMs,
 		app->settings.smoothScrollingDisabled ? -1.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,
 		&appIn->keyboard,
 		&appIn->mouse,
 		&appIn->touch
 	);
+	
+	AppCalculateSmallButtonsGrid();
+	if (app->scrollToSelectedOption)
+	{
+		AutoScrollToSelectedOptionAfterMove();
+		app->scrollToSelectedOption = false;
+	}
 	
 	UIELEM({ .id = UiIdLit("FullscreenContainer"),
 		.direction = UiLayoutDir_TopDown,
@@ -62,12 +72,12 @@ void DoCSwitchAppUI(v2 screenSize)
 		// +==============================+
 		if (!app->minimalModeEnabled || app->isFileMenuOpen || app->isViewMenuOpen)
 		{
-			UiTopbar(UiIdLit("Topbar"), !app->minimalModeEnabled)
+			UiTopbar(UiIdLit("Topbar"))
 			{
 				// +==============================+
 				// |          File Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), &app->isFileMenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
+				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), IsKeyDownRaw(Key_Alt), &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
 				{
 					if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), AppCommand_OpenFile, StrLit("Open a file")))
 					{
@@ -75,7 +85,34 @@ void DoCSwitchAppUI(v2 screenSize)
 						app->isFileMenuOpen = false;
 					}
 					
-					//TODO: Open Recent submenu
+					UiDropdownSubmenuBtn(UiIdLit("OpenRecentSubmenu"), (app->recentFiles.length > 0), AppIcon_OpenRecent, StrLit("Open Recent " UNICODE_RIGHT_ARROW_STR), &app->isOpenRecentSubmenuOpen, &app->keepOpenRecentSubmenuOpenUntilMouseOver)
+					{
+						VarArrayLoop(&app->recentFiles, fIndex)
+						{
+							VarArrayLoopGetReverse(RecentFile, recentFile, &app->recentFiles, fIndex);
+							Str8 displayPath = GetUniqueRecentFilePath(recentFile->path);
+							bool isOpenFile = (AppFindTabForPath(recentFile->path) != nullptr);
+							Str8 tooltipStr = PrintInArenaStr(uiArena, "%.*s%s", StrPrint(recentFile->path), recentFile->fileExists ? "" : " (MISSING)");
+							UiId btnId = UiIdStrIndex(JoinStringsInArena(uiArena, StrLit("RecentFileBtn_"), displayPath, false), fIndex);
+							if (UiDropdownBtn(btnId, !isOpenFile && recentFile->fileExists, AppIcon_None, displayPath, AppCommand_None, tooltipStr))
+							{
+								FileTab* newTab = AppOpenFileTab(recentFile->path);
+								if (newTab != nullptr)
+								{
+									app->isOpenRecentSubmenuOpen = false;
+									app->isFileMenuOpen = false;
+								}
+							}
+						}
+						
+						Str8 clearRecentFilesTooltipStr = PrintInArenaStr(uiArena, "Remove %llu path%s from the \"Recent Files\" list", app->recentFiles.length, Plural(app->recentFiles.length, "s"));
+						if (UiDropdownBtn(UiIdLit("ClearRecentBtn"), (app->recentFiles.length > 0), AppIcon_Trash, StrLit("Clear Recent Files"), AppCommand_ClearRecentFiles, clearRecentFilesTooltipStr))
+						{
+							RunAppCommand(AppCommand_ClearRecentFiles);
+							app->isOpenRecentSubmenuOpen = false;
+							app->isFileMenuOpen = false;
+						}
+					}
 					
 					if (UiDropdownBtn(UiIdLit("ResetFileBtn"), (app->currentTab != nullptr && app->currentTab->isFileChangedFromOriginal), AppIcon_ResetFile, StrLit("Reset File"), AppCommand_ResetFile, StrLit("Reset file to how it was when first opened")))
 					{
@@ -98,7 +135,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          View Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
+				UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), IsKeyDownRaw(Key_Alt), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
 				{
 					ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
 						? ThemeMode_Debug
@@ -362,6 +399,7 @@ void DoCSwitchAppUI(v2 screenSize)
 		// +==============================+
 		SetScrollbarColors(&app->optionsListScrollbarState);
 		app->optionsListScrollbarState.autohide = true;
+		app->optionsListScrollbarState.hidden = app->minimalModeEnabled;
 		ContainerWithVerticalScrollbar(UiIdLit("OptionsList"), &app->optionsListScrollbarState, { })
 		{
 			UIELEM({ .id = UiIdLit("OptionsList"),
@@ -418,27 +456,13 @@ void DoCSwitchAppUI(v2 screenSize)
 					// +==============================+
 					else
 					{
-						UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
-						r32 optionsAreaWidth = (optionsListElem != nullptr)
-							? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
-							: screenSize.Width;
-						u16 buttonMargin = (u16)RoundR32i(SMALL_BTN_MARGIN * app->settings.uiScale);
-						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
-						r32 unscaledButtonWidth = buttonWidth / app->settings.uiScale;
-						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
-						if (numColumns <= 0) { numColumns = 1; }
-						// PrintLine_D("buttonWidth: %g/%g", buttonWidth, unscaledButtonWidth);
-						// PrintLine_D("optionsAreaWidth: %g (%g)", optionsAreaWidth, optionsListElem->layoutRec.Width);
-						// PrintLine_D("longestAbbreviationWidth: %g", app->currentTab->longestAbbreviationWidth);
-						// PrintLine_D("numColumns: %d", numColumns);
-						
 						bool containerStarted = false;
 						VarArrayLoop(&app->currentTab->fileOptions, oIndex)
 						{
 							VarArrayLoopGet(FileOption, option, &app->currentTab->fileOptions, oIndex);
 							bool isOptionSelected = (app->usingKeyboardToSelect && app->currentTab->selectedOptionIndex >= 0 && (uxx)app->currentTab->selectedOptionIndex == oIndex);
 							
-							if ((oIndex % numColumns) == 0)
+							if ((oIndex % app->smallBtnNumColumns) == 0)
 							{
 								if (containerStarted) { CloseUiElement(); }
 								OpenUiElement((UiElemConfig){
@@ -452,21 +476,21 @@ void DoCSwitchAppUI(v2 screenSize)
 							
 							if (option->type == FileOptionType_Bool)
 							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, unscaledButtonWidth))
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->valueBool, isOptionSelected, app->smallBtnWidth))
 								{
 									ToggleOption(app->currentTab, option);
 								}
 							}
 							else if (option->type == FileOptionType_CommentDefine)
 							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, unscaledButtonWidth))
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, option->isUncommented, isOptionSelected, app->smallBtnWidth))
 								{
 									ToggleOption(app->currentTab, option);
 								}
 							}
 							else
 							{
-								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, unscaledButtonWidth))
+								if (UiSmallOptionBtn(UiIdStrIndex(option->name, oIndex), option->abbreviation, false, isOptionSelected, app->smallBtnWidth))
 								{
 									ToggleOption(app->currentTab, option);
 								}
@@ -478,6 +502,9 @@ void DoCSwitchAppUI(v2 screenSize)
 			}
 		}
 	}
+	
+	DoUiNotificationQueue(&app->notificationQueue, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, RoundV2i(screenSize), NOTIFICATION_DEPTH);
+	RenderPopupDialog(&app->popup);
 	
 	RenderPigUi(GetUiRenderList());
 	EndUiFrame();

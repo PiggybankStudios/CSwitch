@@ -74,7 +74,7 @@ static Arena* stdHeap = nullptr;
 #include "app_bindings.c"
 #include "app_helpers.c"
 #include "app_tab.c"
-#include "app_clay.c"
+#include "app_clay_widgets.c"
 #include "app_ui_renderer.c"
 #include "app_ui_widgets.c"
 #include "app_commands.c"
@@ -342,9 +342,7 @@ EXPORT_FUNC APP_INIT_DEF(AppInit)
 	AddThreadToPool(&app->threadPool);
 	#endif
 	
-	#if BUILD_WITH_CLAY
 	InitNotificationQueue(stdHeap, &app->notificationQueue);
-	#endif //BUILD_WITH_CLAY
 	
 	InitAppResources(&app->resources);
 	LoadNotificationIcons();
@@ -508,6 +506,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	ScratchBegin2(scratch3, scratch, scratch2);
 	UpdateDllGlobals(inPlatformInfo, inPlatformApi, memoryPntr, input, inputHandling);
 	TracyCZoneN(_funcZone, "AppUpdate", true);
+	#if BUILD_WITH_PIG_UI
+	SetUiContext(&app->ui);
+	#endif
 	
 	if (app->testThread.isFilled)
 	{
@@ -518,13 +519,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	}
 	
 	TracyCZoneN(Zone_Update, "Update", true);
-	#if BUILD_WITH_CLAY
 	app->notificationQueue.currentProgramTime = appIn->programTime;
-	#endif //BUILD_WITH_CLAY
 	UpdateFileWatches(&app->fileWatches);
-	#if BUILD_WITH_CLAY
 	UpdatePopupDialog(&app->popup);
-	#endif //BUILD_WITH_CLAY
 	if (appIn->frameIndex != 0 && app->renderedLastFrame)
 	{
 		r32 fullUpdateMs = platformInfo->updateMs + app->prevUpdateMs;
@@ -592,6 +589,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +====================================+
 	// | Determine if Screen Needs Refresh  |
 	// +====================================+
+	//NOTE: We will early out inside this block if we don't need to re-render the screen!
 	{
 		if (AppCheckForFileChanges()) { refreshScreen = true; }
 		if (app->wasClayScrollingPrevFrame) { refreshScreen = true; }
@@ -628,9 +626,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		}
 		if (app->popup.isOpen && TimeSinceBy(appIn->programTime, app->popup.openTime) <= POPUP_OPEN_ANIM_TIME) { refreshScreen = true; }
 		else if (!app->popup.isOpen && app->popup.isVisible && TimeSinceBy(appIn->programTime, app->popup.closeTime) <= POPUP_CLOSE_ANIM_TIME) { refreshScreen = true; }
-		#if BUILD_WITH_CLAY
 		if (app->notificationQueue.notifications.length > 0) { refreshScreen = true; }
-		#endif //BUILD_WITH_CLAY
 		if (!AreEqual(appIn->mouse.prevPosition, appIn->mouse.position) && (appIn->mouse.isOverWindow || appIn->mouse.wasOverWindow)) { refreshScreen = true; }
 		if (WasMouseReleasedRaw(MouseBtn_Left) || IsMouseDownRaw(MouseBtn_Left)) { refreshScreen = true; }
 		if (WasMouseReleasedRaw(MouseBtn_Right) || IsMouseDownRaw(MouseBtn_Right)) { refreshScreen = true; }
@@ -645,6 +641,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		
 		if (!refreshScreen && app->numFramesConsecutivelyRendered >= NUM_FRAMES_BEFORE_SLEEP)
 		{
+			#if BUILD_WITH_PIG_UI
+			SetUiContext(nullptr);
+			#endif
 			if (app->testThread.isFilled)
 			{
 				TracyCZoneN(Zone_UnlockTestMutex, "UnlockMutex", true);
@@ -665,7 +664,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	v2 screenSize = ToV2Fromi(appIn->screenSize);
 	// v2 screenCenter = Div(screenSize, 2.0f);
 	// v2i mousePosi = RoundV2i(appIn->mouse.position);
-	v2 mousePos = appIn->mouse.position;
+	// v2 mousePos = appIn->mouse.position;
 	FontNewFrame(&app->uiFont, appIn->programTime);
 	FontNewFrame(&app->mainFont, appIn->programTime);
 	#if BUILD_WITH_CLAY
@@ -811,13 +810,11 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// |   Debug Only Test Hotkeys    |
 	// +==============================+
 	#if DEBUG_BUILD
-	#if BUILD_WITH_CLAY
 	if (WasKeyComboPressed(ModifierKey_None, Key_N, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
 		AddNotificationToQueue(&app->notificationQueue, level, ScratchPrintStr("%s notification is here!", GetDbgLevelStr(level)));
 	}
-	#endif //BUILD_WITH_CLAY
 	if (WasKeyComboPressed(ModifierKey_None, Key_D, true))
 	{
 		DbgLevel level = (DbgLevel)GetRandU32Range(&app->random, 1, DbgLevel_Count);
@@ -963,6 +960,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		TracyCZoneEnd(Zone_UnlockTestMutex);
 	}
 	
+	#if BUILD_WITH_PIG_UI
+	SetUiContext(nullptr);
+	#endif
 	ScratchEnd(scratch);
 	ScratchEnd(scratch2);
 	ScratchEnd(scratch3);

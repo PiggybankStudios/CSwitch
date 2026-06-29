@@ -22,9 +22,9 @@ void SetScrollbarColors(UiScrollbarState* scrollbarState)
 	scrollbarState->barColor = GetThemeColorEx(ScrollBar, themeState);
 }
 
-void UiTopbar_(UiId topbarId, bool isEnabled)
+void UiTopbar_(UiId topbarId)
 {
-	UiSizingAxis topbarHeight = isEnabled ? UI_FIT() : UI_FIXED(0.1f);
+	UiSizingAxis topbarHeight = UI_FIT();
 	OpenUiElement(NEW_STRUCT(UiElemConfig){ .id = topbarId,
 		.direction = UiLayoutDir_LeftToRight,
 		.alignment = UI_ALIGN_LEFT_CENTER(),
@@ -41,9 +41,14 @@ void UiTopbar_(UiId topbarId, bool isEnabled)
 }
 #define UiTopbar(...) DeferBlockWithStart(UiTopbar_(__VA_ARGS__), CloseUiElement())
 
-bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keepOpenUntilMouseover, bool isSubmenuOpen)
+bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMenuOpen, bool* keepOpenUntilMouseover, bool isSubmenuOpen)
 {
 	UiId menuId = UiIdSuffixLit(btnId, "_Menu");
+	
+	Assert(displayText.length >= 1);
+	Str8 altDisplayStr = PrintInArenaStr(uiArena, "(%c)%.*s", displayText.chars[0], displayText.length-1, &displayText.chars[1]);
+	v2 displayTextSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, displayText).logicalRec.Size;
+	v2 altDisplayStrSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, altDisplayStr).logicalRec.Size;
 	
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isMenuHovered = IsUiElementHovered(menuId);
@@ -55,6 +60,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 	
 	UIELEM({ .id = btnId,
 		.sizing = UI_FIT2(),
+		.alignment = UI_ALIGN_CENTER(),
 		.padding = { .inner = MakeV4r(4, 2, 4, 2) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
@@ -63,12 +69,13 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 	})
 	{
 		UIELEM_LEAF({
-			.text = displayText,
+			.text = showAltText ? altDisplayStr : displayText,
+			.alignment = UI_ALIGN_CENTER(),
 			.font = &app->uiFont,
 			.fontSize = app->uiFontSize,
 			.fontStyle = UI_FONT_STYLE,
 			.textColor = textColor,
-			.sizing = UI_TEXT_FULL(),
+			.sizing = { .width=UI_FIXED(MaxR32(displayTextSize.Width, altDisplayStrSize.Width)), .height={.type=UiSizingType_TextClip} },
 		});
 	}
 	
@@ -106,6 +113,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool* isMenuOpen, bool* keep
 
 bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, AppCommand commandForHotkeyDisplay, Str8 tooltipStr)
 {
+	UNUSED(tooltipStr); //TODO: Add tooltip support!
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
 	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : ThemeState_Default));
@@ -169,7 +177,6 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 						.fontSize = app->uiFontSize,
 						.fontStyle = UI_FONT_STYLE,
 						.textColor = hotkeyTextColor,
-						//TODO: Add corner radius
 						.sizing = UI_TEXT_FULL(),
 					});
 				}
@@ -180,9 +187,88 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 	return (isBtnHovered && isEnabled && MouseLeftClicked());
 }
 
+bool UiDropdownSubmenuBtn_(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText, bool* isMenuOpen, bool* keepOpenUntilMouseoverPntr)
+{
+	NotNull(isMenuOpen);
+	NotNull(keepOpenUntilMouseoverPntr);
+	if (*isMenuOpen && !isEnabled) { *isMenuOpen = false; *keepOpenUntilMouseoverPntr = false; WriteLine_D("Disabled, on longer keep over"); }
+	
+	UiId submenuId = UiIdSuffixLit(btnId, "_Submenu");
+	bool isBtnHovered = IsUiElementHovered(btnId);
+	bool isMenuHovered = IsUiElementHovered(submenuId);
+	bool isPressed = (isBtnHovered && IsMouseDownRaw(MouseBtn_Left));
+	
+	if (isBtnHovered && isEnabled && MouseLeftClicked())
+	{
+		*isMenuOpen = !*isMenuOpen;
+		if (*isMenuOpen) { *keepOpenUntilMouseoverPntr = true; }
+		else { *keepOpenUntilMouseoverPntr = false; }
+	}
+	if (isMenuHovered && *keepOpenUntilMouseoverPntr) { *keepOpenUntilMouseoverPntr = false; }
+	if (*isMenuOpen && !isBtnHovered && !isMenuHovered && !(*keepOpenUntilMouseoverPntr)) { *isMenuOpen = false; }
+	
+	ThemeState btnThemeState = !isEnabled ? ThemeState_Disabled : (isPressed ? ThemeState_Pressed : (isBtnHovered ? ThemeState_Hovered : ThemeState_Default));
+	Color32 backgroundColor   = GetThemeColorEx(DropdownBtnBack,   btnThemeState);
+	Color32 borderColor       = GetThemeColorEx(DropdownBtnBorder, btnThemeState);
+	Color32 textColor         = GetThemeColorEx(DropdownBtnText,   btnThemeState);
+	Color32 iconColor         = GetThemeColorEx(DropdownBtnIcon,   btnThemeState);
+	
+	UIELEM({ .id = btnId,
+		.direction = UiLayoutDir_LeftToRight,
+		.sizing = { .width=UI_EXPAND(), .height=UI_FIT(), },
+		.alignment = UI_ALIGN_LEFT_CENTER(),
+		.padding = { .inner=MakeV4r(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
+		.color = backgroundColor,
+		.borderColor = borderColor,
+		.borderThickness = FillV4r(1.0f),
+		.cornerRadius = FillV4r(4),
+	})
+	{
+		if (appIcon != AppIcon_None)
+		{
+			UIELEM_LEAF({
+				.sizing = UI_FIXED2(TOPBAR_ICONS_SIZE, TOPBAR_ICONS_SIZE),
+				.texture = &app->appIconsSheet.texture,
+				.textureSourceRec = GetSheetCellRec(&app->appIconsSheet, app->appIconSheetCell[appIcon]),
+				.color = iconColor,
+			});
+		}
+		
+		UIELEM_LEAF({
+			.text = displayText,
+			.font = &app->uiFont,
+			.fontSize = app->uiFontSize,
+			.fontStyle = UI_FONT_STYLE,
+			.textColor = textColor,
+			.sizing = UI_TEXT_FULL(),
+		});
+	}
+	
+	if (*isMenuOpen)
+	{
+		OpenUiElement(NEW_STRUCT(UiElemConfig){ .id = submenuId,
+			.direction = UiLayoutDir_TopDown,
+			.sizing = UI_FIT2(),
+			.padding = { .inner=FillV4r(2), .child=2 },
+			.color = GetThemeColor(DropdownBack),
+			.borderColor = GetThemeColor(DropdownBorder),
+			.borderThickness = FillV4r(1),
+			.cornerRadius = MakeV4r(0, 0, 4, 4),
+			.floating = {
+				.type = UiFloatingType_Id,
+				.attachId = btnId,
+				.parentSide = UiSide_TopRight,
+				.elemSide = UiSide_TopLeft,
+			},
+		});
+		return true;
+	}
+	else { return false; }
+}
+#define UiDropdownSubmenuBtn(...) DeferIfBlockCondEnd(UiDropdownSubmenuBtn_(__VA_ARGS__), CloseUiElement())
+
 bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isSelected)
 {
-	ScratchBegin(scratch);
 	bool isHovered = IsUiElementHovered(btnId);
 	bool isPressed = (isHovered && IsMouseDownRaw(MouseBtn_Left));
 	
@@ -216,7 +302,7 @@ bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isS
 		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Value"),
 			.sizing = UI_TEXT_FULL(),
 			.text = valueStr,
-			.textColor = nameTextColor,
+			.textColor = valueTextColor,
 			.font = &app->mainFont,
 			.fontSize = app->mainFontSize,
 			.fontStyle = MAIN_FONT_STYLE,

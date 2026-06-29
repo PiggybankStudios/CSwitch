@@ -12,8 +12,6 @@ Description:
 	** with one of the options presented.
 */
 
-#if BUILD_WITH_CLAY
-
 void FreePopupDialogButton(PopupDialogButton* button)
 {
 	NotNull(button);
@@ -104,9 +102,13 @@ void UpdatePopupDialog(PopupDialog* dialog)
 	VarArrayLoop(&dialog->buttons, bIndex)
 	{
 		VarArrayLoopGet(PopupDialogButton, button, &dialog->buttons, bIndex);
+		#if BUILD_WITH_CLAY
 		Str8 buttonClayIdStr = ScratchPrintStr("PopupDialogBtn[%llu]_%s", button->id, GetPopupDialogResultStr(button->result));
 		ClayId buttonClayId = ToClayId(buttonClayIdStr);
 		bool isButtonHovered = IsMouseOverClay(buttonClayId);
+		#elif BUILD_WITH_PIG_UI
+		bool isButtonHovered = IsUiElementHovered(UiIdPrint("PopupDialogBtn[%llu]_%s", button->id, GetPopupDialogResultStr(button->result)));
+		#endif
 		if (isButtonHovered && MouseLeftClicked())
 		{
 			dialog->result = button->result;
@@ -141,6 +143,11 @@ void RenderPopupDialog(PopupDialog* dialog)
 	darkenColor = ColorWithAlpha(darkenColor, (darkenColor.alpha/255.0f) * dialogAlpha);
 	Color32 dialogColor = ColorWithAlpha(GetThemeColor(ConfirmDialogBack), dialogAlpha);
 	Color32 textColor = ColorWithAlpha(GetThemeColor(ConfirmDialogText), textAlpha);
+	
+	// +==============================+
+	// |         Clay Version         |
+	// +==============================+
+	#if BUILD_WITH_CLAY
 	
 	CLAY({ .id = CLAY_ID("PopupDialogScreenOverlay"),
 		.layout = {
@@ -238,6 +245,91 @@ void RenderPopupDialog(PopupDialog* dialog)
 			}
 		}
 	}
+	
+	// +==============================+
+	// |        Pig UI Version        |
+	// +==============================+
+	#elif BUILD_WITH_PIG_UI
+	
+	UIELEM({ .id = UiIdLit("PopupDialogScreenOverlay"),
+		.depth = POPUP_DEPTH,
+		.sizing = UI_FIXED2(appIn->screenSize.Width / GetUiCtx()->scale, appIn->screenSize.Height / GetUiCtx()->scale),
+		.alignment = UI_ALIGN_CENTER(),
+		.floating = {
+			.type = UiFloatingType_Parent,
+			.parentSide = UiSide_TopLeft,
+			.elemSide = UiSide_TopLeft,
+		},
+		.color = darkenColor,
+	})
+	{
+		UIELEM({ .id = UiIdLit("PopupDialog"),
+			.direction = UiLayoutDir_TopDown,
+			.padding = { .inner=FillV4r(16) },
+			.sizing = UI_FIT2(), //TODO: Add a support for minimum size
+			.color = dialogColor,
+			.cornerRadius = FillV4r(8),
+			.borderColor = GetThemeColor(ConfirmDialogBorder),
+			.borderThickness = FillV4r(2),
+		})
+		{
+			UIELEM_LEAF({
+				.sizing = UI_TEXT_WRAP(0),
+				.padding = { .outer={.Top=10, .Bottom=20} },
+				.text = dialog->messageStr,
+				.font = &app->uiFont,
+				.fontSize = app->uiFontSize,
+				.fontStyle = UI_FONT_STYLE,
+				.textColor = textColor,
+			});
+			
+			UIELEM({ .id=UiIdLit("PopupDialogButtonsList"),
+				.direction = UiLayoutDir_LeftToRight,
+				.padding = { .child=8 },
+				.sizing = { .width=UI_PERCENT(1.0f), .height=UI_FIT() },
+			})
+			{
+				VarArrayLoop(&dialog->buttons, bIndex)
+				{
+					VarArrayLoopGet(PopupDialogButton, button, &dialog->buttons, bIndex);
+					
+					UiId buttonId = UiIdPrint("PopupDialogBtn[%llu]_%s", button->id, GetPopupDialogResultStr(button->result));
+					bool isButtonHovered = IsUiElementHovered(buttonId);
+					Color32 buttonColor = Transparent;
+					Color32 borderColor = ColorWithAlpha(button->color, 0.5f * dialogAlpha);
+					if (isButtonHovered && dialog->isOpen)
+					{
+						buttonColor = ColorWithAlpha(button->color, 0.5f * dialogAlpha);
+						borderColor = ColorWithAlpha(button->color, dialogAlpha);
+					}
+					
+					// r32 maxButtonWidth = (dialogMaxWidth - (16 * 2.0f)) / (r32)dialog->buttons.length;
+					UIELEM({ .id = buttonId,
+						.alignment = UI_ALIGN_CENTER(),
+						.padding = { .inner=FillV4r(8), },
+						.sizing = {
+							.width = UI_FIT(), //TODO: Add support for min and max in UI_FIT: MinR32(100, maxButtonWidth), (r32)appIn->screenSize.Width/(r32)dialog->buttons.length
+							.height = UI_FIT(), //TODO: Add support for max in UI_FIT: (r32)appIn->screenSize.Height
+						},
+						.color = buttonColor,
+						.cornerRadius = FillV4r(9),
+						.borderColor = borderColor,
+						.borderThickness = FillV4r(2),
+					})
+					{
+						UIELEM_LEAF({
+							.sizing = UI_TEXT_WRAP(0),
+							.text = button->displayStr,
+							.font = &app->uiFont,
+							.fontSize = (u16)app->uiFontSize,
+							.fontStyle = UI_FONT_STYLE,
+							.textColor = ColorWithAlpha(GetThemeColor(ConfirmDialogText), textAlpha), //TODO: $THEME Update to use color for the type of button (defined by the theme)
+						});
+					}
+				}
+			}
+		}
+	}
+	
+	#endif //BUILD_WITH_CLAY
 }
-
-#endif //BUILD_WITH_CLAY
