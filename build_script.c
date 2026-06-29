@@ -126,8 +126,8 @@ int main(int argc, char* argv[])
 	// +==============================+
 	Str buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
-	Str PROJECT_DLL_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME"));
-	Str PROJECT_EXE_NAME  = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME"));
+	Str PROJECT_DLL_NAME  = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME")));
+	Str PROJECT_EXE_NAME  = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME")));
 	// Str PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
 	// Str PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
 	
@@ -140,6 +140,7 @@ int main(int argc, char* argv[])
 	LOAD_CONFIG(USE_BUNDLED_RESOURCES);
 	LOAD_CONFIG(BUILD_WINDOWS);
 	LOAD_CONFIG(BUILD_LINUX);
+	LOAD_CONFIG(BUILD_OSX);
 	LOAD_CONFIG(BUILD_SHADERS);
 	LOAD_CONFIG(BUILD_PIGGEN);
 	LOAD_CONFIG(RUN_PIGGEN);
@@ -164,9 +165,10 @@ int main(int argc, char* argv[])
 	Str filenameAppDll    = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dll"));
 	Str filenameAppDllAsm = JoinStrings2(PROJECT_DLL_NAME, StrLit(".asm"));
 	Str filenameAppSo     = JoinStrings2(PROJECT_DLL_NAME, StrLit(".so"));
+	Str filenameAppDylib  = JoinStrings2(PROJECT_DLL_NAME, StrLit(".dylib"));
 	Str filenameAppExe    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".exe"));
 	Str filenameAppAsm    = JoinStrings2(PROJECT_EXE_NAME, StrLit(".asm"));
-	Str filenameApp       = JoinStrings2(PROJECT_EXE_NAME, StrLit(""));
+	Str filenameApp       = PROJECT_EXE_NAME;
 	
 	// +==============================+
 	// | Parse Command-Line Arguments |
@@ -191,6 +193,16 @@ int main(int argc, char* argv[])
 	{
 		WriteLine_E("BUILD_WINDOWS does not working when building on non-Windows platforms");
 		BUILD_WINDOWS = false;
+	}
+	if (BUILD_OSX && !BUILDING_ON_OSX)
+	{
+		WriteLine_E("BUILD_OSX does not working when building on non-Mac platforms");
+		BUILD_OSX = false;
+	}
+	if (BUILD_LINUX && !BUILDING_ON_LINUX && !BUILDING_ON_WINDOWS)
+	{
+		WriteLine_E("BUILD_LINUX only works when building on Linux (or on Windows through WSL)");
+		BUILD_LINUX = false;
 	}
 	if (BUILD_INTO_SINGLE_UNIT && BUILD_APP_DLL && !BUILD_APP_EXE)
 	{
@@ -411,6 +423,7 @@ int main(int argc, char* argv[])
 			chdir("..");
 			#endif
 		}
+		//TODO: Add OSX support
 	}
 	if (PROFILING_ENABLED)
 	{
@@ -539,8 +552,17 @@ int main(int argc, char* argv[])
 			{
 				Str oPath = findContext.oPaths.strings[sIndex];
 				AddTaggedArgStr(&commonLinkerFlags, T_NOT_WINDOWS T_SHADER_OBJS, CLI_QUOTED_ARG, oPath);
-				Str oPathWithFolder = BUILDING_ON_LINUX ? CopyStr(oPath) : JoinStrings2(StrLit(FOLDERNAME_LINUX "/"), oPath);
+				Str oPathWithFolder = BUILDING_ON_LINUX ? CopyStr(oPath) : JoinPaths(StrLit(FOLDERNAME_LINUX), oPath);
 				if (!DoesFileExist(oPathWithFolder) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPathWithFolder)); BUILD_SHADERS = true; }
+			}
+		}
+		if (BUILD_OSX)
+		{
+			for (u64 sIndex = 0; sIndex < findContext.oPaths.length; sIndex++)
+			{
+				Str oPath = findContext.oPaths.strings[sIndex];
+				AddTaggedArgStr(&commonLinkerFlags, T_NOT_WINDOWS T_SHADER_OBJS, CLI_QUOTED_ARG, oPath);
+				if (!DoesFileExist(oPath) && !BUILD_SHADERS) { PrintLine("Building shaders because \"%.*s\" is missing!", StrPrint(oPath)); BUILD_SHADERS = true; }
 			}
 		}
 		
@@ -631,7 +653,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_WINDOWS);
 				AddTag(&tags, T_LANG_C);
 				
-				RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, StrLit("Failed to build TODO: for Windows!"));
+				RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, FormatStr("Failed to build %.*s for Windows!", StrPrint(sourcePath)));
 				AssertFileExist(objPath, true);
 			}
 			if (BUILD_LINUX)
@@ -668,12 +690,35 @@ int main(int argc, char* argv[])
 				cmd.rootDirPath = StrLit("../..");
 				#endif
 				
-				RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, StrLit("Failed to build TODO: for Linux!"));
+				RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, FormatStr("Failed to build %.*s for Linux!", StrPrint(sourcePath)));
 				AssertFileExist(oPath, true);
 				
 				#if !BUILDING_ON_LINUX
 				chdir("..");
 				#endif
+			}
+			if (BUILD_OSX)
+			{
+				Str oPath = findContext.oPaths.strings[sIndex];
+				
+				CliArgs cmd = EMPTY;
+				cmd.pathSepChar = '/';
+				AddArg(&cmd, CLANG_COMPILE);
+				AddArgStr(&cmd, CLI_QUOTED_ARG, sourcePath);
+				AddArgStr(&cmd, CLANG_OUTPUT_FILE, oPath);
+				AddArgStr(&cmd, CLANG_INCLUDE_DIR, headerDirectory);
+				AddArgNt(&cmd, CLANG_DISABLE_WARNING, "unused-command-line-argument"); //Clang likes to warn about _lib_debug/_lib_release library folder being unused
+				AddArgList(&cmd, &commonCompilerFlags);
+				
+				StrArray tags = EMPTY;
+				AddStrArray(&tags, &commonTags);
+				AddTag(&tags, T_CLANG);
+				AddTag(&tags, T_OSX);
+				AddTag(&tags, T_UNIX);
+				AddTag(&tags, T_LANG_OBJECTIVEC);
+				
+				RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, FormatStr("Failed to build %.*s for OSX!", StrPrint(sourcePath)));
+				AssertFileExist(oPath, true);
 			}
 		}
 		
@@ -758,6 +803,7 @@ int main(int argc, char* argv[])
 			chdir("..");
 			#endif
 		}
+		//TODO: Add OSX support
 	}
 	
 	// +--------------------------------------------------------------+
@@ -805,8 +851,7 @@ int main(int argc, char* argv[])
 				AddTag(&tags, T_SHADER_OBJS);
 			}
 			
-			Str errorStr = JoinStrings3(StrLit("Failed to build "), filenameAppExe, StrLit("!"));
-			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, errorStr);
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_MSVC_CL), tags, &cmd, FormatStr("Failed to build %.*s on Windows!", StrPrint(filenameAppExe)));
 			AssertFileExist(filenameAppExe, true);
 			PrintLine("[Built %.*s for Windows!]", StrPrint(filenameAppExe));
 		}
@@ -847,7 +892,7 @@ int main(int argc, char* argv[])
 			cmd.rootDirPath = StrLit("../..");
 			#endif
 			
-			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, FormatStr("Failed to build %.*s!", StrPrint(filenameApp)));
+			RunCliProgramAndExitOnFailureTags(clangExe, tags, &cmd, FormatStr("Failed to build %.*s on Linux!", StrPrint(filenameApp)));
 			AssertFileExist(filenameApp, true);
 			PrintLine("[Built %.*s for Linux!]", StrPrint(filenameApp));
 			
@@ -856,7 +901,44 @@ int main(int argc, char* argv[])
 			#endif
 		}
 		
-		//TODO: Add OSX support
+		if (BUILD_OSX)
+		{
+			PrintLine("\n[Building %.*s for OSX...]", StrPrint(filenameApp));
+			
+			Str platformMainMPath = StrLit("platform_main.m");
+			if (!DoesFileExist(platformMainMPath))
+			{
+				WriteLine_E("Creating platform_main.m");
+				CreateAndWriteFile(platformMainMPath, StrLit("#include \"platform_main.c\"\n"), true);
+			}
+			
+			CliArgs cmd = EMPTY;
+			cmd.pathSepChar = '/';
+			AddArgStr(&cmd, CLI_QUOTED_ARG, platformMainMPath); //NOTE: When BUILD_INTO_SINGLE_UNIT platform_main.c #includes app_main.c (and has PigCore implementations)
+			AddArgStr(&cmd, CLANG_OUTPUT_FILE, filenameApp);
+			AddArgList(&cmd, &commonCompilerFlags);
+			AddArgNt(&cmd, CLANG_SYSTEM_LIBRARY, "GL"); //TODO: We should update pig_build_pig_core_flags.h tags so this gets added based on our tags chosen below
+			AddArgNt(&cmd, CLANG_RPATH_DIR, ".");
+			if (!BUILD_INTO_SINGLE_UNIT) { AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_PIG_CORE_SO); }
+			AddArgList(&cmd, &commonLinkerFlags);
+			
+			StrArray tags = EMPTY;
+			AddStrArray(&tags, &commonTags);
+			AddTag(&tags, T_CLANG);
+			AddTag(&tags, T_OSX);
+			AddTag(&tags, T_UNIX);
+			AddTag(&tags, T_LANG_C);
+			AddTag(&tags, T_PROGRAM);
+			if (BUILD_INTO_SINGLE_UNIT)
+			{
+				AddTag(&tags, T_PIG_CORE);
+				AddTag(&tags, T_SHADER_OBJS);
+			}
+			
+			RunCliProgramAndExitOnFailureTags(StrLit(EXE_CLANG), tags, &cmd, FormatStr("Failed to build %.*s on OSX!", StrPrint(filenameApp)));
+			AssertFileExist(filenameApp, true);
+			PrintLine("[Built %.*s for OSX!]", StrPrint(filenameApp));
+		}
 	}
 	
 	// +--------------------------------------------------------------+

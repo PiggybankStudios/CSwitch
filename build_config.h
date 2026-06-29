@@ -21,22 +21,24 @@ Description:
 
 
 // Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 1
+#define BUILD_WINDOWS 0
 // Build binaries for Linux platform(s)
 #define BUILD_LINUX   0
+// Build .app for MacOS platform
+#define BUILD_OSX     1
 
 
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
-#define BUILD_INTO_SINGLE_UNIT  0
+#define BUILD_INTO_SINGLE_UNIT  1
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS 0
+#define BUILD_SHADERS 1
 
 // Builds dll_main.c into pig_core.dll and pig_core.lib
 #define BUILD_PIG_CORE_DLL      0
 // Compiles app/platform_main.c to %PROJECT_EXE_NAME%.exe
-#define BUILD_APP_EXE  0
+#define BUILD_APP_EXE  1
 // Compiles app/app_main.c to %PROJECT_DLL_NAME%.dll
-#define BUILD_APP_DLL  1
+#define BUILD_APP_DLL  0
 
 // Compiles piggen/main.c
 #define BUILD_PIGGEN   0
