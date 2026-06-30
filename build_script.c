@@ -229,11 +229,12 @@ int main(int argc, char* argv[])
 	// +==============================+
 	CliArgs commonCompilerFlags = EMPTY;
 	CliArgs commonLinkerFlags = EMPTY;
-	FillPigCoreFlags(&commonCompilerFlags, &commonLinkerFlags, StrLit("[ROOT]/core"));
-	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR, "[ROOT]/app");
-	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR, "[ROOT]/core");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/app");
 	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/app");
-	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/core");
+	
+	FillPigCoreFlags(&commonCompilerFlags, &commonLinkerFlags, StrLit("[ROOT]/core"));
 	
 	//clang_AndroidFlags, clang_AndroidLinkFlags, clang_WasmFlags, clang_WebFlags, clang_OrcaFlags
 	//cl_PlaydateSimulatorCompilerFlags, link_PlaydateSimulatorLinkerFlags, link_PlaydateSimulatorLibraries
