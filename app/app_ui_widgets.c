@@ -33,10 +33,10 @@ void UiTopbar_(UiId topbarId)
 			.height = topbarHeight,
 		},
 		//TODO: Do we need padding to account for border on bottom?
-		.padding = { .inner={ .Bottom=1 }, .child = 2 },
+		.padding = { .inner={ .bottom=1 }, .child = 2 },
 		.color = GetThemeColor(TopbarBack),
 		.borderColor = GetThemeColor(TopbarBorder),
-		.borderThickness = { .Bottom=1 },
+		.borderThickness = { .bottom=1 },
 	});
 }
 #define UiTopbar(...) DeferBlockWithStart(UiTopbar_(__VA_ARGS__), CloseUiElement())
@@ -47,8 +47,8 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 	
 	Assert(displayText.length >= 1);
 	Str8 altDisplayStr = PrintInArenaStr(uiArena, "(%c)%.*s", displayText.chars[0], displayText.length-1, &displayText.chars[1]);
-	v2 displayTextSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, displayText).logicalRec.Size;
-	v2 altDisplayStrSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, altDisplayStr).logicalRec.Size;
+	v2 displayTextSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, displayText).logicalRec.size;
+	v2 altDisplayStrSize = MeasureTextEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, false, 0.0f, altDisplayStr).logicalRec.size;
 	
 	bool isBtnHovered = IsUiElementHovered(btnId);
 	bool isMenuHovered = IsUiElementHovered(menuId);
@@ -75,7 +75,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 			.fontSize = app->uiFontSize,
 			.fontStyle = UI_FONT_STYLE,
 			.textColor = textColor,
-			.sizing = { .width=UI_FIXED(MaxR32(displayTextSize.Width, altDisplayStrSize.Width)), .height={.type=UiSizingType_TextClip} },
+			.sizing = { .width=UI_FIXED(MaxR32(displayTextSize.width, altDisplayStrSize.width)), .height={.type=UiSizingType_TextClip} },
 		});
 	}
 	
@@ -102,7 +102,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 				.parentSide = UiSide_BottomLeft,
 				.elemSide = UiSide_TopLeft,
 			},
-			.cornerRadius = { .BottomLeft=4, .BottomRight=4 },
+			.cornerRadius = { .bottomLeft=4, .bottomRight=4 },
 		});
 		menuNeedsClosing = true;
 	}
@@ -164,7 +164,7 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 			{
 				UIELEM({
 					.sizing = UI_FIT2(),
-					.padding = { .inner = { .Left=2, .Right=2, .Top=1, .Bottom=1 } },
+					.padding = { .inner = { .left=2, .right=2, .top=1, .bottom=1 } },
 					.color = hotkeyBackColor,
 					.borderColor = hotkeyBorderColor,
 					.borderThickness = FillV4r(1),

@@ -385,7 +385,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		{
 			#if BUILD_WITH_CLAY
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
-			if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->Y = 0; }
+			if (optionsListScrollData.found) { optionsListScrollData.scrollTarget->y = 0; }
 			#elif BUILD_WITH_PIG_UI
 			SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, 0));
 			#endif //BUILD_WITH_CLAY
@@ -400,14 +400,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
 			{
-				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-				optionsListScrollData.scrollTarget->Y = -maxScroll;
+				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
+				optionsListScrollData.scrollTarget->y = -maxScroll;
 			}
 			#elif BUILD_WITH_PIG_UI
 			UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
 			if (optionsListElem != nullptr)
 			{
-				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, optionsListElem->scrollMax.Y));
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, optionsListElem->scrollMax.y));
 			}
 			#endif //BUILD_WITH_CLAY
 		} break;
@@ -421,14 +421,14 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
 			{
-				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-				optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y + optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
+				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
+				optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y + optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
 			}
 			#elif BUILD_WITH_PIG_UI
 			UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
 			if (optionsListElem != nullptr)
 			{
-				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, MaxR32(0.0f, optionsListElem->scroll.Y - optionsListElem->layoutRec.Height))); //TODO: Should we take inner padding into account here?
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, MaxR32(0.0f, optionsListElem->scroll.y - optionsListElem->layoutRec.height))); //TODO: Should we take inner padding into account here?
 			}
 			#endif //BUILD_WITH_CLAY
 		} break;
@@ -442,21 +442,21 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 			Clay_ScrollContainerData optionsListScrollData = Clay_GetScrollContainerData(CLAY_ID("OptionsList"), false);
 			if (optionsListScrollData.found)
 			{
-				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.Height - optionsListScrollData.scrollContainerDimensions.Height);
-				optionsListScrollData.scrollTarget->Y = ClampR32(optionsListScrollData.scrollTarget->Y - optionsListScrollData.scrollContainerDimensions.Height, -maxScroll, 0);
+				r32 maxScroll = MaxR32(0, optionsListScrollData.contentDimensions.height - optionsListScrollData.scrollContainerDimensions.height);
+				optionsListScrollData.scrollTarget->y = ClampR32(optionsListScrollData.scrollTarget->y - optionsListScrollData.scrollContainerDimensions.height, -maxScroll, 0);
 			}
 			#elif BUILD_WITH_PIG_UI
 			UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
 			if (optionsListElem != nullptr)
 			{
-				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, MinR32(optionsListElem->scrollMax.Y, optionsListElem->scroll.Y + optionsListElem->layoutRec.Height))); //TODO: Should we take inner padding into account here?
+				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, MinR32(optionsListElem->scrollMax.y, optionsListElem->scroll.y + optionsListElem->layoutRec.height))); //TODO: Should we take inner padding into account here?
 			}
 			#endif //BUILD_WITH_CLAY
 		} break;
 		
 		#if BUILD_WITH_CLAY
 		#define CALC_SMALL_OPTION_GRID_SPECS(optionsAreaWidthVarName, buttonMarginVarName, buttonWidthVarName, numColumnsVarName, numRowsVarName)           \
-			r32 optionsAreaWidthVarName = (r32)appIn->screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2); \
+			r32 optionsAreaWidthVarName = (r32)appIn->screenSize.width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2); \
 			u16 buttonMarginVarName = UI_U16(SMALL_BTN_MARGIN);                                                                                             \
 			r32 buttonWidthVarName = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;                                        \
 			i32 numColumnsVarName = FloorR32i((optionsAreaWidthVarName - (r32)buttonMarginVarName) / (buttonWidthVarName + (r32)buttonMarginVarName));      \

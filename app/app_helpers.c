@@ -40,7 +40,7 @@ void LoadNotificationIcons()
 	{
 		ScratchBegin(scratch);
 		ImageData imageData = LoadImageData(scratch, NOTIFICATION_ICONS_TEXTURE_PATH);
-		AssertMsg(imageData.pixels != nullptr && imageData.size.Width > 0 && imageData.size.Height > 0, "Failed to load notification icons texture!");
+		AssertMsg(imageData.pixels != nullptr && imageData.size.width > 0 && imageData.size.height > 0, "Failed to load notification icons texture!");
 		Texture newTexture = InitTexture(stdHeap, StrLit("notificationIcons"), imageData.size, imageData.pixels, 0x00);
 		AssertMsg(newTexture.error == Result_Success, "Failed to init texture for notification icons!");
 		FreeTexture(&app->notificationIconsTexture);
@@ -48,12 +48,12 @@ void LoadNotificationIcons()
 		ScratchEnd(scratch);
 	}
 	
-	const v2i sheetSize = { .X=2, .Y=2 };
+	const v2i sheetSize = MakeV2i(2, 2);
 	v2 cellSize = MakeV2(
-		(r32)app->notificationIconsTexture.Width / (r32)sheetSize.Width,
-		(r32)app->notificationIconsTexture.Height / (r32)sheetSize.Height
+		(r32)app->notificationIconsTexture.width / (r32)sheetSize.width,
+		(r32)app->notificationIconsTexture.height / (r32)sheetSize.height
 	);
-	r32 iconScale = NOTIFICATION_ICONS_SIZE / cellSize.Width;
+	r32 iconScale = NOTIFICATION_ICONS_SIZE / cellSize.width;
 	for (uxx lIndex = DbgLevel_Debug; lIndex < DbgLevel_Count; lIndex++)
 	{
 		DbgLevel dbgLevel = (DbgLevel)lIndex;
@@ -68,12 +68,12 @@ void LoadNotificationIcons()
 			case DbgLevel_Warning: cellPos = MakeV2i(0, 1); break;
 			case DbgLevel_Error:   cellPos = MakeV2i(1, 1); break;
 		}
-		if (cellPos.X != 0 || cellPos.Y != 0)
+		if (cellPos.x != 0 || cellPos.y != 0)
 		{
 			rec iconSourceRec = MakeRec(
-				cellSize.Width * cellPos.X,
-				cellSize.Height * cellPos.Y,
-				cellSize.Width, cellSize.Height
+				cellSize.width * cellPos.x,
+				cellSize.height * cellPos.y,
+				cellSize.width, cellSize.height
 			);
 			SetNotificationIconEx(&app->notificationQueue, dbgLevel, &app->notificationIconsTexture, iconScale, GetDbgLevelTextColor(dbgLevel), iconSourceRec);
 		}
@@ -330,10 +330,10 @@ bool AppCreateFonts()
 			bool useWideSheet = false;
 			v2i tilePos = GetSheetFrameForKey(GetKeyForCodepoint(codepoint), false, &keyGlyphWidth, &useWideSheet);
 			v2i sheetTileSize = useWideSheet ? MakeV2i(32, 16) : FillV2i(16);
-			i32 glyphOffset = (i32)(sheetTileSize.Width - keyGlyphWidth) / 2;
+			i32 glyphOffset = (i32)(sheetTileSize.width - keyGlyphWidth) / 2;
 			customGlyphs[numKeyCodepoints].codepoint = codepoint;
 			customGlyphs[numKeyCodepoints].imageData = useWideSheet ? keysWideSheet : keysSheet;
-			customGlyphs[numKeyCodepoints].sourceRec = MakeReci(tilePos.X * sheetTileSize.Width + glyphOffset, tilePos.Y * sheetTileSize.Height, keyGlyphWidth, sheetTileSize.Height);
+			customGlyphs[numKeyCodepoints].sourceRec = MakeReci(tilePos.x * sheetTileSize.width + glyphOffset, tilePos.y * sheetTileSize.height, keyGlyphWidth, sheetTileSize.height);
 			numKeyCodepoints++;
 		}
 		CustomFontCharRange customGlyphsRange = MakeCustomFontCharRangeArray(numKeyCodepoints, &customGlyphs[0]);
@@ -360,7 +360,7 @@ bool AppCreateFonts()
 		FontAtlas* uiAtlas = GetDefaultFontAtlas(&newUiFont);
 		NotNull(uiAtlas);
 		PrintLine_D("UI Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
-			uiAtlas->texture.Width, uiAtlas->texture.Height,
+			uiAtlas->texture.width, uiAtlas->texture.height,
 			uiAtlas->glyphs.length,
 			uiAtlas->metrics.lineHeight,
 			uiAtlas->metrics.maxAscend,
@@ -374,10 +374,10 @@ bool AppCreateFonts()
 			if (glyph->codepoint == 'W')
 			{
 				PrintLine_D("W Glyph: AtlasRec=(%d, %d, %d, %d) renderOffset=(%g, %g) advanceX=%g logicalRec=(%g, %g, %g, %g)",
-					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
-					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
+					glyph->atlasSourcePos.x, glyph->atlasSourcePos.y, glyph->metrics.glyphSize.width, glyph->metrics.glyphSize.height,
+					glyph->metrics.renderOffset.x, glyph->metrics.renderOffset.y,
 					glyph->metrics.advanceX,
-					glyph->metrics.logicalRec.X, glyph->metrics.logicalRec.Y, glyph->metrics.logicalRec.Width, glyph->metrics.logicalRec.Height
+					glyph->metrics.logicalRec.x, glyph->metrics.logicalRec.y, glyph->metrics.logicalRec.width, glyph->metrics.logicalRec.height
 				);
 			}
 		}
@@ -410,7 +410,7 @@ bool AppCreateFonts()
 		FontAtlas* mainAtlas = GetDefaultFontAtlas(&newMainFont);
 		NotNull(mainAtlas);
 		PrintLine_D("Main Atlas: %dx%d %llu glyphs lineHeight=%g maxAscend=%g maxDescend=%g centerOffset=%g fontScale=%g",
-			mainAtlas->texture.Width, mainAtlas->texture.Height,
+			mainAtlas->texture.width, mainAtlas->texture.height,
 			mainAtlas->glyphs.length,
 			mainAtlas->metrics.lineHeight,
 			mainAtlas->metrics.maxAscend,
@@ -424,10 +424,10 @@ bool AppCreateFonts()
 			if (glyph->codepoint == 'W')
 			{
 				PrintLine_D("W Glyph: AtlasRec=(%d, %d, %d, %d) renderOffset=(%g, %g) advanceX=%g logicalRec=(%g, %g, %g, %g)",
-					glyph->atlasSourcePos.X, glyph->atlasSourcePos.Y, glyph->metrics.glyphSize.Width, glyph->metrics.glyphSize.Height,
-					glyph->metrics.renderOffset.X, glyph->metrics.renderOffset.Y,
+					glyph->atlasSourcePos.x, glyph->atlasSourcePos.y, glyph->metrics.glyphSize.width, glyph->metrics.glyphSize.height,
+					glyph->metrics.renderOffset.x, glyph->metrics.renderOffset.y,
 					glyph->metrics.advanceX,
-					glyph->metrics.logicalRec.X, glyph->metrics.logicalRec.Y, glyph->metrics.logicalRec.Width, glyph->metrics.logicalRec.Height
+					glyph->metrics.logicalRec.x, glyph->metrics.logicalRec.y, glyph->metrics.logicalRec.width, glyph->metrics.logicalRec.height
 				);
 			}
 		}
@@ -450,7 +450,7 @@ bool AppChangeFontSize(bool increase)
 	{
 		NotNull(appIn);
 		//NOTE: This max is likely too large if the window is fullscreen but when the window is small it will make sure the font size doesn't get so large that the UI breaks down
-		r32 maxFontSize = MinR32((r32)appIn->screenSize.Width/12.0f, (r32)appIn->screenSize.Height/12.0f);
+		r32 maxFontSize = MinR32((r32)appIn->screenSize.width/12.0f, (r32)appIn->screenSize.height/12.0f);
 		if (app->uiFontSize < maxFontSize)
 		{
 			app->uiFontSize += 1;
@@ -806,8 +806,8 @@ void AppCalculateSmallButtonsGrid()
 {
 	UiElement* optionsListElem = GetUiElementByIdInPrevFrame(UiIdLit("OptionsList"), true);
 	r32 optionsAreaWidth = (optionsListElem != nullptr)
-		? (optionsListElem->layoutRec.Width - optionsListElem->config.padding.inner.Left - optionsListElem->config.padding.inner.Right)
-		: appIn->screenSize.Width;
+		? (optionsListElem->layoutRec.width - optionsListElem->config.padding.inner.left - optionsListElem->config.padding.inner.right)
+		: appIn->screenSize.width;
 	r32 scaledMargin = (SMALL_BTN_MARGIN * app->settings.uiScale);
 	r32 longestAbbreviationWidth = (app->currentTab != nullptr) ? app->currentTab->longestAbbreviationWidth : 0.0f;
 	r32 buttonWidth = longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
@@ -832,19 +832,19 @@ void AutoScrollToSelectedOptionAfterMove()
 		Str8 btnIdStr = PrintInArenaStr(scratch, "%.*s_OptionBtn", StrPrint(selectedOption->name));
 		ClayId btnId = ToClayIdEx(btnIdStr, (uxx)app->currentTab->selectedOptionIndex);
 		rec optionRec = GetClayElementDrawRec(btnId);
-		if (viewportScrollData.found && optionRec.Width > 0 && optionRec.Height > 0)
+		if (viewportScrollData.found && optionRec.width > 0 && optionRec.height > 0)
 		{
-			r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.Height - viewportScrollData.scrollContainerDimensions.Height);
-			r32 optionYPosition = (optionRec.Y - viewportRec.Y) - viewportScrollData.scrollPosition->Y;
-			r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.Height);
-			r32 scrollDownTarget = optionYPosition + optionRec.Height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.Height);
-			if (-viewportScrollData.scrollTarget->Y < scrollDownTarget)
+			r32 maxScroll = MaxR32(0, viewportScrollData.contentDimensions.height - viewportScrollData.scrollContainerDimensions.height);
+			r32 optionYPosition = (optionRec.y - viewportRec.y) - viewportScrollData.scrollPosition->y;
+			r32 scrollUpTarget = optionYPosition - (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * viewportRec.height);
+			r32 scrollDownTarget = optionYPosition + optionRec.height - ((1.0f - OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW) * viewportRec.height);
+			if (-viewportScrollData.scrollTarget->y < scrollDownTarget)
 			{
-				viewportScrollData.scrollTarget->Y = -MinR32(maxScroll, scrollDownTarget);
+				viewportScrollData.scrollTarget->y = -MinR32(maxScroll, scrollDownTarget);
 			}
-			else if (-viewportScrollData.scrollTarget->Y > scrollUpTarget)
+			else if (-viewportScrollData.scrollTarget->y > scrollUpTarget)
 			{
-				viewportScrollData.scrollTarget->Y = -MaxR32(0, scrollUpTarget);
+				viewportScrollData.scrollTarget->y = -MaxR32(0, scrollUpTarget);
 			}
 		}
 		#elif BUILD_WITH_PIG_UI
@@ -854,18 +854,18 @@ void AutoScrollToSelectedOptionAfterMove()
 		UiElement* optionBtnElem = GetUiElementByIdInPrevFrame(btnId, true);
 		if (optionsListElem != nullptr && optionBtnElem != nullptr)
 		{
-			// r32 maxScroll = MaxR32(0, optionsListElem->contentSize.Height - optionsListElem->layoutRec.Height);
-			r32 optionYPosition = (optionBtnElem->layoutRec.Y - (optionsListElem->layoutRec.Y + optionsListElem->config.padding.inner.Top * app->settings.uiScale)) + optionsListElem->scroll.Y;
-			r32 bufferHeight = (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * optionsListElem->layoutRec.Height);
+			// r32 maxScroll = MaxR32(0, optionsListElem->contentSize.height - optionsListElem->layoutRec.height);
+			r32 optionYPosition = (optionBtnElem->layoutRec.y - (optionsListElem->layoutRec.y + optionsListElem->config.padding.inner.top * app->settings.uiScale)) + optionsListElem->scroll.y;
+			r32 bufferHeight = (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * optionsListElem->layoutRec.height);
 			r32 scrollUpTarget = MaxR32(0.0f, optionYPosition - bufferHeight);
-			r32 scrollDownTarget = MinR32(optionsListElem->scrollMax.Y, optionYPosition + optionBtnElem->layoutRec.Height + bufferHeight - optionsListElem->layoutRec.Height);
-			PrintLine_D("Scroll to up=%g down=%g (current=%g, yPos=%g)", scrollUpTarget, scrollDownTarget, optionsListElem->scrollGoto.Y, optionYPosition);
-			if (optionsListElem->scrollGoto.Y < scrollDownTarget)
+			r32 scrollDownTarget = MinR32(optionsListElem->scrollMax.y, optionYPosition + optionBtnElem->layoutRec.height + bufferHeight - optionsListElem->layoutRec.height);
+			PrintLine_D("Scroll to up=%g down=%g (current=%g, yPos=%g)", scrollUpTarget, scrollDownTarget, optionsListElem->scrollGoto.y, optionYPosition);
+			if (optionsListElem->scrollGoto.y < scrollDownTarget)
 			{
 				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, scrollDownTarget));
 				WriteLine_D("Scrolling Down!");
 			}
-			else if (optionsListElem->scrollGoto.Y > scrollUpTarget)
+			else if (optionsListElem->scrollGoto.y > scrollUpTarget)
 			{
 				SetUiElementScroll(UiIdLit("OptionsList"), FillV2(-1), MakeV2(-1, scrollUpTarget));
 				WriteLine_D("Scrolling Up!");

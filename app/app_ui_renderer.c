@@ -36,12 +36,12 @@ void RenderPigUi(UiRenderList* renderList)
 						}
 					}
 					
-					if (cmd->rectangle.borderThickness.Left > 0.0f || cmd->rectangle.borderThickness.Top > 0.0f ||
-						cmd->rectangle.borderThickness.Right > 0.0f || cmd->rectangle.borderThickness.Bottom > 0.0f)
+					if (cmd->rectangle.borderThickness.left > 0.0f || cmd->rectangle.borderThickness.top > 0.0f ||
+						cmd->rectangle.borderThickness.right > 0.0f || cmd->rectangle.borderThickness.bottom > 0.0f)
 					{
 						DrawRectangleOutlineSidesEx(
 							cmd->rectangle.rectangle,
-							cmd->rectangle.borderThickness.Left, cmd->rectangle.borderThickness.Right, cmd->rectangle.borderThickness.Top, cmd->rectangle.borderThickness.Bottom,
+							cmd->rectangle.borderThickness.left, cmd->rectangle.borderThickness.right, cmd->rectangle.borderThickness.top, cmd->rectangle.borderThickness.bottom,
 							cmd->rectangle.borderColor,
 							false
 						);
@@ -52,27 +52,27 @@ void RenderPigUi(UiRenderList* renderList)
 					if (cmd->rectangle.texture != nullptr)
 					{
 						DrawRoundedRectangleEx(cmd->rectangle.rectangle,
-							cmd->rectangle.cornerRadius.TopLeft, cmd->rectangle.cornerRadius.TopRight, cmd->rectangle.cornerRadius.BottomRight, cmd->rectangle.cornerRadius.BottomLeft,
+							cmd->rectangle.cornerRadius.topLeft, cmd->rectangle.cornerRadius.topRight, cmd->rectangle.cornerRadius.bottomRight, cmd->rectangle.cornerRadius.bottomLeft,
 							cmd->color
 						);
 					}
 					else
 					{
 						DrawTexturedRoundedRectangleEx(cmd->rectangle.rectangle,
-							cmd->rectangle.cornerRadius.TopLeft, cmd->rectangle.cornerRadius.TopRight, cmd->rectangle.cornerRadius.BottomRight, cmd->rectangle.cornerRadius.BottomLeft,
+							cmd->rectangle.cornerRadius.topLeft, cmd->rectangle.cornerRadius.topRight, cmd->rectangle.cornerRadius.bottomRight, cmd->rectangle.cornerRadius.bottomLeft,
 							cmd->color,
 							cmd->rectangle.texture,
 							cmd->rectangle.sourceRec
 						);
 					}
 					
-					r32 borderThickness = MaxR32(MaxR32(cmd->rectangle.borderThickness.X, cmd->rectangle.borderThickness.Y), MaxR32(cmd->rectangle.borderThickness.Z, cmd->rectangle.borderThickness.W));
+					r32 borderThickness = MaxR32(MaxR32(cmd->rectangle.borderThickness.x, cmd->rectangle.borderThickness.y), MaxR32(cmd->rectangle.borderThickness.z, cmd->rectangle.borderThickness.w));
 					if (borderThickness && cmd->rectangle.borderColor.a > 0)
 					{
 						DrawTexturedRoundedRectangleOutlineEx(
 							cmd->rectangle.rectangle,
 							borderThickness,
-							cmd->rectangle.cornerRadius.TopLeft, cmd->rectangle.cornerRadius.TopRight, cmd->rectangle.cornerRadius.BottomRight, cmd->rectangle.cornerRadius.BottomLeft,
+							cmd->rectangle.cornerRadius.topLeft, cmd->rectangle.cornerRadius.topRight, cmd->rectangle.cornerRadius.bottomRight, cmd->rectangle.cornerRadius.bottomLeft,
 							cmd->rectangle.borderColor,
 							/*outside=*/false,
 							nullptr,
@@ -94,9 +94,9 @@ void RenderPigUi(UiRenderList* renderList)
 				if (cmd->params.textContraction == TextContraction_ClipLeft)
 				{
 					TextMeasure textMeasure = MeasureRichTextEx(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, true, cmd->text.wrapWidth, richStr);
-					if (textMeasure.Width > cmd->text.bounds.Width)
+					if (textMeasure.width > cmd->text.bounds.width)
 					{
-						textPos.X -= (textMeasure.Width - cmd->text.bounds.Width);
+						textPos.x -= (textMeasure.width - cmd->text.bounds.width);
 					}
 				}
 				else if (cmd->params.textContraction == TextContraction_EllipseLeft)
@@ -104,7 +104,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenTextStartToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->text.bounds.Width),
+						CeilR32(cmd->text.bounds.width),
 						StrLit(UNICODE_ELLIPSIS_STR)
 					);
 					richStr = ToRichStr(text);
@@ -114,7 +114,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenTextToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->text.bounds.Width),
+						CeilR32(cmd->text.bounds.width),
 						StrLit(UNICODE_ELLIPSIS_STR),
 						cmd->text.text.length/2
 					);
@@ -125,7 +125,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenTextEndToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->text.bounds.Width),
+						CeilR32(cmd->text.bounds.width),
 						StrLit(UNICODE_ELLIPSIS_STR)
 					);
 					richStr = ToRichStr(text);
@@ -135,7 +135,7 @@ void RenderPigUi(UiRenderList* renderList)
 					Str8 text = ShortenFilePathToFitWidth(scratch,
 						cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle,
 						cmd->text.text,
-						CeilR32(cmd->text.bounds.Width),
+						CeilR32(cmd->text.bounds.width),
 						StrLit(UNICODE_ELLIPSIS_STR)
 					);
 					richStr = ToRichStr(text);
@@ -145,11 +145,11 @@ void RenderPigUi(UiRenderList* renderList)
 					if (cmd->text.alignment.x != UiAlign_Left)
 					{
 						TextMeasure textMeasure = MeasureRichTextEx(cmd->text.font, cmd->text.fontSize, cmd->text.fontStyle, true, cmd->text.wrapWidth, richStr);
-						if (textMeasure.Width < cmd->text.bounds.Width)
+						if (textMeasure.width < cmd->text.bounds.width)
 						{
-							textPos.X = (cmd->text.alignment.x == UiAlign_Right)
-								? FloorR32(cmd->text.bounds.X + cmd->text.bounds.Width - textMeasure.Width)
-								: RoundR32(cmd->text.bounds.X + cmd->text.bounds.Width/2 - textMeasure.Width/2);
+							textPos.x = (cmd->text.alignment.x == UiAlign_Right)
+								? FloorR32(cmd->text.bounds.x + cmd->text.bounds.width - textMeasure.width)
+								: RoundR32(cmd->text.bounds.x + cmd->text.bounds.width/2 - textMeasure.width/2);
 						}
 					}
 					//TODO: Should we handle cmd->text.alignment.y?

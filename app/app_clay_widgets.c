@@ -19,7 +19,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	Str8 altDisplayStr = PrintInArenaStr(persistScratch, "(%c)%.*s", normalDisplayStr.chars[0], normalDisplayStr.length-1, &normalDisplayStr.chars[1]);
 	v2 normalDisplayStrSize = ClayUiTextSize(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, normalDisplayStr);
 	v2 altDisplayStrSize = ClayUiTextSize(&app->uiFont, app->uiFontSize, UI_FONT_STYLE, altDisplayStr);
-	u16 leftPadding = (u16)(showAltText ? 0 : (altDisplayStrSize.Width - normalDisplayStrSize.Width)/2);
+	u16 leftPadding = (u16)(showAltText ? 0 : (altDisplayStrSize.width - normalDisplayStrSize.width)/2);
 	
 	Str8 btnIdStr = PrintInArenaStr(scratch, "%s_TopBtn", btnText);
 	Str8 menuIdStr = PrintInArenaStr(scratch, "%s_TopBtnMenu", btnText);
@@ -41,7 +41,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	});
 	CLAY({
 		.layout = {
-			.sizing = { .width=CLAY_SIZING_FIXED(altDisplayStrSize.Width), .height=CLAY_SIZING_FIT(0) },
+			.sizing = { .width=CLAY_SIZING_FIXED(altDisplayStrSize.width), .height=CLAY_SIZING_FIT(0) },
 			.padding = { .left = leftPadding },
 		},
 	})
@@ -62,7 +62,7 @@ bool ClayTopBtn(const char* btnText, bool showAltText, bool* isOpenPntr, bool* k
 	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr && !isSubmenuOpen) { *isOpenPntr = false; }
 	if (*isOpenPntr)
 	{
-		r32 maxDropdownWidth = isSubmenuOpen ? appIn->screenSize.Width/2.0f : appIn->screenSize.Width;
+		r32 maxDropdownWidth = isSubmenuOpen ? appIn->screenSize.width/2.0f : appIn->screenSize.width;
 		Clay__OpenElement();
 		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 			.id = menuId,
@@ -165,7 +165,7 @@ bool ClayTopSubmenu(const char* idStr, const char* btnText, bool isParentOpen, b
 	if (*isOpenPntr == true && !isHovered && !*keepOpenUntilMouseoverPntr) { *isOpenPntr = false; *keepOpenUntilMouseoverPntr = false; }
 	if (*isOpenPntr)
 	{
-		r32 maxDropdownWidth = appIn->screenSize.Width/2.0f;
+		r32 maxDropdownWidth = appIn->screenSize.width/2.0f;
 		Clay__OpenElement();
 		Clay__ConfigureOpenElement((Clay_ElementDeclaration){
 			.id = menuId,
@@ -450,10 +450,10 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 	Clay_ScrollContainerData scrollData = Clay_GetScrollContainerData(scrollContainerId, false);
 	r32 scrollbarYPercent = 0.0f;
 	r32 scrollbarSizePercent = 1.0f;
-	if (scrollData.found && scrollData.contentDimensions.Height > scrollData.scrollContainerDimensions.Height)
+	if (scrollData.found && scrollData.contentDimensions.height > scrollData.scrollContainerDimensions.height)
 	{
-		scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.Height / scrollData.contentDimensions.Height, 0.0f, 1.0f);
-		scrollbarYPercent = ClampR32(-scrollData.scrollPosition->Y / (scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height), 0.0f, 1.0f);
+		scrollbarSizePercent = ClampR32(scrollData.scrollContainerDimensions.height / scrollData.contentDimensions.height, 0.0f, 1.0f);
+		scrollbarYPercent = ClampR32(-scrollData.scrollPosition->y / (scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height), 0.0f, 1.0f);
 	}
 	
 	bool isScrollbarVisible = (scrollData.found && scrollbarSizePercent < 1.0f);
@@ -476,9 +476,9 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 			rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 			v2 scrollBarSize = MakeV2(
 				gutterWidth - (UI_U16(1) * 2.0f),
-				scrollGutterDrawRec.Height * scrollbarSizePercent
+				scrollGutterDrawRec.height * scrollbarSizePercent
 			);
-			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.Height - scrollBarSize.Height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.Height);
+			r32 scrollBarOffsetY = ClampR32((scrollGutterDrawRec.height - scrollBarSize.height) * scrollbarYPercent, 0.0f, scrollGutterDrawRec.height);
 			ThemeState scrollbarThemeState = state->isDragging ? ThemeState_Pressed : (isHovered ? ThemeState_Hovered : ThemeState_Default);
 			Color32 scrollBarColor = GetThemeColorEx(ScrollBar, scrollbarThemeState);
 			
@@ -490,12 +490,12 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 				},
 				.layout = {
 					.sizing = {
-						.width = CLAY_SIZING_FIXED(scrollBarSize.X),
-						.height = CLAY_SIZING_FIXED(scrollBarSize.Y),
+						.width = CLAY_SIZING_FIXED(scrollBarSize.x),
+						.height = CLAY_SIZING_FIXED(scrollBarSize.y),
 					},
 				},
 				.backgroundColor = scrollBarColor,
-				.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.Width/2),
+				.cornerRadius = CLAY_CORNER_RADIUS(scrollBarSize.width/2),
 			}) {}
 		}
 		
@@ -506,14 +506,14 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
 				state->isDragging = true;
 				state->isDraggingSmooth = false;
-				state->grabOffset = Sub(appIn->mouse.position, scrollbarDrawRec.TopLeft);
+				state->grabOffset = Sub(appIn->mouse.position, scrollbarDrawRec.topLeft);
 			}
 			else if (appIn->mouse.isOverWindow && IsMouseOverClay(gutterId) && MouseLeftClicked())
 			{
 				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
 				state->isDragging = true;
 				state->isDraggingSmooth = true;
-				state->grabOffset = MakeV2(scrollbarDrawRec.Width/2, scrollbarDrawRec.Height/2);
+				state->grabOffset = MakeV2(scrollbarDrawRec.width/2, scrollbarDrawRec.height/2);
 			}
 		}
 		
@@ -528,17 +528,17 @@ bool ClayScrollbar(ClayId scrollContainerId, Str8 scrollbarIdStr, r32 gutterWidt
 			{
 				rec scrollGutterDrawRec = GetClayElementDrawRec(gutterId);
 				rec scrollbarDrawRec = GetClayElementDrawRec(scrollbarId);
-				r32 minY = scrollGutterDrawRec.Y;
-				r32 maxY = scrollGutterDrawRec.Y + scrollGutterDrawRec.Height - scrollbarDrawRec.Height;
+				r32 minY = scrollGutterDrawRec.y;
+				r32 maxY = scrollGutterDrawRec.y + scrollGutterDrawRec.height - scrollbarDrawRec.height;
 				if (maxY > minY)
 				{
-					r32 newScrollbarPos = ClampR32(appIn->mouse.position.Y - state->grabOffset.Y, minY, maxY);
+					r32 newScrollbarPos = ClampR32(appIn->mouse.position.y - state->grabOffset.y, minY, maxY);
 					r32 newScrollbarPercent = (newScrollbarPos - minY) / (maxY - minY);
-					scrollData.scrollTarget->Y = -((scrollData.contentDimensions.Height - scrollData.scrollContainerDimensions.Height) * newScrollbarPercent);
-					if (!state->isDraggingSmooth) { scrollData.scrollPosition->Y = scrollData.scrollTarget->Y; }
+					scrollData.scrollTarget->y = -((scrollData.contentDimensions.height - scrollData.scrollContainerDimensions.height) * newScrollbarPercent);
+					if (!state->isDraggingSmooth) { scrollData.scrollPosition->y = scrollData.scrollTarget->y; }
 				}
 			}
-			if (scrollData.scrollPosition->Y == scrollData.scrollTarget->Y) { state->isDraggingSmooth = false; }
+			if (scrollData.scrollPosition->y == scrollData.scrollTarget->y) { state->isDraggingSmooth = false; }
 		}
 	}
 	else if (state->isDragging)

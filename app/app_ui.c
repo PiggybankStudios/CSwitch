@@ -308,7 +308,7 @@ void DoCSwitchAppUI(v2 screenSize)
 						//TODO: How do we specify elipses logic to shrink path text?
 						UIELEM_LEAF({
 							.text = app->currentTab->filePath,
-							.padding = { .outer={ .Right=4 } },
+							.padding = { .outer={ .right=4 } },
 							.font = &app->uiFont,
 							.fontSize = app->uiFontSize,
 							.fontStyle = UI_FONT_STYLE,
@@ -330,7 +330,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				.direction = UiLayoutDir_LeftToRight,
 				.alignment = UI_ALIGN_TOP_LEFT(),
 				.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
-				.padding = { .inner = { .Top=4 } },
+				.padding = { .inner = { .top=4 } },
 				.color = GetThemeColor(TopbarBack),
 			})
 			{
@@ -361,10 +361,10 @@ void DoCSwitchAppUI(v2 screenSize)
 						.alignment = UI_ALIGN_CENTER(),
 						.sizing = { .width=UI_PERCENT(1.0f / (r32)app->tabs.length), .height=UI_FIT() },
 						.padding = { .inner=FillV4r(4) },
-						.cornerRadius = { .TopLeft=4, .TopRight=4 },
+						.cornerRadius = { .topLeft=4, .topRight=4 },
 						.color = backgroundColor,
 						.borderColor = borderColor,
-						.borderThickness = { .Left=2, .Top=2, .Right=2 },//TODO: Add support to Pig UI Renderer for missing sides when both corners don't have a radius!
+						.borderThickness = { .left=2, .top=2, .right=2 },//TODO: Add support to Pig UI Renderer for missing sides when both corners don't have a radius!
 					})
 					{
 						Str8 displayPath = GetUniqueTabFilePath(tab->filePath);
@@ -535,8 +535,8 @@ void DoCSwitchAppUI(v2 screenSize)
 	clayMouseScrollInput = ScaleV2(clayMouseScrollInput, LINUX_SCROLL_WHEEL_SCALING);
 	#endif
 	if (IsKeyDownRaw(Key_Control)) { clayMouseScrollInput = V2_Zero; }
-	if (appInputHandling->mouse.scrollXHandled) { clayMouseScrollInput.X = 0; }
-	if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.Y = 0; }
+	if (appInputHandling->mouse.scrollXHandled) { clayMouseScrollInput.x = 0; }
+	if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.y = 0; }
 	
 	app->wasClayScrollingPrevFrame = UpdateClayScrolling(&app->clay.clay, appIn->elapsedMs, false, clayMouseScrollInput, false);
 	BeginClayUIRender(&app->clay.clay, screenSize, false, appIn->mouse.position, IsMouseDownRaw(MouseBtn_Left));
@@ -544,7 +544,7 @@ void DoCSwitchAppUI(v2 screenSize)
 	CLAY({ .id = CLAY_ID("FullscreenContainer"),
 		.layout = {
 			.layoutDirection = CLAY_TOP_TO_BOTTOM,
-			.sizing = { .width = CLAY_SIZING_GROW(0, screenSize.Width), .height = CLAY_SIZING_GROW(0, screenSize.Height) },
+			.sizing = { .width = CLAY_SIZING_GROW(0, screenSize.width), .height = CLAY_SIZING_GROW(0, screenSize.height) },
 			.padding = CLAY_PADDING_ALL(fullscreenBorderThickness)
 		},
 		.border = {
@@ -1016,7 +1016,7 @@ void DoCSwitchAppUI(v2 screenSize)
 					if (app->settings.smallButtons)
 					{
 						// rec optionsDrawRec = GetClayElementDrawRec(optionsContainerId);
-						r32 optionsAreaWidth = screenSize.Width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
+						r32 optionsAreaWidth = screenSize.width - (app->minimalModeEnabled ? 0.0f : UI_R32(SCROLLBAR_WIDTH)) - (r32)(UI_U16(4) * 2);
 						u16 buttonMargin = UI_U16(SMALL_BTN_MARGIN);
 						r32 buttonWidth = app->currentTab->longestAbbreviationWidth + (r32)UI_U16(SMALL_BTN_PADDING_X)*2;
 						i32 numColumns = FloorR32i((optionsAreaWidth - (r32)buttonMargin) / (buttonWidth + (r32)buttonMargin));
@@ -1123,13 +1123,13 @@ void DoCSwitchAppUI(v2 screenSize)
 						NotNull(mainAtlas);
 						CLAY({ .id = CLAY_ID("UiFontAtlas"),
 							.layout = {
-								.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(uiAtlas->texture.Width)), .height = CLAY_SIZING_FIXED(UI_R32(uiAtlas->texture.Height)) },
+								.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(uiAtlas->texture.width)), .height = CLAY_SIZING_FIXED(UI_R32(uiAtlas->texture.height)) },
 							},
 							.image = ToClayImage(&uiAtlas->texture),
 						}) {}
 						CLAY({ .id = CLAY_ID("MainFontAtlas"),
 							.layout = {
-								.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(mainAtlas->texture.Width)), .height = CLAY_SIZING_FIXED(UI_R32(mainAtlas->texture.Height)) },
+								.sizing = { .width = CLAY_SIZING_FIXED(UI_R32(mainAtlas->texture.width)), .height = CLAY_SIZING_FIXED(UI_R32(mainAtlas->texture.height)) },
 							},
 							.image = ToClayImage(&mainAtlas->texture),
 						}) {}

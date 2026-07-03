@@ -115,8 +115,8 @@ SET_WINDOW_ICON_DEF(Plat_SetWindowIcon)
 	for (uxx iIndex = 0; iIndex < numIconSizes; iIndex++)
 	{
 		const ImageData* imageData = &iconSizes[iIndex];
-		iconDesc.images[iIndex].width = (int)imageData->size.Width;
-		iconDesc.images[iIndex].height = (int)imageData->size.Height;
+		iconDesc.images[iIndex].width = (int)imageData->size.width;
+		iconDesc.images[iIndex].height = (int)imageData->size.height;
 		iconDesc.images[iIndex].pixels = (sapp_range){ imageData->pixels, sizeof(u32) * imageData->numPixels };
 	}
 	sapp_set_icon(&iconDesc);

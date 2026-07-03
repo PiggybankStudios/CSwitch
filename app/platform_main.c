@@ -257,7 +257,7 @@ bool PlatDoUpdate(void)
 	newAppInput->isMinimizedChanged = false;
 	newAppInput->isFocusedChanged = false;
 	RefreshKeyboardState(&newAppInput->keyboard);
-	RefreshMouseState(&newAppInput->mouse, isMouseLocked, MakeV2((r32)newScreenSize.Width/2.0f, (r32)newScreenSize.Height/2.0f));
+	RefreshMouseState(&newAppInput->mouse, isMouseLocked, MakeV2((r32)newScreenSize.width/2.0f, (r32)newScreenSize.height/2.0f));
 	IncrementU64(newAppInput->frameIndex);
 	platformData->oldAppInput = oldAppInput;
 	platformData->currentAppInput = newAppInput;
@@ -581,8 +581,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 			windowSize = newSize;
 		}
 	}
-	if (windowSize.Width < MIN_WINDOW_SIZE.Width) { windowSize.Width = MIN_WINDOW_SIZE.Width; }
-	if (windowSize.Height < MIN_WINDOW_SIZE.Height) { windowSize.Height = MIN_WINDOW_SIZE.Height; }
+	if (windowSize.width < MIN_WINDOW_SIZE.width) { windowSize.width = MIN_WINDOW_SIZE.width; }
+	if (windowSize.height < MIN_WINDOW_SIZE.height) { windowSize.height = MIN_WINDOW_SIZE.height; }
 	
 	InitScratchArenasVirtual(Gigabytes(4));
 	
@@ -591,8 +591,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.frame_cb = PlatDoUpdate,
 		.cleanup_cb = PlatSappCleanup,
 		.event_cb = PlatSappEvent,
-		.width = RoundR32i(windowSize.Width),
-		.height = RoundR32i(windowSize.Height),
+		.width = RoundR32i(windowSize.width),
+		.height = RoundR32i(windowSize.height),
 		// .min_width = 100, //TODO: Can we implement this somehow on X11? And get the implementation from GLFW for Win32
 		// .min_height = 200, //TODO: Can we implement this somehow on X11? And get the implementation from GLFW for Win32
 		.swap_interval = 1, //16ms aka 60fps

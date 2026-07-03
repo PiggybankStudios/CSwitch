@@ -27,21 +27,21 @@ bool IsMouseOverClayInContainer(ClayId containerId, ClayId clayId)
 v2 ClayUiTextSize(PigFont* font, r32 fontSize, u8 styleFlags, Str8 text)
 {
 	TextMeasure textMeasure = MeasureTextEx(font, fontSize, styleFlags, true, 0.0f, text);
-	return MakeV2(CeilR32(textMeasure.Width - textMeasure.OffsetX), CeilR32(textMeasure.Height));
+	return MakeV2(CeilR32(textMeasure.width - textMeasure.offsetX), CeilR32(textMeasure.height));
 }
 
 #define CLAY_ICON(texturePntr, size, color) CLAY({      \
 	.layout = {                                         \
 		.sizing = {                                     \
-			.width = CLAY_SIZING_FIXED((size).Width),   \
-			.height = CLAY_SIZING_FIXED((size).Height), \
+			.width = CLAY_SIZING_FIXED((size).width),   \
+			.height = CLAY_SIZING_FIXED((size).height), \
 		},                                              \
 	},                                                  \
 	.image = {                                          \
 		.imageData = (texturePntr),                     \
 		.sourceDimensions = {                           \
-			.Width = (r32)((texturePntr)->Width),       \
-			.Height = (r32)((texturePntr)->Height),     \
+			.width = (r32)((texturePntr)->width),       \
+			.height = (r32)((texturePntr)->height),     \
 		},                                              \
 	},                                                  \
 	.backgroundColor = color,                           \

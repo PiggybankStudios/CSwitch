@@ -633,7 +633,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (WasMouseReleasedRaw(MouseBtn_Middle) || IsMouseDownRaw(MouseBtn_Middle)) { refreshScreen = true; }
 		for (uxx keyIndex = 0; keyIndex < Key_Count; keyIndex++) { if (IsKeyDownRaw((Key)keyIndex) || WasKeyReleasedRaw((Key)keyIndex)) { refreshScreen = true; break; } }
 		if (appIn->isFullscreenChanged || appIn->isMinimizedChanged || appIn->isFocusedChanged || appIn->screenSizeChanged) { refreshScreen = true; }
-		if (appIn->mouse.scrollDelta.X != 0 || appIn->mouse.scrollDelta.Y != 0) { refreshScreen = true; }
+		if (appIn->mouse.scrollDelta.x != 0 || appIn->mouse.scrollDelta.y != 0) { refreshScreen = true; }
 		if (app->shouldRenderAfterReload) { refreshScreen = true; app->shouldRenderAfterReload = false; }
 		
 		if (refreshScreen) { app->numFramesConsecutivelyRendered = 0; }
@@ -694,7 +694,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		if (app->tooltipWindowHandle == NULL)
 		{
 			WriteLine_O("Opening tooltip...");
-			POINT mouseScreenPos = { mousePosi.X, mousePosi.Y };
+			POINT mouseScreenPos = { mousePosi.x, mousePosi.y };
 		    ClientToScreen(windowHandle, &mouseScreenPos);
 		    PrintLine_D("Mouse Global Coordinates: (%d, %d)", mouseScreenPos.x, mouseScreenPos.y);
 		    
@@ -854,9 +854,9 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |   Handle Ctrl+ScrollWheel    |
 	// +==============================+
-	if (IsKeyDownRaw(Key_Control) && appIn->mouse.scrollDelta.Y != 0 && appIn->mouse.isOverWindow)
+	if (IsKeyDownRaw(Key_Control) && appIn->mouse.scrollDelta.y != 0 && appIn->mouse.isOverWindow)
 	{
-		RunAppCommand((appIn->mouse.scrollDelta.Y > 0) ? AppCommand_IncreaseUiScale : AppCommand_DecreaseUiScale);
+		RunAppCommand((appIn->mouse.scrollDelta.y > 0) ? AppCommand_IncreaseUiScale : AppCommand_DecreaseUiScale);
 	}
 	
 	// +==================================================+
@@ -890,7 +890,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 		ClearDepthBuffer(1.0f);
 		SetDepth(1.0f);
 		mat4 projMat = Mat4_Identity;
-		TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(screenSize.Width/2.0f), 1.0f/(screenSize.Height/2.0f), 1.0f));
+		TransformMat4(&projMat, MakeScaleXYZMat4(1.0f/(screenSize.width/2.0f), 1.0f/(screenSize.height/2.0f), 1.0f));
 		TransformMat4(&projMat, MakeTranslateXYZMat4(-1.0f, -1.0f, 0.0f));
 		TransformMat4(&projMat, MakeScaleYMat4(-1.0f));
 		SetProjectionMat(projMat);
@@ -914,22 +914,22 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			Str8 openTooltipStr = (openTooltip != nullptr) ? openTooltip->displayStr : Str8_Empty;
 			BindFont(&app->uiFont);
 			v2 textPos = MakeV2(10, 200);
-			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
-			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(OptionOnNameText)); textPos.Y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "Tooltips: %llu registered", app->tooltips.tooltips.length), textPos, GetThemeColor(OptionOnNameText)); textPos.y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoveredTooltip: %llu \"%.*s\"", app->tooltips.hoverTooltipId, StrPrint(hoverTooltipStr)), textPos, GetThemeColor(OptionOnNameText)); textPos.y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "OpenTooltip: %llu \"%.*s\"", app->tooltips.openTooltipId, StrPrint(openTooltipStr)), textPos, GetThemeColor(OptionOnNameText)); textPos.y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "HoverChanged: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.hoverTooltipChangeTime)), textPos, GetThemeColor(OptionOnNameText)); textPos.y += GetLineHeight();
+			DrawText(PrintInArenaStr(scratch, "MouseMove: %llums ago", TimeSinceBy(appIn->programTime, app->tooltips.lastMouseMoveTime)), textPos, GetThemeColor(OptionOnNameText)); textPos.y += GetLineHeight();
 		}
 		#endif //DEBUG_BUILD && BUILD_WITH_CLAY
 		
 		#if 0
 		FontAtlas* fontAtlas = GetFontAtlas(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
 		BindFontEx(&app->uiFont, app->uiFontSize, UI_FONT_STYLE);
-		rec textRec = MakeRec(50, screenSize.Height/2, mousePos.X - 50, fontAtlas->lineHeight);
-		if (textRec.Width < 5) { textRec.Width = 5; }
+		rec textRec = MakeRec(50, screenSize.height/2, mousePos.x - 50, fontAtlas->lineHeight);
+		if (textRec.width < 5) { textRec.width = 5; }
 		DrawRectangleOutline(textRec, 2, MonokaiRed);
-		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.Width, StrLit("..."));
-		DrawText(shortenedPath, MakeV2(textRec.X, textRec.Y + textRec.Height/2 + fontAtlas->centerOffset), MonokaiWhite);
+		Str8 shortenedPath = ShortenFilePathToFitWidth(scratch, &app->uiFont, app->uiFontSize, UI_FONT_STYLE, app->filePath, textRec.width, StrLit("..."));
+		DrawText(shortenedPath, MakeV2(textRec.x, textRec.y + textRec.height/2 + fontAtlas->centerOffset), MonokaiWhite);
 		#endif
 		
 		// +==============================+

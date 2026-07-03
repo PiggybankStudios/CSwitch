@@ -137,7 +137,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 		closeAnimAmount = ClampR32((r32)closeAnimTime / (r32)POPUP_CLOSE_ANIM_TIME, 0.0f, 1.0f);
 	}
 	r32 dialogAlpha = openAnimAmount * (1.0f - closeAnimAmount);
-	r32 dialogMaxWidth = (r32)appIn->screenSize.Width * EaseQuadraticOut(dialogAlpha);
+	r32 dialogMaxWidth = (r32)appIn->screenSize.width * EaseQuadraticOut(dialogAlpha);
 	r32 textAlpha = InverseLerpR32(0.75f, 1.0f, dialogAlpha);
 	Color32 darkenColor = GetThemeColor(ConfirmDialogDarken);
 	darkenColor = ColorWithAlpha(darkenColor, (darkenColor.alpha/255.0f) * dialogAlpha);
@@ -152,7 +152,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 	CLAY({ .id = CLAY_ID("PopupDialogScreenOverlay"),
 		.layout = {
 			.childAlignment = { CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER },
-			.sizing = { .width = CLAY_SIZING_FIXED((r32)appIn->screenSize.Width), .height = CLAY_SIZING_FIXED((r32)appIn->screenSize.Height) },
+			.sizing = { .width = CLAY_SIZING_FIXED((r32)appIn->screenSize.width), .height = CLAY_SIZING_FIXED((r32)appIn->screenSize.height) },
 		},
 		.floating = {
 			.zIndex = 100,
@@ -172,7 +172,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 				.padding = CLAY_PADDING_ALL(UI_U16(16)),
 				.sizing = {
 					.width = CLAY_SIZING_FIT(MinR32(POPUP_MIN_WIDTH * app->settings.uiScale, dialogMaxWidth), dialogMaxWidth),
-					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->settings.uiScale, (r32)appIn->screenSize.Height), (r32)appIn->screenSize.Height)
+					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->settings.uiScale, (r32)appIn->screenSize.height), (r32)appIn->screenSize.height)
 				},
 			},
 			.backgroundColor = dialogColor,
@@ -223,8 +223,8 @@ void RenderPopupDialog(PopupDialog* dialog)
 						.layout = {
 							.padding = CLAY_PADDING_ALL(UI_U16(8)),
 							.sizing = {
-								.width = CLAY_SIZING_FIT(MinR32(100, maxButtonWidth), (r32)appIn->screenSize.Width/(r32)dialog->buttons.length),
-								.height = CLAY_SIZING_FIT(0, (r32)appIn->screenSize.Height) },
+								.width = CLAY_SIZING_FIT(MinR32(100, maxButtonWidth), (r32)appIn->screenSize.width/(r32)dialog->buttons.length),
+								.height = CLAY_SIZING_FIT(0, (r32)appIn->screenSize.height) },
 							.childAlignment = { CLAY_ALIGN_X_CENTER, CLAY_ALIGN_Y_CENTER },
 						},
 						.backgroundColor = buttonColor,
@@ -254,7 +254,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 	
 	UIELEM({ .id = UiIdLit("PopupDialogScreenOverlay"),
 		.depth = POPUP_DEPTH,
-		.sizing = UI_FIXED2(appIn->screenSize.Width / GetUiCtx()->scale, appIn->screenSize.Height / GetUiCtx()->scale),
+		.sizing = UI_FIXED2(appIn->screenSize.width / GetUiCtx()->scale, appIn->screenSize.height / GetUiCtx()->scale),
 		.alignment = UI_ALIGN_CENTER(),
 		.floating = {
 			.type = UiFloatingType_Parent,
@@ -276,7 +276,7 @@ void RenderPopupDialog(PopupDialog* dialog)
 		{
 			UIELEM_LEAF({
 				.sizing = UI_TEXT_WRAP(0),
-				.padding = { .outer={.Top=10, .Bottom=20} },
+				.padding = { .outer={.top=10, .bottom=20} },
 				.text = dialog->messageStr,
 				.font = &app->uiFont,
 				.fontSize = app->uiFontSize,
@@ -309,8 +309,8 @@ void RenderPopupDialog(PopupDialog* dialog)
 						.alignment = UI_ALIGN_CENTER(),
 						.padding = { .inner=FillV4r(8), },
 						.sizing = {
-							.width = UI_FIT(), //TODO: Add support for min and max in UI_FIT: MinR32(100, maxButtonWidth), (r32)appIn->screenSize.Width/(r32)dialog->buttons.length
-							.height = UI_FIT(), //TODO: Add support for max in UI_FIT: (r32)appIn->screenSize.Height
+							.width = UI_FIT(), //TODO: Add support for min and max in UI_FIT: MinR32(100, maxButtonWidth), (r32)appIn->screenSize.width/(r32)dialog->buttons.length
+							.height = UI_FIT(), //TODO: Add support for max in UI_FIT: (r32)appIn->screenSize.height
 						},
 						.color = buttonColor,
 						.cornerRadius = FillV4r(9),
