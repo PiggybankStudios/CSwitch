@@ -328,9 +328,9 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_OUTPUT_FOLDER, FOLDERNAME_GENERATED_CODE "/");
 		
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/.git/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_build/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_data/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_media/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/build/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/data/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/media/");
 		
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/base/base_defines_check.h");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/piggen/");
@@ -338,11 +338,10 @@ int main(int argc, char* argv[])
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/third_party/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/wasm/std/");
 		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/.git/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_build/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_scripts/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_media/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_template/");
-		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/_fuzzing/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/build/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/media/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/template/");
+		AddArgNt(&cmd, PIGGEN_EXCLUDE_FOLDER, "[ROOT]/core/fuzzing/");
 		
 		RunCliProgramAndExitOnFailure(StrLit(EXEC_PROGRAM_IN_FOLDER_PREFIX RUNNABLE_FILENAME_PIGGEN), &cmd, StrLit(RUNNABLE_FILENAME_PIGGEN " Failed!"));
 	}
@@ -444,7 +443,7 @@ int main(int argc, char* argv[])
 		//TODO: Move away from using python! This is the last script we depend on, currently
 		CliArgs cmd = EMPTY;
 		AddArgNt(&cmd, CLI_UNQUOTED_ARG, "[ROOT]/core/_scripts/pack_resources.py");
-		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/_data/resources");
+		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/data/resources");
 		AddArgNt(&cmd, CLI_QUOTED_ARG, FILENAME_RESOURCES_ZIP);
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/resources_zip.h");
 		AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/app/resources_zip.c");
@@ -458,8 +457,8 @@ int main(int argc, char* argv[])
 		mz_bool initResult = mz_zip_writer_init(&context.zip, 0);
 		if (initResult != MZ_TRUE) { PrintLine_E("zip error: %s", mz_zip_get_error_string(context.zip.m_last_error)); }
 		assert(initResult == MZ_TRUE);
-		context.relativePath = StrLit("../_data/resources");
-		RecursiveDirWalk(StrLit("../_data/resources"), BundleResourcesCallback, &context);
+		context.relativePath = StrLit("../data/resources");
+		RecursiveDirWalk(StrLit("../data/resources"), BundleResourcesCallback, &context);
 		mz_bool finalizeResult = mz_zip_writer_finalize_archive(&context.zip);
 		assert(finalizeResult == MZ_TRUE);
 		mz_zip_writer_end(&context.zip);
@@ -1024,11 +1023,11 @@ int main(int argc, char* argv[])
 	}
 	
 	// +--------------------------------------------------------------+
-	// |                   Copy to _data Directory                    |
+	// |                    Copy to data Directory                    |
 	// +--------------------------------------------------------------+
 	if (COPY_TO_DATA_DIRECTORY)
 	{
-		Str dataFolder = StrLit("../_data");
+		Str dataFolder = StrLit("../data");
 		PrintLine("Copying files to %.*s...", StrPrint(dataFolder));
 		#if BUILDING_ON_WINDOWS
 		if (BUILD_PIG_CORE_DLL) { CopyFileToFolder(StrLit(FILENAME_PIG_CORE_DLL), dataFolder, true); }

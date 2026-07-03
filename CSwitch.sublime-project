@@ -5,8 +5,8 @@
 			"name": "Root",
 			"path": ".",
 			"folder_exclude_patterns": [
-				"_build",
-				"_data",
+				"build",
+				"data",
 				"core",
 				"third_party",
 				"pig_build",
@@ -18,7 +18,7 @@
 		},
 		{
 			"name": "Resources",
-			"path": "_data/resources",
+			"path": "data/resources",
 			"file_include_patterns": [
 				"*.txt",
 				"*.meta",
@@ -28,9 +28,8 @@
 			"name": "PigCore",
 			"path": "core",
 			"folder_exclude_patterns": [
-				"_build",
-				"_media",
-				"_template",
+				"media",
+				"template",
 				"third_party",
 				"wasm",
 				"tests",
