@@ -61,11 +61,11 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 	UIELEM({ .id = btnId,
 		.sizing = UI_FIT2(),
 		.alignment = UI_ALIGN_CENTER(),
-		.padding = { .inner = MakeV4r(4, 2, 4, 2) },
+		.padding = { .inner = MakeV4(4, 2, 4, 2) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
-		.borderThickness = FillV4r(1.0f),
-		.cornerRadius = FillV4r(4),
+		.borderThickness = FillV4(1.0f),
+		.cornerRadius = FillV4(4),
 	})
 	{
 		UIELEM_LEAF({
@@ -92,10 +92,10 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 		OpenUiElement(NEW_STRUCT(UiElemConfig){ .id = menuId,
 			.direction = UiLayoutDir_TopDown,
 			.sizing = UI_FIT2(),
-			.padding = { .inner=FillV4r(2), .child=2 },
+			.padding = { .inner=FillV4(2), .child=2 },
 			.color = GetThemeColor(DropdownBack),
 			.borderColor = GetThemeColor(DropdownBorder),
-			.borderThickness = FillV4r(1),
+			.borderThickness = FillV4(1),
 			.floating = {
 				.type = UiFloatingType_Id,
 				.attachId = btnId,
@@ -129,11 +129,11 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 		.direction = UiLayoutDir_LeftToRight,
 		.sizing = { .width=UI_EXPAND(), .height=UI_FIT(), },
 		.alignment = UI_ALIGN_LEFT_CENTER(),
-		.padding = { .inner=MakeV4r(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
+		.padding = { .inner=MakeV4(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
 		.color = backgroundColor,
 		.borderColor = borderColor,
-		.borderThickness = FillV4r(1.0f),
-		.cornerRadius = FillV4r(4),
+		.borderThickness = FillV4(1.0f),
+		.cornerRadius = FillV4(4),
 	})
 	{
 		if (appIcon != AppIcon_None)
@@ -167,8 +167,8 @@ bool UiDropdownBtn(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 displayText
 					.padding = { .inner = { .left=2, .right=2, .top=1, .bottom=1 } },
 					.color = hotkeyBackColor,
 					.borderColor = hotkeyBorderColor,
-					.borderThickness = FillV4r(1),
-					.cornerRadius = FillV4r(5),
+					.borderThickness = FillV4(1),
+					.cornerRadius = FillV4(5),
 				})
 				{
 					UIELEM_LEAF({
@@ -217,11 +217,11 @@ bool UiDropdownSubmenuBtn_(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 dis
 		.direction = UiLayoutDir_LeftToRight,
 		.sizing = { .width=UI_EXPAND(), .height=UI_FIT(), },
 		.alignment = UI_ALIGN_LEFT_CENTER(),
-		.padding = { .inner=MakeV4r(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
+		.padding = { .inner=MakeV4(4,2,4,6), .child=TOPBAR_ICONS_PADDING },
 		.color = backgroundColor,
 		.borderColor = borderColor,
-		.borderThickness = FillV4r(1.0f),
-		.cornerRadius = FillV4r(4),
+		.borderThickness = FillV4(1.0f),
+		.cornerRadius = FillV4(4),
 	})
 	{
 		if (appIcon != AppIcon_None)
@@ -249,11 +249,11 @@ bool UiDropdownSubmenuBtn_(UiId btnId, bool isEnabled, AppIcon appIcon, Str8 dis
 		OpenUiElement(NEW_STRUCT(UiElemConfig){ .id = submenuId,
 			.direction = UiLayoutDir_TopDown,
 			.sizing = UI_FIT2(),
-			.padding = { .inner=FillV4r(2), .child=2 },
+			.padding = { .inner=FillV4(2), .child=2 },
 			.color = GetThemeColor(DropdownBack),
 			.borderColor = GetThemeColor(DropdownBorder),
-			.borderThickness = FillV4r(1),
-			.cornerRadius = MakeV4r(0, 0, 4, 4),
+			.borderThickness = FillV4(1),
+			.cornerRadius = MakeV4(0, 0, 4, 4),
 			.floating = {
 				.type = UiFloatingType_Id,
 				.attachId = btnId,
@@ -281,11 +281,11 @@ bool UiOptionBtn(UiId btnId, Str8 nameStr, Str8 valueStr, bool enabled, bool isS
 	UIELEM({ .id = btnId,
 		.direction = UiLayoutDir_LeftToRight,
 		.sizing = { .width=UI_EXPAND(), .height=UI_FIT() },
-		.padding = { .inner=FillV4r(4) },
+		.padding = { .inner=FillV4(4) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
-		.borderThickness = FillV4r(2),
-		.cornerRadius = FillV4r(4),
+		.borderThickness = FillV4(2),
+		.cornerRadius = FillV4(4),
 	})
 	{
 		//TODO: Determine the clipping style (left vs right)
@@ -326,11 +326,11 @@ bool UiSmallOptionBtn(UiId btnId, Str8 abbrevStr, bool enabled, bool isSelected,
 		.direction = UiLayoutDir_LeftToRight,
 		.alignment = UI_ALIGN_CENTER(),
 		.sizing = { .width=UI_FIXED(buttonWidth), .height=UI_FIT() },
-		.padding = { .inner = MakeV4r(SMALL_BTN_PADDING_X, SMALL_BTN_PADDING_Y, SMALL_BTN_PADDING_X, SMALL_BTN_PADDING_Y) },
+		.padding = { .inner = MakeV4(SMALL_BTN_PADDING_X, SMALL_BTN_PADDING_Y, SMALL_BTN_PADDING_X, SMALL_BTN_PADDING_Y) },
 		.color = backgroundColor,
-		.cornerRadius = FillV4r(4),
+		.cornerRadius = FillV4(4),
 		.borderColor = borderColor,
-		.borderThickness = FillV4r(2),
+		.borderThickness = FillV4(2),
 	})
 	{
 		UIELEM_LEAF({ .id = UiIdSuffixLit(btnId, "_Name"),

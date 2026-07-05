@@ -745,9 +745,8 @@ int main(int argc, char* argv[])
 			PrintLine("\n[Building %s for Windows...]", FILENAME_PIG_CORE_DLL);
 			
 			CliArgs cmd = EMPTY;
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/dll/dll_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/src/dll/dll_main.c");
 			AddArgNt(&cmd, CL_BINARY_FILE, FILENAME_PIG_CORE_DLL);
-			AddArgNt(&cmd, CL_DEFINE, "PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL=1");
 			AddArgList(&cmd, &commonCompilerFlags);
 			if (DUMP_ASSEMBLY) { AddArgNt(&cmd, CL_ASSEMB_LISTING_FILE, "pig_core.asm"); }
 			AddArg(&cmd, CL_LINK);
@@ -772,11 +771,10 @@ int main(int argc, char* argv[])
 			
 			CliArgs cmd = EMPTY;
 			cmd.pathSepChar = '/';
-			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/dll/dll_main.c");
+			AddArgNt(&cmd, CLI_QUOTED_ARG, "[ROOT]/core/src/dll/dll_main.c");
 			AddArgNt(&cmd, CLANG_OUTPUT_FILE, FILENAME_PIG_CORE_SO);
 			AddArg(&cmd, CLANG_BUILD_SHARED_LIB);
 			AddArg(&cmd, CLANG_fPIC);
-			AddArgNt(&cmd, CLANG_DEFINE, "PIG_CORE_DLL_INCLUDE_GFX_SYSTEM_GLOBAL=1");
 			AddArgList(&cmd, &commonCompilerFlags);
 			AddArgList(&cmd, &commonLinkerFlags);
 			

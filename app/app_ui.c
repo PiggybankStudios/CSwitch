@@ -62,8 +62,8 @@ void DoCSwitchAppUI(v2 screenSize)
 		.direction = UiLayoutDir_TopDown,
 		.alignment = UI_ALIGN_TOP_LEFT(),
 		.sizing = UI_EXPAND2(),
-		.padding = { .inner = FillV4r(fullscreenBorderThickness), },
-		.borderThickness = FillV4r(fullscreenBorderThickness),
+		.padding = { .inner = FillV4(fullscreenBorderThickness), },
+		.borderThickness = FillV4(fullscreenBorderThickness),
 		.borderColor = GetThemeColor(TopmostBorder),
 	})
 	{
@@ -360,7 +360,7 @@ void DoCSwitchAppUI(v2 screenSize)
 						.direction = UiLayoutDir_LeftToRight,
 						.alignment = UI_ALIGN_CENTER(),
 						.sizing = { .width=UI_PERCENT(1.0f / (r32)app->tabs.length), .height=UI_FIT() },
-						.padding = { .inner=FillV4r(4) },
+						.padding = { .inner=FillV4(4) },
 						.cornerRadius = { .topLeft=4, .topRight=4 },
 						.color = backgroundColor,
 						.borderColor = borderColor,
@@ -407,7 +407,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				.sizing = UI_EXPAND2(),
 				.alignment = UI_ALIGN_TOP_LEFT(),
 				.scrolling = UI_SCROLL_VERTICAL(),
-				.padding = { .inner = FillV4r(4), .child=OPTION_UI_GAP },
+				.padding = { .inner = FillV4(4), .child=OPTION_UI_GAP },
 			})
 			{
 				if (app->currentTab != nullptr)

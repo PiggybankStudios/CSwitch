@@ -266,12 +266,12 @@ void RenderPopupDialog(PopupDialog* dialog)
 	{
 		UIELEM({ .id = UiIdLit("PopupDialog"),
 			.direction = UiLayoutDir_TopDown,
-			.padding = { .inner=FillV4r(16) },
+			.padding = { .inner=FillV4(16) },
 			.sizing = UI_FIT2(), //TODO: Add a support for minimum size
 			.color = dialogColor,
-			.cornerRadius = FillV4r(8),
+			.cornerRadius = FillV4(8),
 			.borderColor = GetThemeColor(ConfirmDialogBorder),
-			.borderThickness = FillV4r(2),
+			.borderThickness = FillV4(2),
 		})
 		{
 			UIELEM_LEAF({
@@ -307,15 +307,15 @@ void RenderPopupDialog(PopupDialog* dialog)
 					// r32 maxButtonWidth = (dialogMaxWidth - (16 * 2.0f)) / (r32)dialog->buttons.length;
 					UIELEM({ .id = buttonId,
 						.alignment = UI_ALIGN_CENTER(),
-						.padding = { .inner=FillV4r(8), },
+						.padding = { .inner=FillV4(8), },
 						.sizing = {
 							.width = UI_FIT(), //TODO: Add support for min and max in UI_FIT: MinR32(100, maxButtonWidth), (r32)appIn->screenSize.width/(r32)dialog->buttons.length
 							.height = UI_FIT(), //TODO: Add support for max in UI_FIT: (r32)appIn->screenSize.height
 						},
 						.color = buttonColor,
-						.cornerRadius = FillV4r(9),
+						.cornerRadius = FillV4(9),
 						.borderColor = borderColor,
-						.borderThickness = FillV4r(2),
+						.borderThickness = FillV4(2),
 					})
 					{
 						UIELEM_LEAF({

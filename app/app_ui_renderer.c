@@ -22,7 +22,7 @@ void RenderPigUi(UiRenderList* renderList)
 			// +==============================+
 			case UiRenderCmdType_Rectangle:
 			{
-				if (AreEqualV4r(cmd->rectangle.cornerRadius, V4r_Zero))
+				if (AreEqualV4(cmd->rectangle.cornerRadius, V4_Zero))
 				{
 					if (cmd->color.a > 0)
 					{
