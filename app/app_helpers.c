@@ -126,6 +126,7 @@ bool AppTryLoadBindings(bool assertOnFailure)
 		FreeAppBindingSet(&newBindings);
 		return false;
 	}
+	// PrintLine_D("There are %llu bindings in the default bindings (from \"%.*s\")", newBindings.bindings.length, StrPrint(defaultBindingsPath));
 	
 	FilePath settingsFolderPath = OsGetSettingsSavePath(scratch, Str8_Empty, StrLit(PROJECT_FOLDER_NAME_STR), false);
 	Assert(!IsEmptyStr(settingsFolderPath));

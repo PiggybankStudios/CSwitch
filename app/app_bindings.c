@@ -76,23 +76,40 @@ AppBinding* FindBindingForAppCommand(AppBindingSet* bindings, AppCommand command
 	}
 	return nullptr;
 }
+
+Str8 GetBindingStr(Arena* arena, u8 modifierKeys, Key key)
+{
+	bool cmdMod     = IsFlagSet(modifierKeys, ModifierKey_Command); Str8 cmdStr   = StrLit("Cmd");
+	bool optMod     = IsFlagSet(modifierKeys, ModifierKey_Option);  Str8 optStr   = StrLit("Opt");
+	bool controlMod = IsFlagSet(modifierKeys, ModifierKey_Control); Str8 cntrlStr = StrLit("Cntrl");
+	bool altMod     = IsFlagSet(modifierKeys, ModifierKey_Alt);     Str8 altStr   = StrLit("Alt");
+	bool shiftMod   = IsFlagSet(modifierKeys, ModifierKey_Shift);   Str8 shiftStr = StrLit("Shift");
+	Str8 keyStr = MakeStr8Nt(GetKeyStr(key));
+	Str8 result = Str8_Empty;
+	if (cmdMod)          { if (result.length > 0) { result.length++; } result.length += cmdStr.length;   }
+	if (optMod)          { if (result.length > 0) { result.length++; } result.length += optStr.length;   }
+	if (controlMod)      { if (result.length > 0) { result.length++; } result.length += cntrlStr.length; }
+	if (altMod)          { if (result.length > 0) { result.length++; } result.length += altStr.length;   }
+	if (shiftMod)        { if (result.length > 0) { result.length++; } result.length += shiftStr.length; }
+	if (key != Key_None) { if (result.length > 0) { result.length++; } result.length += keyStr.length;   }
+	result.chars = (char*)AllocMem(arena, result.length);
+	NotNull(result.chars);
+	uxx cIndex = 0;
+	if (cmdMod)          { if (cIndex > 0) { result.chars[cIndex] = '+'; cIndex++; } MyMemCopy(&result.chars[cIndex], cmdStr.chars,   cmdStr.length);   cIndex += cmdStr.length;   }
+	if (optMod)          { if (cIndex > 0) { result.chars[cIndex] = '+'; cIndex++; } MyMemCopy(&result.chars[cIndex], optStr.chars,   optStr.length);   cIndex += optStr.length;   }
+	if (controlMod)      { if (cIndex > 0) { result.chars[cIndex] = '+'; cIndex++; } MyMemCopy(&result.chars[cIndex], cntrlStr.chars, cntrlStr.length); cIndex += cntrlStr.length; }
+	if (altMod)          { if (cIndex > 0) { result.chars[cIndex] = '+'; cIndex++; } MyMemCopy(&result.chars[cIndex], altStr.chars,   altStr.length);   cIndex += altStr.length;   }
+	if (shiftMod)        { if (cIndex > 0) { result.chars[cIndex] = '+'; cIndex++; } MyMemCopy(&result.chars[cIndex], shiftStr.chars, shiftStr.length); cIndex += shiftStr.length; }
+	if (key != Key_None) { if (cIndex > 0) { result.chars[cIndex] = '+'; cIndex++; } MyMemCopy(&result.chars[cIndex], keyStr.chars,   keyStr.length);   cIndex += keyStr.length;   }
+	Assert(cIndex == result.length);
+	return result;
+}
+
 Str8 GetBindingStrForAppCommand(AppBindingSet* bindings, AppCommand command, Arena* arena, uxx skipCount)
 {
 	AppBinding* binding = FindBindingForAppCommand(bindings, command, skipCount);
 	if (binding == nullptr) { return Str8_Empty; }
-	bool controlMod = IsFlagSet(binding->modifierKeys, ModifierKey_Control);
-	bool altMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Alt);
-	bool shiftMod   = IsFlagSet(binding->modifierKeys, ModifierKey_Shift);
-	Str8 result = PrintInArenaStr(arena, "%s%s%s%s%s%s%s",
-		controlMod ? "Ctrl" : "",
-		(controlMod && altMod) ? "+" : "",
-		altMod ? "Alt" : "",
-		((controlMod || altMod) && shiftMod) ? "+" : "",
-		shiftMod ? "Shift" : "",
-		(controlMod || altMod || shiftMod) ? "+" : "",
-		GetKeyStr(binding->key)
-	);
-	return result;
+	return GetBindingStr(arena, binding->modifierKeys, binding->key);
 }
 
 void RemoveAppBinding(AppBindingSet* bindings, u8 modifierKeys, Key key)
@@ -204,19 +221,10 @@ void RunAppBindingCommands(AppBindingSet* bindings)
 			if (runCommand)
 			{
 				#if DEBUG_BUILD
-				bool controlMod = IsFlagSet(binding->modifierKeys, ModifierKey_Control);
-				bool altMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Alt);
-				bool shiftMod   = IsFlagSet(binding->modifierKeys, ModifierKey_Shift);
-				PrintLine_O("%s%s%s%s%s%s%s -> AppCommand_%s",
-					controlMod ? "Ctrl" : "",
-					(controlMod && altMod) ? "+" : "",
-					altMod ? "Alt" : "",
-					((controlMod || altMod) && shiftMod) ? "+" : "",
-					shiftMod ? "Shift" : "",
-					(controlMod || altMod || shiftMod) ? "+" : "",
-					GetKeyStr(binding->key),
-					GetAppCommandStr(binding->command)
-				);
+				ScratchBegin(scratch);
+				Str8 bindingStr = GetBindingStr(scratch, binding->modifierKeys, binding->key);
+				PrintLine_O("%.*s -> AppCommand_%s", StrPrint(bindingStr), GetAppCommandStr(binding->command));
+				ScratchEnd(scratch);
 				#endif
 				
 				RunAppCommand(binding->command);
@@ -268,6 +276,16 @@ Result TryParseBindingFile(Str8 fileContents, AppBindingSet* bindingsOut)
 						{
 							if (IsFlagSet(modifierKeys, ModifierKey_Shift)) { NotifyPrint_W("Duplicated Shift modifier in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key)); }
 							modifierKeys |= ModifierKey_Shift;
+						}
+						else if (StrAnyCaseEquals(modifierName, StrLit("Command")) || StrAnyCaseEquals(modifierName, StrLit("Cmd"))) //TODO: Add support for U+2318?
+						{
+							if (IsFlagSet(modifierKeys, ModifierKey_Command)) { NotifyPrint_W("Duplicated Command modifier in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key)); }
+							modifierKeys |= ModifierKey_Command;
+						}
+						else if (StrAnyCaseEquals(modifierName, StrLit("Option")) || StrAnyCaseEquals(modifierName, StrLit("Opt")))
+						{
+							if (IsFlagSet(modifierKeys, ModifierKey_Option)) { NotifyPrint_W("Duplicated Option modifier in bindings file on line %llu: \"%.*s\"", parser.lineParser.lineIndex, StrPrint(token.key)); }
+							modifierKeys |= ModifierKey_Option;
 						}
 						else if (IsEmptyStr(modifierName))
 						{
@@ -366,7 +384,12 @@ Str8 SerializeCommentedBindingsFileFromBindingSet(Arena* arena, AppBindingSet* d
 		TwoPassStrNt(&result, "// This file stores all the user configured bindings for functionality in C-Switch.\n");
 		TwoPassStrNt(&result, "// The following commented lines are a copy of the default bindings that are baked into the program.\n");
 		TwoPassStrNt(&result, "// Override these bindings with your own or unbind a key combo by assigning it to \"None\".\n");
-		TwoPassStrNt(&result, "// Key combos are modifier keys (Ctrl, Alt, and Shift) joined by \'+\' character ending in a single valid key name like \"Enter\".\n");
+		#if TARGET_IS_OSX
+		#define OS_MODIFIER_KEYS_STR "(Cmd, Opt, Ctrl, and Shift)"
+		#else
+		#define OS_MODIFIER_KEYS_STR "(Ctrl, Alt, and Shift)"
+		#endif
+		TwoPassStrNt(&result, "// Key combos are modifier keys " OS_MODIFIER_KEYS_STR " joined by \'+\' character ending in a single valid key name like \"Enter\".\n");
 		TwoPassStrNt(&result, "// Whitespace is allowed pretty much anywhere you would expect. Comments are allowed with // but multi-line comment syntax like /* */ is not allowed.\n");
 		
 		TwoPassStrNt(&result, "// \n");
@@ -408,16 +431,18 @@ Str8 SerializeCommentedBindingsFileFromBindingSet(Arena* arena, AppBindingSet* d
 			if (binding->id != APP_BINDING_ID_INVALID)
 			{
 				TwoPassStrNt(&result, "// ");
+				bool cmdMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Command);
+				bool optMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Option);
 				bool controlMod = IsFlagSet(binding->modifierKeys, ModifierKey_Control);
 				bool altMod     = IsFlagSet(binding->modifierKeys, ModifierKey_Alt);
 				bool shiftMod   = IsFlagSet(binding->modifierKeys, ModifierKey_Shift);
-				if (controlMod)                         { TwoPassStrNt(&result, "Ctrl");  }
-				if (controlMod && altMod)               { TwoPassStrNt(&result, "+");     }
-				if (altMod)                             { TwoPassStrNt(&result, "Alt");   }
-				if ((controlMod || altMod) && shiftMod) { TwoPassStrNt(&result, "+");     }
-				if (shiftMod)                           { TwoPassStrNt(&result, "Shift"); }
-				if (controlMod || altMod || shiftMod)   { TwoPassStrNt(&result, "+");     }
-				
+				bool addedModifierStr = false;
+				if (cmdMod)     { if (addedModifierStr) { TwoPassChar(&result, '+'); } TwoPassStrNt(&result, "Cmd");   addedModifierStr = true; }
+				if (optMod)     { if (addedModifierStr) { TwoPassChar(&result, '+'); } TwoPassStrNt(&result, "Opt");   addedModifierStr = true; }
+				if (controlMod) { if (addedModifierStr) { TwoPassChar(&result, '+'); } TwoPassStrNt(&result, "Ctrl");  addedModifierStr = true; }
+				if (altMod)     { if (addedModifierStr) { TwoPassChar(&result, '+'); } TwoPassStrNt(&result, "Alt");   addedModifierStr = true; }
+				if (shiftMod)   { if (addedModifierStr) { TwoPassChar(&result, '+'); } TwoPassStrNt(&result, "Shift"); addedModifierStr = true; }
+				if (addedModifierStr) { TwoPassChar(&result, '+'); }
 				TwoPassStrNt(&result, GetKeyStr(binding->key));
 				TwoPassStrNt(&result, ": ");
 				TwoPassStrNt(&result, GetAppCommandStr(binding->command));

@@ -9,6 +9,7 @@ Description:
 */
 
 #include "build_config.h"
+#include "base/base_compiler_check.h"
 #include "defines.h"
 #define PIG_CORE_IMPLEMENTATION BUILD_INTO_SINGLE_UNIT
 

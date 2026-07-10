@@ -9,6 +9,7 @@ Description:
 */
 
 #include "build_config.h"
+#include "base/base_compiler_check.h"
 #include "defines.h"
 #define PIG_CORE_IMPLEMENTATION BUILD_INTO_SINGLE_UNIT
 
@@ -854,7 +855,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	// +==============================+
 	// |   Handle Ctrl+ScrollWheel    |
 	// +==============================+
-	if (IsKeyDownRaw(Key_Control) && appIn->mouse.scrollDelta.y != 0 && appIn->mouse.isOverWindow)
+	if (IsKeyDownRaw(Key_CtrlOrCmd) && appIn->mouse.scrollDelta.y != 0 && appIn->mouse.isOverWindow)
 	{
 		RunAppCommand((appIn->mouse.scrollDelta.y > 0) ? AppCommand_IncreaseUiScale : AppCommand_DecreaseUiScale);
 	}

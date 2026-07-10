@@ -1,0 +1,32 @@
+// These are the default key bindings for C-Switch. Bindings can be overridden (or unset) by a bindings.txt file in the user's config folder
+
+//Cmd+Q is always bound, and cannot be unbound
+Cmd+Shift+R:        ReloadBindings
+Cmd+W:              CloseTab
+Cmd+Shift+W:        CloseWindow
+F6:                 TogglePerfGraph //TODO: Do we want to move this to debug_bindings.txt
+F9:                 ToggleLightMode
+F10:                ToggleSmallButtons
+F11:                ToggleTopbar //TODO: On some platforms F11 is an OS-level binding for fullscreen
+Escape:             ClosePopupOrMenu
+Cmd+Plus:           IncreaseUiScale
+Cmd+NumpadAdd:      IncreaseUiScale
+Cmd+Minus:          DecreaseUiScale
+Cmd+NumpadSubtract: DecreaseUiScale
+Cmd+0:              ResetUiScale
+Alt+F:              OpenFileMenu
+Alt+V:              OpenViewMenu
+Cmd+O:              OpenFile
+Ctrl+Tab:           NextTab
+Ctrl+Shift+Tab:     PreviousTab
+Cmd+E:              ReopenRecentFile
+Cmd+T:              ToggleTopmost
+Home:               ScrollToTop
+End:                ScrollToBottom
+PageUp:             ScrollUpPage
+PageDown:           ScrollDownPage
+Up:                 SelectMoveUp
+Down:               SelectMoveDown
+Left:               SelectMoveLeft
+Right:              SelectMoveRight
+Enter:              ToggleSelected

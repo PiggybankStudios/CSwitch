@@ -26,7 +26,7 @@
 		},
 		{
 			"name": "PigCore",
-			"path": "core",
+			"path": "core/src",
 			"folder_exclude_patterns": [
 				"media",
 				"template",
@@ -69,7 +69,7 @@
 		},
 		{
 			"name": "Stb",
-			"path": "core/third_party/stb",
+			"path": "core/src/third_party/stb",
 			"file_include_patterns": [
 				"stb_image.h",
 				"stb_image_write.h",
@@ -81,7 +81,7 @@
 		},
 		{
 			"name": "Sokol",
-			"path": "core/third_party/sokol",
+			"path": "core/src/third_party/sokol",
 			"folder_exclude_patterns": [
 				".github",
 				"tests",
@@ -94,16 +94,8 @@
 			],
 		},
 		{
-			"name": "HandmadeMath",
-			"path": "core/third_party/handmade_math",
-			"file_exclude_patterns": [
-				"LICENSE",
-				"README.md",
-			],
-		},
-		{
 			"name": "Clay",
-			"path": "core/third_party/clay",
+			"path": "core/src/third_party/clay",
 			"folder_exclude_patterns": [
 				".github",
 				"bindings",
@@ -119,7 +111,7 @@
 		},
 		{
 			"name": "miniz",
-			"path": "core/third_party/miniz",
+			"path": "core/src/third_party/miniz",
 			"file_exclude_patterns": [
 				"Changelog.md",
 				"readme.md",

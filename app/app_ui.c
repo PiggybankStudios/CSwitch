@@ -77,7 +77,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          File Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), IsKeyDownRaw(Key_Alt), &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
+				UiTopbarMenuBtn(UiIdLit("FileBtn"), StrLit("File"), IsKeyDownRaw(Key_AltOrOpt), &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen)
 				{
 					if (UiDropdownBtn(UiIdLit("OpenFileBtn"), true, AppIcon_OpenFile, StrLit("Open" UNICODE_ELLIPSIS_STR), AppCommand_OpenFile, StrLit("Open a file")))
 					{
@@ -135,7 +135,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          View Menu           |
 				// +==============================+
-				UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), IsKeyDownRaw(Key_Alt), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
+				UiTopbarMenuBtn(UiIdLit("ViewBtn"), StrLit("View"), IsKeyDownRaw(Key_AltOrOpt), &app->isViewMenuOpen, &app->keepViewMenuOpenUntilMouseOver, false)
 				{
 					ThemeMode otherThemeMode = ((DEBUG_BUILD && IsKeyDownRaw(Key_Shift))
 						? ThemeMode_Debug
@@ -534,7 +534,7 @@ void DoCSwitchAppUI(v2 screenSize)
 	#if TARGET_IS_LINUX
 	clayMouseScrollInput = ScaleV2(clayMouseScrollInput, LINUX_SCROLL_WHEEL_SCALING);
 	#endif
-	if (IsKeyDownRaw(Key_Control)) { clayMouseScrollInput = V2_Zero; }
+	if (IsKeyDownRaw(Key_CtrlOrCmd)) { clayMouseScrollInput = V2_Zero; }
 	if (appInputHandling->mouse.scrollXHandled) { clayMouseScrollInput.x = 0; }
 	if (appInputHandling->mouse.scrollYHandled) { clayMouseScrollInput.y = 0; }
 	
@@ -576,7 +576,7 @@ void DoCSwitchAppUI(v2 screenSize)
 				// +==============================+
 				// |          File Menu           |
 				// +==============================+
-				bool showMenuHotkeys = (IsKeyDown(Key_Alt) && appIn->isFocused);
+				bool showMenuHotkeys = (IsKeyDown(Key_AltOrOpt) && appIn->isFocused);
 				if (ClayTopBtn("File", showMenuHotkeys, &app->isFileMenuOpen, &app->keepFileMenuOpenUntilMouseOver, app->isOpenRecentSubmenuOpen))
 				{
 					if (ClayBtnAppIconStr(StrLit("OpenFileBtn"),

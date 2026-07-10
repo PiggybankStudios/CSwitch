@@ -42,7 +42,11 @@ Date:   02\25\2025
 #define APP_ICONS_TEXTURE_PATH  "resources/image/btn_icons_4x5.png"
 #define APP_ICONS_METADATA_PATH "resources/image/btn_icons_4x5.meta"
 
+#if TARGET_IS_OSX
+#define DEFAULT_BINDINGS_PATH "resources/text/default_bindings_osx.txt"
+#else
 #define DEFAULT_BINDINGS_PATH "resources/text/default_bindings.txt"
+#endif
 #define DEBUG_BINDINGS_PATH   "resources/text/debug_bindings.txt"
 
 #define DEFAULT_WINDOW_SIZE        MakeV2(360, 500)
