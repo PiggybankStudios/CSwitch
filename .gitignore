@@ -6,6 +6,7 @@ data/*.exe
 data/*.dll
 data/*.so
 data/*.ini
+data/*.app/
 data/cswitch
 data/cswitch_app.so
 data/cswitch_app_TEMP.so
