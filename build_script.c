@@ -129,10 +129,10 @@ int main(int argc, char* argv[])
 	// +==============================+
 	Str buildConfigContents = ReadEntireFile(StrLit(BUILD_CONFIG_PATH));
 	
-	Str PROJECT_DLL_NAME  = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME")));
-	Str PROJECT_EXE_NAME  = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME")));
-	// Str PROJECT_READABLE_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME"));
-	// Str PROJECT_FOLDER_NAME = ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME"));
+	Str PROJECT_DLL_NAME      = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_DLL_NAME")));
+	Str PROJECT_EXE_NAME      = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_EXE_NAME")));
+	Str PROJECT_READABLE_NAME = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_READABLE_NAME")));
+	Str PROJECT_FOLDER_NAME   = CopyStr(ExtractStrDefine(buildConfigContents, StrLit("PROJECT_FOLDER_NAME")));
 	
 	#define LOAD_CONFIG(CONFIG_NAME)                                                     \
 		bool CONFIG_NAME = ExtractBoolDefine(buildConfigContents, StrLit(#CONFIG_NAME)); \
@@ -1018,6 +1018,54 @@ int main(int argc, char* argv[])
 		}
 		
 		//TODO: Add OSX support
+	}
+	
+	// +--------------------------------------------------------------+
+	// |                    Create OSX App Bundle                     |
+	// +--------------------------------------------------------------+
+	if (BUILD_OSX && BUILD_INTO_SINGLE_UNIT)
+	{
+		PrintLine("PROJECT_FOLDER_NAME \"%.*s\"", StrPrint(PROJECT_FOLDER_NAME));
+		Str appBundleDir   = JoinStrings2(PROJECT_FOLDER_NAME, StrLit(".app"));
+		PrintLine("appBundleDir \"%.*s\"", StrPrint(appBundleDir));
+		Str appContentsDir = JoinPaths(appBundleDir, StrLit("Contents"));
+		PrintLine("appContentsDir \"%.*s\"", StrPrint(appContentsDir));
+		Str infoPlistPath  = JoinPaths(appContentsDir, StrLit("Info.plist"));
+		PrintLine("infoPlistPath \"%.*s\"", StrPrint(infoPlistPath));
+		Str appMacOSDir    = JoinPaths(appContentsDir, StrLit("MacOS"));
+		PrintLine("appMacOSDir \"%.*s\"", StrPrint(appMacOSDir));
+		
+		MyCreateFolder(appBundleDir, false);
+		MyCreateFolder(appContentsDir, false);
+		MyCreateFolder(appMacOSDir, false);
+		
+		PrintLine("Writing to \"%.*s\"", StrPrint(infoPlistPath));
+		Str plistContents = FormatStr(
+			"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+			"<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+			"<plist version=\"1.0\">\n"
+			"<dict>\n"
+			"\t<key>CFBundleExecutable</key>\n"
+			"\t<string>%.*s</string>\n"
+			"\t<key>CFBundleIdentifier</key>\n"
+			"\t<string>com.piggybankstudios.%.*s</string>\n"
+			"\t<key>CFBundleName</key>\n"
+			"\t<string>%.*s</string>\n"
+			"\t<key>CFBundlePackageType</key>\n"
+			"\t<string>APPL</string>\n"
+			"\t<key>NSPrincipalClass</key>\n"
+			"\t<string>NSApplication</string>\n"
+			"\t<key>NSHighResolutionCapable</key>\n"
+			"\t<true/>\n"
+			"</dict>\n"
+			"</plist>\n",
+			StrPrint(filenameApp), //CFBundleExecutable
+			StrPrint(PROJECT_EXE_NAME), //CFBundleIdentifier
+			StrPrint(PROJECT_READABLE_NAME) //CFBundleName
+		);
+		CreateAndWriteFile(infoPlistPath, plistContents, true);
+		
+		CopyFileToFolder(filenameApp, appMacOSDir, true);
 	}
 	
 	// +--------------------------------------------------------------+
