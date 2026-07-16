@@ -105,6 +105,7 @@ Description:
 #define BUILD_WITH_PIG_UI     1
 #define BUILD_WITH_FREETYPE   1
 #define BUILD_WITH_GTK        0
+#define BUILD_WITH_HTTP       0
 
 //This makes "pig_ui_config.h" get #included
 #define PIG_CORE_INCLUDE_PIG_UI_CONFIG 1
