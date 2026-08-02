@@ -31,7 +31,7 @@ Description:
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
 #define BUILD_INTO_SINGLE_UNIT  0
 // Runs the sokol-shdc.exe on all .glsl files in the source directory to produce .glsl.h and .glsl.c files and then compiles the .glsl.c files to .obj
-#define BUILD_SHADERS           1
+#define BUILD_SHADERS           0
 
 // Builds dll_main.c into pig_core.dll and pig_core.lib
 #define BUILD_PIG_CORE_DLL      1

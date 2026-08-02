@@ -55,16 +55,10 @@
 		},
 		{
 			"name": "PigBuild",
-			"path": "pig_build",
+			"path": "../pig_build/src",
 			"folder_exclude_patterns": [
-				"examples",
 			],
 			"file_exclude_patterns": [
-				".gitignore",
-				"LICENSE.txt",
-				"NOTES.todo",
-				"*.sublime-*",
-				"README.md",
 			],
 		},
 		{
