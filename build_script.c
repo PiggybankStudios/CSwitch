@@ -14,7 +14,6 @@ Description:
 	** since it's lifespan is short and it's memory requirements are tiny
 */
 
-#define PIG_BUILD_FOLDER_PATH "../pig_build"
 #include "pig_build.h"
 #include "pig_build_optional.h"
 
