@@ -98,3 +98,4 @@ type_view:
   type: Vec4R64
   expr: "rows($, $.X, $.Y, $.Z, $.W)"
 }
+name: "C-Switch"
