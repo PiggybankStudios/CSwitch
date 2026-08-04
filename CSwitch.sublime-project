@@ -57,6 +57,7 @@
 			"name": "PigBuild",
 			"path": "../pig_build/src",
 			"folder_exclude_patterns": [
+				"third_party",
 			],
 			"file_exclude_patterns": [
 			],
@@ -231,8 +232,8 @@
 			"BUILD_WITH_SDL",
 			"BUILD_WITH_SOKOL_APP",
 			"BUILD_WITH_SOKOL_GFX",
-			"BUNDLE_RESOURCES_ZIP",
-			"BUNDLE_RESOURCES_ZIP_IF_NEEDED",
+			"ZIP_RESOURCES_FOR_EMBEDDING",
+			"USE_EMBEDDED_RESOURCES_ZIP",
 			"Black",
 			"Black_Const",
 			"Black_Value",
@@ -954,7 +955,6 @@
 			"UNKNOWN_STR",
 			"USER_BINDINGS_FILENAME",
 			"USER_THEME_RELOAD_DELAY",
-			"USE_BUNDLED_RESOURCES",
 			"UiAlign_Bottom",
 			"UiAlign_Center",
 			"UiAlign_Count",

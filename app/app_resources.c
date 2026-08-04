@@ -8,7 +8,7 @@ Description:
 	** baked into the .exe
 */
 
-#if USE_BUNDLED_RESOURCES
+#if USE_EMBEDDED_RESOURCES_ZIP
 #include "resources_zip.c"
 #endif
 
@@ -16,8 +16,8 @@ void InitAppResources(AppResources* resources)
 {
 	NotNull(resources);
 	ClearPointer(resources);
-	resources->isLoadingFromDisk = (USE_BUNDLED_RESOURCES == 0);
-	#if USE_BUNDLED_RESOURCES
+	resources->isLoadingFromDisk = (USE_EMBEDDED_RESOURCES_ZIP == 0);
+	#if USE_EMBEDDED_RESOURCES_ZIP
 	Slice zipFileContents = MakeSlice(ArrayCount(resources_zip_bytes), &resources_zip_bytes[0]);
 	Result openResult = OpenZipArchive(stdHeap, zipFileContents, &resources->zipFile);
 	if (openResult != Result_Success) { NotifyPrint_E("Failed to parse builtin zip file %llu bytes as zip archive: %s", zipFileContents.length, GetResultStr(openResult)); }
@@ -31,7 +31,7 @@ Result TryReadAppResource(AppResources* resources, Arena* arena, FilePath path, 
 	NotNull(resources);
 	Assert(arena != nullptr || fileContentsOut == nullptr);
 	NotNullStr(path);
-	#if USE_BUNDLED_RESOURCES
+	#if USE_EMBEDDED_RESOURCES_ZIP
 	{
 		if (StrAnyCaseStartsWith(path, StrLit("resources/"))) { path = StrSliceFrom(path, 10); }
 		else { return Result_WrongFolder; }

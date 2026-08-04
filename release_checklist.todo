@@ -47,7 +47,7 @@ We should track how long each test takes, once we get to 10+ minutes of testing 
 	[ ] 
 
 # Checklist (Should be performed once on each platform)
-	[ ] Change build_config.h: BUILD_INTO_SINGLE_UNIT, BUNDLE_RESOURCES, USE_BUNDLED_RESOURCES, !DEBUG_BUILD, BUILD_SHADERS, !PROFILING_ENABLED
+	[ ] Change build_config.h: BUILD_INTO_SINGLE_UNIT, ZIP_RESOURCES_FOR_EMBEDDING, USE_EMBEDDED_RESOURCES_ZIP, !DEBUG_BUILD, BUILD_SHADERS, !PROFILING_ENABLED
 	[ ] Compile the executable, move it to the Programs folder (or any empty folder), check to make sure it has executable permissions, start the program from explorer
 	[ ] Drag and drop to open file
 	[ ] F6 to open framerate graph, make sure the framerate is reasonable

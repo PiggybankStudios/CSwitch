@@ -200,13 +200,13 @@ bool AppTryLoadDefaultTheme(bool assertOnFailure)
 		return false;
 	}
 	
-	#if !USE_BUNDLED_RESOURCES
+	#if !USE_EMBEDDED_RESOURCES_ZIP
 	if (app->defaultThemeFileWatchId == 0)
 	{
 		app->defaultThemeFileWatchId = AddFileWatch(&app->fileWatches, StrLit(DEFAULT_THEME_FILE_PATH), CHECK_DEFAULT_THEME_PERIOD);
 	}
 	else { ClearFileWatchChanged(&app->fileWatches, app->defaultThemeFileWatchId); }
-	#endif //!USE_BUNDLED_RESOURCES
+	#endif //!USE_EMBEDDED_RESOURCES_ZIP
 	
 	ThemeDefinition newDefaultTheme = ZEROED;
 	InitThemeDefinition(stdHeap, &newDefaultTheme, NUM_ENTRIES_EXPECTED_IN_DEFAULT_THEME);

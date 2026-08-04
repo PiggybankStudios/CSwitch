@@ -605,7 +605,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			AppLoadRecentFilesList();
 			refreshScreen = true;
 		}
-		#if !USE_BUNDLED_RESOURCES
+		#if !USE_EMBEDDED_RESOURCES_ZIP
 		if (app->defaultThemeFileWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->defaultThemeFileWatchId, DEFAULT_THEME_RELOAD_DELAY))
 		{
 			ClearFileWatchChanged(&app->fileWatches, app->defaultThemeFileWatchId);
@@ -616,7 +616,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 			
 			refreshScreen = true;
 		}
-		#endif // !USE_BUNDLED_RESOURCES
+		#endif // !USE_EMBEDDED_RESOURCES_ZIP
 		if (app->userThemeFileWatchId != 0 && HasFileWatchChangedWithDelay(&app->fileWatches, app->userThemeFileWatchId, USER_THEME_RELOAD_DELAY))
 		{
 			ClearFileWatchChanged(&app->fileWatches, app->userThemeFileWatchId);
