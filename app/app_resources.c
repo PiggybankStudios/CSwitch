@@ -48,6 +48,39 @@ Result TryReadAppResource(AppResources* resources, Arena* arena, FilePath path, 
 			return Result_FailedToReadFile;
 		}
 	}
+	#elif TARGET_IS_OSX
+	{
+		//NOTE: On OSX when an application is run from Finder, the working directory is not guaranteed.
+		//      We always need to look up where our executable is actually located and use paths relative to that
+		
+		if (StrAnyCaseStartsWith(path, StrLit("resources/"))) { path = StrSliceFrom(path, 10); }
+		else { return Result_WrongFolder; }
+		
+		ScratchBegin1(scratch, arena);
+		Result getExePathError = Result_None;
+		FilePath appBundlePath = OsGetExecutablePath(scratch, &getExePathError);
+		if (getExePathError != Result_None) { ScratchEnd(scratch); return getExePathError; }
+		NotEmptyStr(appBundlePath);
+		
+		#if USE_OSX_APP_BUNDLE_RESOURCES
+		FilePath resourcePath = JoinStringsInArena3(scratch, appBundlePath, StrLit("/Contents/Resources/"), path, true);
+		#else
+		FilePath resourcePath = JoinStringsInArena3(scratch, appBundlePath, StrLit("/../resources/"), path, true);
+		#endif
+		
+		if (fileContentsOut != nullptr)
+		{
+			bool readSuccess = OsReadFile(resourcePath, arena, convertNewLines, fileContentsOut);
+			if (!readSuccess) { PrintLine_E("Failed to read resource %s app bundle \"%.*s\"", USE_OSX_APP_BUNDLE_RESOURCES ? "from inside" : "next to", StrPrint(resourcePath)); }
+			return readSuccess ? Result_Success : Result_FailedToReadFile;
+		}
+		else
+		{
+			return OsDoesFileExist(resourcePath) ? Result_Success : Result_FailedToReadFile;
+		}
+		
+		ScratchEnd(scratch);
+	}
 	#else
 	{
 		if (fileContentsOut != nullptr)

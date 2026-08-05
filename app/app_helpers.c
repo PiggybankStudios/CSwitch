@@ -13,7 +13,11 @@ ImageData LoadImageData(Arena* arena, const char* path)
 	// bool readFileResult = OsReadFile(FilePathLit(path), scratch, false, &fileContents);
 	// Assert(readFileResult);
 	Result readFileResult = TryReadAppResource(&app->resources, scratch, MakeFilePathNt(path), false, &fileContents);
-	Assert(readFileResult == Result_Success);
+	if (readFileResult != Result_Success)
+	{
+		PrintLine_E("Failed to read resource: \"%s\" Error=%s", path, GetResultStr(readFileResult));
+		Assert(readFileResult == Result_Success);
+	}
 	ImageData imageData = ZEROED;
 	Result parseResult = TryParseImageFile(fileContents, arena, &imageData);
 	Assert(parseResult == Result_Success);

@@ -45,9 +45,11 @@ Description:
 
 
 // This puts all the contents of _data/resources into a zip file and converts the contents of that zip into resources_zip.c (and resources_zip.h in app/)
-#define ZIP_RESOURCES_FOR_EMBEDDING  1
+#define ZIP_RESOURCES_FOR_EMBEDDING  0
 // The .exe will use the resources_zip.h/c file instead of loading resources from disk
-#define USE_EMBEDDED_RESOURCES_ZIP   1
+#define USE_EMBEDDED_RESOURCES_ZIP   0
+// On OSX we can either look at the resources folder next to our .app bundle, or we can look inside the bundle (only applicable if !USE_EMBEDDED_RESOURCES_ZIP)
+#define USE_OSX_APP_BUNDLE_RESOURCES 1
 
 
 // Builds third_party/tracy/TracyClient.cpp in C++ mode into tracy.obj which will be linked into pig_core.dll
