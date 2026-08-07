@@ -63,11 +63,10 @@ Result TryReadAppResource(AppResources* resources, Arena* arena, FilePath path, 
 		NotEmptyStr(appBundlePath);
 		
 		#if USE_OSX_APP_BUNDLE_RESOURCES
-		FilePath resourcesDirPath = JoinPathsInArena(scratch, appBundlePath, StrLit("Contents/Resources"), false);
+		FilePath resourcePath = JoinPathsInArena3(scratch, appBundlePath, StrLit("Contents/Resources"), path, false);
 		#else
-		FilePath resourcesDirPath = JoinPathsInArena(scratch, appBundlePath, StrLit("../resources"), false);
+		FilePath resourcePath = JoinPathsInArena3(scratch, appBundlePath, StrLit("../resources"), path, false);
 		#endif
-		FilePath resourcePath = JoinPathsInArena(scratch, resourcesDirPath, path, false);
 		
 		if (fileContentsOut != nullptr)
 		{
