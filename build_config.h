@@ -20,12 +20,11 @@ Description:
 #define DEBUG_BUILD  1
 
 
-// Build .exe binaries for Windows platform
-#define BUILD_WINDOWS 0
-// Build binaries for Linux platform(s)
-#define BUILD_LINUX   0
-// Build .app for MacOS platform
-#define BUILD_OSX     1
+// Build for Windows when on Windows, for Linux on Linux, and OSX on OSX
+// (usually you want this on unless you just want BUILD_LINUX_VIA_WSL)
+#define BUILD_THIS_PLATFORM       1
+// On Windows we can build a Linux binaries by running clang inside WSL (Windows Subsystem for Linux)
+#define BUILD_LINUX_VIA_WSL       0
 
 
 // This disables hot-reloading support, the platform and game are one unit. Also PigCore gets compiled in directly rather than being used as a dynamic library
