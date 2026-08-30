@@ -460,11 +460,11 @@ bool AppChangeFontSize(bool increase)
 		{
 			app->uiFontSize += 1;
 			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-			app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+			app->settings.uiScale = (app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE) / platformInfo->sappDpiScale;
 			if (!AppCreateFonts())
 			{
 				app->uiFontSize -= 1;
-				app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+				app->settings.uiScale = (app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE) / platformInfo->sappDpiScale;
 				app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
 			}
 		}
@@ -475,7 +475,7 @@ bool AppChangeFontSize(bool increase)
 	{
 		app->uiFontSize -= 1;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
-		app->settings.uiScale = app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE;
+		app->settings.uiScale = (app->uiFontSize / (r32)DEFAULT_UI_FONT_SIZE) / platformInfo->sappDpiScale;
 		AppCreateFonts();
 		if (app->settings.uiScale != oldUiScale) { SaveAppSettings(); }
 		return true;
@@ -494,9 +494,9 @@ void LoadAppSettings()
 		if (loadSettingsResult == Result_Success)
 		{
 			PrintLine_I("Loaded settings from \"%.*s\"", StrPrint(settingsFilePath));
-			if (app->settings.uiScale <= 0.0f || app->settings.uiScale * DEFAULT_UI_FONT_SIZE < MIN_UI_FONT_SIZE)
+			if (app->settings.uiScale <= 0.0f || app->settings.uiScale * platformInfo->sappDpiScale * DEFAULT_UI_FONT_SIZE < MIN_UI_FONT_SIZE)
 			{
-				app->settings.uiScale = (r32)MIN_UI_FONT_SIZE / (r32)MIN_UI_FONT_SIZE;
+				app->settings.uiScale = ((r32)MIN_UI_FONT_SIZE / (r32)MIN_UI_FONT_SIZE) / platformInfo->sappDpiScale;
 				NotifyPrint_W("UiScale from settings.txt was too small or negative. Clamped to %g", app->settings.uiScale);
 			}
 		}
@@ -512,7 +512,7 @@ void LoadAppSettings()
 	}
 	if (app->settings.uiScale != prevUiScale || app->uiFont.arena == nullptr)
 	{
-		app->uiFontSize = app->settings.uiScale * DEFAULT_UI_FONT_SIZE;
+		app->uiFontSize = app->settings.uiScale * platformInfo->sappDpiScale * DEFAULT_UI_FONT_SIZE;
 		app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
 		bool fontBakeSuccess = AppCreateFonts();
 		Assert(fontBakeSuccess);
@@ -813,12 +813,12 @@ void AppCalculateSmallButtonsGrid()
 	r32 optionsAreaWidth = (optionsListElem != nullptr)
 		? (optionsListElem->layoutRec.width - optionsListElem->config.padding.inner.left - optionsListElem->config.padding.inner.right)
 		: appIn->screenSize.width;
-	r32 scaledMargin = (SMALL_BTN_MARGIN * app->settings.uiScale);
+	r32 scaledMargin = (SMALL_BTN_MARGIN * app->settings.uiScale * platformInfo->sappDpiScale);
 	r32 longestAbbreviationWidth = (app->currentTab != nullptr) ? app->currentTab->longestAbbreviationWidth : 0.0f;
-	r32 buttonWidth = longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale)*2;
+	r32 buttonWidth = longestAbbreviationWidth + (r32)RoundR32(SMALL_BTN_PADDING_X * app->settings.uiScale * platformInfo->sappDpiScale)*2;
 	app->smallBtnNumColumns = FloorR32i((optionsAreaWidth - scaledMargin) / (buttonWidth + scaledMargin));
 	if (app->smallBtnNumColumns <= 0) { app->smallBtnNumColumns = 1; }
-	app->smallBtnWidth = FloorR32i((optionsAreaWidth - (SMALL_BTN_MARGIN * (app->smallBtnNumColumns-1))) / app->smallBtnNumColumns) / app->settings.uiScale;
+	app->smallBtnWidth = FloorR32i((optionsAreaWidth - (SMALL_BTN_MARGIN * (app->smallBtnNumColumns-1))) / app->smallBtnNumColumns) / (app->settings.uiScale * platformInfo->sappDpiScale);
 	u64 numOptions = (app->currentTab != nullptr) ? app->currentTab->fileOptions.length : 1;
 	app->smallBtnNumRows = CeilDivU64(numOptions, app->smallBtnNumColumns);
 }
@@ -860,7 +860,7 @@ void AutoScrollToSelectedOptionAfterMove()
 		if (optionsListElem != nullptr && optionBtnElem != nullptr)
 		{
 			// r32 maxScroll = MaxR32(0, optionsListElem->contentSize.height - optionsListElem->layoutRec.height);
-			r32 optionYPosition = (optionBtnElem->layoutRec.y - (optionsListElem->layoutRec.y + optionsListElem->config.padding.inner.top * app->settings.uiScale)) + optionsListElem->scroll.y;
+			r32 optionYPosition = (optionBtnElem->layoutRec.y - (optionsListElem->layoutRec.y + optionsListElem->config.padding.inner.top * app->settings.uiScale * platformInfo->sappDpiScale)) + optionsListElem->scroll.y;
 			r32 bufferHeight = (OPTIONS_AUTOSCROLL_BUFFER_ABOVE_BELOW * optionsListElem->layoutRec.height);
 			r32 scrollUpTarget = MaxR32(0.0f, optionYPosition - bufferHeight);
 			r32 scrollDownTarget = MinR32(optionsListElem->scrollMax.y, optionYPosition + optionBtnElem->layoutRec.height + bufferHeight - optionsListElem->layoutRec.height);

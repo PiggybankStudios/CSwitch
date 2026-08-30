@@ -336,7 +336,7 @@ void RunAppCommand(AppCommand command) //pre-declared in app_commands.h
 		// +==============================+
 		case AppCommand_ResetUiScale:
 		{
-			app->uiFontSize = DEFAULT_UI_FONT_SIZE;
+			app->uiFontSize = DEFAULT_UI_FONT_SIZE * platformInfo->sappDpiScale;
 			app->mainFontSize = RoundR32(app->uiFontSize * MAIN_TO_UI_FONT_RATIO);
 			app->settings.uiScale = 1.0f;
 			bool fontBakeSuccess = AppCreateFonts();

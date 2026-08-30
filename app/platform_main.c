@@ -264,6 +264,7 @@ bool PlatDoUpdate(void)
 	platformData->currentAppInput = newAppInput;
 	OsTime afterUpdateTime = OsGetTime();
 	platformInfo->updateMs = OsTimeDiffMsR32(beforeUpdateTime, afterUpdateTime);
+	platformInfo->sappDpiScale = MaxR32(1.0f, sapp_dpi_scale());
 	
 	PlatRefreshAppInputHandling(oldAppInput, &platformData->appInputHandling);
 	
@@ -296,6 +297,7 @@ void PlatSappInit(void)
 	platformInfo->platformStdHeap = stdHeap;
 	platformInfo->platformStdHeapAllowFreeWithoutSize = &platformData->stdHeapAllowFreeWithoutSize;
 	platformInfo->programArgs = &programArgs;
+	platformInfo->sappDpiScale = MaxR32(1.0f, sapp_dpi_scale());
 	
 	platform = AllocType(PlatformApi, stdHeap);
 	NotNull(platform);
@@ -602,6 +604,7 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.logger.func = SokolLogCallback,
 		.enable_dragndrop = true,
 		.max_dropped_files = 1,
+		.high_dpi = true,
 	};
 }
 

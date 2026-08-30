@@ -171,8 +171,8 @@ void RenderPopupDialog(PopupDialog* dialog)
 				.layoutDirection = CLAY_TOP_TO_BOTTOM,
 				.padding = CLAY_PADDING_ALL(UI_U16(16)),
 				.sizing = {
-					.width = CLAY_SIZING_FIT(MinR32(POPUP_MIN_WIDTH * app->settings.uiScale, dialogMaxWidth), dialogMaxWidth),
-					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->settings.uiScale, (r32)appIn->screenSize.height), (r32)appIn->screenSize.height)
+					.width = CLAY_SIZING_FIT(MinR32(POPUP_MIN_WIDTH * app->settings.uiScale * platformInfo->sappDpiScale, dialogMaxWidth), dialogMaxWidth),
+					.height = CLAY_SIZING_FIT(MinR32(POPUP_MIN_HEIGHT * app->settings.uiScale * platformInfo->sappDpiScale, (r32)appIn->screenSize.height), (r32)appIn->screenSize.height)
 				},
 			},
 			.backgroundColor = dialogColor,

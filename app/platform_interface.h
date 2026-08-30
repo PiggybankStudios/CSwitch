@@ -14,6 +14,7 @@ struct PlatformInfo
 	Arena* platformStdHeapAllowFreeWithoutSize;
 	ProgramArgs* programArgs;
 	r32 updateMs;
+	r32 sappDpiScale;
 };
 
 typedef struct AppInput AppInput;

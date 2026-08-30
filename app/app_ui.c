@@ -42,7 +42,7 @@ void DoCSwitchAppUI(v2 screenSize)
 	StartUiFrame(&app->ui,
 		screenSize,
 		GetThemeColor(OptionListBack),
-		app->settings.uiScale,
+		app->settings.uiScale * platformInfo->sappDpiScale,
 		appIn->programTime,
 		appIn->elapsedMs,
 		app->settings.smoothScrollingDisabled ? -1.0f : (r32)OPTIONS_SMOOTH_SCROLLING_DIVISOR,
@@ -522,7 +522,7 @@ void DoCSwitchAppUI(v2 screenSize)
 		&appInputHandling->keyboard,
 		&appIn->mouse,
 		&appInputHandling->mouse,
-		app->settings.uiScale,
+		app->settings.uiScale * platformInfo->sappDpiScale,
 		nullptr, //TODO: Fill focusedElementPntr
 		MouseCursorShape_Default,
 		OsWindowHandleEmpty,

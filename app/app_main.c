@@ -946,7 +946,7 @@ EXPORT_FUNC APP_UPDATE_DEF(AppUpdate)
 	CommitAllFontTextureUpdates(&app->uiFont);
 	CommitAllFontTextureUpdates(&app->mainFont);
 	OsTime afterRenderTime = OsGetTime();
-	TracyCZoneN(Zone_EndFrame, "BeginFrame", true);
+	TracyCZoneN(Zone_EndFrame, "EndFrame", true);
 	EndFrame();
 	TracyCZoneEnd(Zone_EndFrame);
 	app->renderedLastFrame = true;

@@ -61,7 +61,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 	UIELEM({ .id = btnId,
 		.sizing = UI_FIT2(),
 		.alignment = UI_ALIGN_CENTER(),
-		.padding = { .inner = MakeV4(4, 2, 4, 2) },
+		// .padding = { .inner = MakeV4(4, 2, 4, 2) },
 		.color = backgroundColor,
 		.borderColor = borderColor,
 		.borderThickness = FillV4(1.0f),
@@ -75,7 +75,7 @@ bool UiTopbarMenuBtn_(UiId btnId, Str8 displayText, bool showAltText, bool* isMe
 			.fontSize = app->uiFontSize,
 			.fontStyle = UI_FONT_STYLE,
 			.textColor = textColor,
-			.sizing = { .width=UI_FIXED(MaxR32(displayTextSize.width, altDisplayStrSize.width)), .height={.type=UiSizingType_TextClip} },
+			.sizing = { .width=UI_FIXED(MaxR32(displayTextSize.width, altDisplayStrSize.width) / GetUiCtx()->scale), .height={.type=UiSizingType_TextClip} },
 		});
 	}
 	
